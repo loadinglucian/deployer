@@ -4,144 +4,133 @@ alwaysApply: true
 
 ## Testing Rules
 
+All rules MANDATORY.
+
 **Philosophy:** "A test that never fails is not a test, it's a lie."
 
-**Framework:** Pest exclusively with `it()` syntax, 80%+ coverage
+**Framework:** Pest exclusively, `it()` syntax, 80%+ coverage
 
 ### Running Tests
 
-- `composer pest` - run entire test suite in parallel, with coverage
-- `vendor/bin/pest $TEST_FILE` - run specific test file
+```bash
+composer pest                 # Full suite with coverage (parallel)
+vendor/bin/pest $TEST_FILE    # Specific file
+```
 
 ### Dependency Injection in Tests
 
-**The DI Container rule applies to PRODUCTION code, not tests.**
+**DI Container rule applies to PRODUCTION code, not tests.**
 
-**✅ PREFERRED - Manual Instantiation (Unit Tests):**
+**Unit Tests (Services/Utilities) - Manual Instantiation:**
 
 ```php
-// Testing services in isolation
 $mockFs = mockFilesystem(true, 'content');
 $service = new EnvService(new FilesystemService($mockFs), new Dotenv());
 ```
 
-Benefits: Clear dependency wiring, easy mock injection, no container overhead.
+Clear dependency wiring, easy mocking, no container overhead.
 
-**✅ RECOMMENDED - Container with Bindings (Command/Integration Tests):**
+**Command/Integration Tests - Container with Bindings:**
 
 ```php
-// Testing commands with mockCommandContainer()
+// Basic usage
 $container = mockCommandContainer();
 $command = $container->build(ServerAddCommand::class);
 
-// Override specific services when needed
+// Override services
 $customSSH = mockSSHServiceWithBehavior(canConnect: false);
 $container = mockCommandContainer(ssh: $customSSH);
-$command = $container->build(ServerAddCommand::class);
 
-// Pre-populate inventory data
+// Pre-populate data
 $container = mockCommandContainer(
     inventoryData: ['servers' => [['name' => 'web1', 'host' => '192.168.1.1']]]
 );
-$command = $container->build(ServerListCommand::class);
 ```
 
-Benefits: Sustainable (no updates needed when BaseCommand grows), consistent pattern, easy service overrides.
+Sustainable pattern - no updates when BaseCommand grows.
 
-**✅ OPTIONAL - Container Auto-wiring (Edge Cases):**
+**Container Auto-wiring (Edge Cases Only):**
 
 ```php
-// Testing DI configuration or service integration
 $container = new Container();
 $container->bind(Filesystem::class, $mockFs);
 $service = $container->build(CustomService::class);
 ```
 
-When to use: Verifying DI configuration or testing multiple services together.
+Use when verifying DI configuration or testing service integration.
 
-**Rule:** Unit tests (services/utilities) use manual instantiation. Command/integration tests use `mockCommandContainer()`.
-
-**Maintenance Note:** When adding a new service to `BaseCommand`, update `mockCommandContainer()` in `tests/TestHelpers.php`:
+**Maintenance:** When adding service to BaseCommand, update `mockCommandContainer()` in `tests/TestHelpers.php`:
 
 ```php
 function mockCommandContainer(
     ?NewService $newService = null,  // 1. Add parameter
-    // ... existing parameters
+    // ... existing params
 ) {
-    // ...
     $newService = $newService ?? mockNewService();  // 2. Build or use provided
-
-    // Bind services to container
-    $container->bind(NewService::class, $newService);  // 3. Bind to container
-    // ...
+    $container->bind(NewService::class, $newService);  // 3. Bind
 }
 ```
 
-This is the ONLY place you need to update for command testing.
-
 ### Test Minimalism
 
-**Target:** Keep test files under 1.8x the size of source code they test.
+**Target:** Keep test files under 1.8x source code size.
 
 **Rules:**
 
 - Test core business logic only, skip framework testing
-- Use dataset-driven testing: `->with([])` for multiple scenarios
-- Eliminate test overlap: no two tests covering same functionality
+- Use datasets: `->with([])` for multiple scenarios
+- Eliminate overlap: no two tests covering same functionality
 - Consolidate assertions: `expect($x)->toBe(1)->and($y)->toBe(2)`
 - Mock external dependencies only
-- No performance tests unless performance is the primary concern
+- No performance tests unless performance is primary concern
 - Don't sacrifice readability for ratio targets
 
-**Don't consolidate when:**
+**Don't consolidate:** Different public methods, exception vs normal flow, different setup, distinct business logic.
 
-- Different public methods
-- Exception vs normal flow tests
-- Different setup requirements
-- Distinct business logic
-
-### AAA Pattern (MANDATORY)
+### AAA Pattern
 
 ```php
-it('does something specific', function () {
+it('does something', function () {
     // ARRANGE
     $service = new Service(mock(Dependency::class));
 
     // ACT
-    $result = $service->performAction();
+    $result = $service->action();
 
     // ASSERT
     expect($result)->toBe('expected');
 
     // CLEANUP (when needed)
-    $this->resetTimeState();
     unlink($tempFile);
 });
 ```
 
-**Exception tests:** Use `// ACT & ASSERT` when act triggers assertion.
+Exception tests: `// ACT & ASSERT` when act triggers assertion.
 
-**Organization:** Use `describe()` blocks, `beforeEach()` setup, extract helpers/traits for DRY tests.
+Use `describe()` blocks, `beforeEach()` setup, extract helpers/traits for DRY tests.
 
 ### Testing Patterns
 
-**❌ FORBIDDEN:**
+**Forbidden:**
 
 ```php
-expect($x)->toBeInstanceOf(Class::class);     // Type-only testing
-expect($x)->toBeArray();                      // Generic assertions
-expect($x)->not->toBeNull();                  // Meaningless on its own
-expect($x)->not->toBeNull()->and($x)->toContain('text');  // Redundant (toContain already guarantees non-null)
-expect(true)->toBeTrue();                     // Literally meaningless
-sleep(...);                                   // Use time mocking
+expect($x)->toBeInstanceOf(Class::class);   // Type-only testing
+expect($x)->toBeArray();                    // Generic assertion
+expect($x)->not->toBeNull();                // Meaningless alone
+expect($x)->not->toBeNull()->and($x)->toContain('text');  // Redundant
+expect(true)->toBeTrue();                   // Literally meaningless
+sleep(...);                                 // Test logic not time
 ```
 
-**✅ REQUIRED:**
+**Required:**
 
 ```php
 expect($config->getValue('host'))->toBe('example.com');
 expect($this->validator->isValid($input))->toBe($expected);
 $mock->shouldReceive('method')->with('param')->andReturn('result');
+
+// For polling/timeout - use zero intervals
+$service->waitForReady('id', timeout: 10, pollInterval: 0);
 ```
 
 ### Test Types
@@ -165,7 +154,6 @@ $mock->shouldReceive('method')->with('param')->andReturn('result');
 
 ### Static Analysis
 
-**Running PHPStan applies to PRODUCTION code, not tests.**
+**PHPStan applies to PRODUCTION code, not tests.**
 
-- Ignore PHPStan issues in tests - focus on test functionality over compliance
-- Avoid excessive phpdoc just to appease types
+Ignore PHPStan issues in tests. Focus on functionality over compliance. Avoid excessive phpdoc to appease types.
