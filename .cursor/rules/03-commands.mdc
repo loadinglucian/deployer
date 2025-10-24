@@ -4,214 +4,77 @@ alwaysApply: true
 
 ## Symfony Console Rules
 
-**🚨 Console rules are MANDATORY and IMMUTABLE - fix violating code, not the console rules**
+All rules MANDATORY. Fix violating code, not these rules.
 
-### 📤 Output Method Philosophy
+### Output Method Philosophy
 
-**🚨 NEVER use Symfony IO methods directly - use [BaseCommand.php](mdc:app/Contracts/BaseCommand.php) methods exclusively**
+NEVER use Symfony IO methods directly - use BaseCommand methods exclusively.
 
-**Core Principle:** All console output flows through custom methods in BaseCommand that:
+All console output flows through custom methods in BaseCommand for consistent TUI styling.
 
-- Provide modern, beautiful TUI styling
-- Maintain consistent user experience
-- Enable centralized output control
-
-**Custom IO Methods (MANDATORY):**
+**Custom IO Methods:**
 
 ```php
-// ✅ CORRECT - BaseCommand custom methods
-$this->writeln(['Multiple', 'lines']);     // Multi-line output
-$this->hr();                               // Beautiful section separator
-$this->h1('Section Heading');              // Heading with icon
+// Output
+$this->writeln(['Multiple', 'lines']);
+$this->io->hr();
+$this->io->h1('Section Heading');
 
 // Status messages
-$this->success('Server added successfully');
-$this->error('Failed to connect to server');
-$this->warning('Skipping connection check');
-$this->info('Configuration loaded');
+$this->success('Operation completed');     // Green checkmark
+$this->error('Operation failed');          // Red X
+$this->warning('Skipping step');           // Yellow warning
+$this->info('Configuration loaded');       // Cyan info
 ```
 
-**❌ FORBIDDEN - Direct Symfony IO Usage:**
-
-```php
-// ❌ NEVER use Symfony methods directly
-$this->io->writeln('Direct output');      // Bypasses our custom styling
-$this->io->text('Raw text');              // Inconsistent with our TUI
-$this->io->success('Task done');          // Basic, outdated styling
-```
-
-**🔧 Missing a Method? Create It!**
-
-If you need output functionality not in [BaseCommand.php](mdc:app/Contracts/BaseCommand.php):
-
-1. Add a new method to BaseCommand
-2. Use modern styling and formatting
-3. Keep it reusable and minimal
-4. Document with example usage
-
-```php
-// ✅ CORRECT - Extend BaseCommand for new needs
-protected function success(string $message): void {
-    // Custom success styling here
-}
-```
+**Missing a method?** Add to BaseCommand with modern styling.
 
 **Integration Points:**
 
-- Base implementation: [BaseCommand.php](mdc:app/Contracts/BaseCommand.php)
-- Output trait: [ConsoleOutputTrait.php](mdc:app/Traits/ConsoleOutputTrait.php)
-- Input trait: [ConsoleInputTrait.php](mdc:app/Traits/ConsoleInputTrait.php)
-- Output methods: `writeln()`, `info()`, `hr()`, `h1()`
-- Status methods: `success()`, `error()`, `warning()`
-- Input methods: `getOptionOrPrompt()`, `getValidatedOptionOrPrompt()`, `promptText()`, `promptPassword()`, `promptConfirm()`, `promptSelect()`, `promptMultiselect()`, `promptSuggest()`, `promptSearch()`, `promptPause()`, `promptSpin()`
-- Helper methods: `showCommandHint()`
+- Base: BaseCommand.php
+- Output: ConsoleOutputTrait.php
+- Input: ConsoleInputTrait.php
+- Methods: `writeln()`, `info()`, `hr()`, `h1()`, `success()`, `error()`, `warning()`, `getOptionOrPrompt()`, `getValidatedOptionOrPrompt()`, `promptText()`, `promptPassword()`, `promptConfirm()`, `promptSelect()`, `promptMultiselect()`, `promptSuggest()`, `promptSearch()`, `promptPause()`, `promptSpin()`, `showCommandHint()`
 
-**When to Add New Methods:**
+**Trait Organization:**
 
-Console functionality is organized using traits for reusability:
+- ConsoleOutputTrait: Output/formatting methods using `$this->io` (SymfonyStyle)
+- ConsoleInputTrait: Input methods using `$this->input` (InputInterface)
+- BaseCommand: Shared initialization, configuration, orchestration (NOT individual I/O ops)
 
-- **ConsoleOutputTrait:** Add output/formatting methods that format and display text
-    - Examples: status messages, headings, separators, formatting helpers
-    - All methods should work with `$this->io` (SymfonyStyle)
+### User Input with Laravel Prompts
 
-- **ConsoleInputTrait:** Add input gathering methods that collect user data
-    - Examples: prompt helpers, option validators, input transformers
-    - All methods should work with `$this->input` (InputInterface)
-
-- **BaseCommand:** Add only shared initialization, configuration, or orchestration logic
-    - Examples: service initialization, common options, execution flow
-    - NOT for individual I/O operations
-
-This separation ensures console I/O methods remain reusable across different command contexts.
-
-### 📣 Status Message Helpers
-
-**Use status helpers for consistent success/error/warning messages:**
+Use `laravel/prompts` for ALL user interactions:
 
 ```php
-// ✅ Success messages (green checkmark)
-$this->success('Server added successfully');
-$this->success('Connection successful');
+use function Laravel\Prompts\{text, password, confirm, select, multiselect, suggest, search, spin};
 
-// ✅ Error messages (red X)
-$this->error('Failed to connect to server');
-$this->error('Failed to add server: ' . $e->getMessage());
-
-// ✅ Info messages (cyan info symbol)
-$this->info('Configuration loaded from .env');
-$this->info('Using custom inventory path');
-
-// ✅ Warning messages (yellow warning symbol)
-$this->warning('Skipping SSH connection check');
-$this->warning('Server add cancelled');
-```
-
-**Benefits:**
-
-- Consistent formatting across all commands
-- Clear visual indicators (✓, ✗, ℹ, ⚠)
-- Modern, colorful output styling
-
-### 🎯 User Input with Laravel Prompts
-
-**Use `laravel/prompts` for ALL user interactions to create rich CLI experiences:**
-
-```php
-use function Laravel\Prompts\text;
-use function Laravel\Prompts\password;
-use function Laravel\Prompts\confirm;
-use function Laravel\Prompts\select;
-use function Laravel\Prompts\multiselect;
-use function Laravel\Prompts\suggest;
-use function Laravel\Prompts\search;
-use function Laravel\Prompts\spin;
-
-// ✅ CORRECT - Modern prompts
 $name = text('What is your name?', required: true);
 $password = password('Enter password:', required: true);
-$confirmed = confirm('Deploy to production?', default: false);
-$environment = select('Select environment:', ['dev', 'staging', 'prod']);
-$features = multiselect('Enable features:', ['cache', 'queue', 'logs']);
-
-// Spinners for long operations
-$result = spin(fn() => $this->service->heavyOperation(), 'Processing...');
+$confirmed = confirm('Deploy?', default: false);
+$env = select('Environment:', ['dev', 'staging', 'prod']);
+$features = multiselect('Features:', ['cache', 'queue', 'logs']);
+$result = spin(fn() => $this->service->process(), 'Processing...');
 ```
 
-**Key Benefits:**
+Commands handle ALL user interaction. Services return plain data with NO console operations.
 
-- Beautiful, interactive prompts with validation
-- Auto-complete and search functionality
-- Loading spinners for long operations
-- Consistent, modern user experience
-- Zero Symfony IO boilerplate
+### Interactive + Options Pattern
 
-### 📋 Command Layer Patterns
+Support both interactive prompts AND CLI options using `getOptionOrPrompt()`.
 
-**Console I/O Rules:**
-
-- Commands handle ALL user interaction (input/output)
-- Services return plain data - NO console operations
-- Use consistent styling patterns across all commands
-- Validation errors bubble up to Commands for display
-
-**Core Flow:**
-
-```php
-class MyCommand extends BaseCommand {
-    protected function execute(InputInterface $input, OutputInterface $output): int {
-        // ✅ CORRECT - Custom BaseCommand methods
-        $this->h1('Deployment');
-        $this->info('Starting deployment process...');
-
-        // Prompt user with Laravel Prompts
-        $confirmed = confirm('Continue with deployment?', default: true);
-
-        // Services return data, not output
-        $result = $this->service->performWork();
-
-        // Custom output formatting
-        $this->success('Deployment completed: ' . $result);
-
-        return Command::SUCCESS;
-    }
-}
-```
-
-**Key Benefits:**
-
-- Consistent user experience across all commands
-- Easy testing with mockable I/O patterns
-- Clean separation between business logic and presentation
-
-**Rule:** Commands orchestrate Services and format output. Services never touch console I/O.
-
-### 🔀 Interactive + Options Pattern
-
-**Support both interactive prompts AND command-line options for maximum flexibility using the `getOptionOrPrompt()` helper.**
-
-**The Pattern:**
-
-The `getOptionOrPrompt()` method enables dual-mode commands that work both interactively and via CLI options:
-
-- **Signature:** `getOptionOrPrompt(string $optionName, Closure $promptCallback): mixed`
-- Checks if option was provided via CLI → returns option value
-- If not provided → executes the closure to prompt user interactively
-- Supports any return type (string, bool, int, array) via the closure
-- Works with all prompt methods: `promptText()`, `promptSelect()`, `promptConfirm()`, etc.
-
-**Example (Creating New Resource):**
+**Pattern:**
 
 ```php
 protected function configure(): void {
     parent::configure();
-
     $this->addOption('name', null, InputOption::VALUE_REQUIRED, 'Server name');
     $this->addOption('host', null, InputOption::VALUE_REQUIRED, 'Host/IP address');
     $this->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip confirmation');
 }
 
 protected function execute(InputInterface $input, OutputInterface $output): int {
-    // Text input with option fallback
+    // Checks CLI option first, prompts if not provided
     $name = $this->getOptionOrPrompt(
         'name',
         fn() => $this->promptText(
@@ -223,20 +86,12 @@ protected function execute(InputInterface $input, OutputInterface $output): int 
 
     $host = $this->getOptionOrPrompt(
         'host',
-        fn() => $this->promptText(
-            label: 'Host/IP address:',
-            placeholder: '192.168.1.100',
-            required: true
-        )
+        fn() => $this->promptText('Host/IP:', placeholder: '192.168.1.100', required: true)
     );
 
-    // Boolean flag with interactive fallback
     $skipConfirm = $this->getOptionOrPrompt(
         'yes',
-        fn() => $this->promptConfirm(
-            label: 'Skip verification?',
-            default: false
-        )
+        fn() => $this->promptConfirm('Skip verification?', default: false)
     );
 
     // ... process command ...
@@ -245,66 +100,18 @@ protected function execute(InputInterface $input, OutputInterface $output): int 
 }
 ```
 
-**Example (Selecting Existing Resource):**
+**Signature:** `getOptionOrPrompt(string $optionName, Closure $promptCallback): mixed`
+
+Prompt wrappers (`promptText()`, `promptSelect()`, etc.) automatically suppress extra spacing for clean output.
+
+### Input Validation Pattern
+
+Validation traits provide reusable validation for both Laravel Prompts and CLI options.
+
+**Validation Method Pattern:**
 
 ```php
-protected function configure(): void {
-    parent::configure();
-
-    $this->addOption('server', null, InputOption::VALUE_REQUIRED, 'Server name');
-    $this->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip confirmation');
-}
-
-protected function execute(InputInterface $input, OutputInterface $output): int {
-    // Selection with option fallback
-    $serverName = $this->getOptionOrPrompt(
-        'server',
-        fn() => $this->promptSelect(
-            label: 'Select server:',
-            options: $this->servers->getNames()
-        )
-    );
-
-    // ... process command ...
-
-    return Command::SUCCESS;
-}
-```
-
-**Prompt Wrapper Methods:**
-
-ConsoleInputTrait provides wrappers for all Laravel Prompts functions:
-
-- `promptText()` - Text input with validation
-- `promptPassword()` - Password input (masked)
-- `promptConfirm()` - Yes/No confirmation
-- `promptSelect()` - Single selection from list
-- `promptMultiselect()` - Multiple selections
-- `promptSuggest()` - Autocomplete suggestions
-- `promptSearch()` - Searchable options
-- `promptPause()` - Wait for Enter key
-- `promptSpin()` - Loading spinner for operations
-
-All wrappers automatically suppress extra spacing for cleaner output.
-
-**Benefits:**
-
-- Script-friendly with full option support
-- User-friendly with interactive fallbacks
-- Flexible - supports any prompt type via closures
-- Type-safe - preserves return types from prompts
-- DRY - single command serves both use cases
-
-### 🎯 Input Validation Pattern
-
-Validation traits provide reusable validation logic that integrates with both Laravel Prompts and CLI options.
-
-**Core Pattern:**
-
-Validation methods accept `mixed`, check type first, then return `?string` (error message or `null` if valid):
-
-```php
-// ✅ CORRECT - Accept mixed with type guard
+// ✅ CORRECT - Accept mixed, return ?string (error message or null)
 protected function validateNameInput(mixed $name): ?string
 {
     if (!is_string($name)) {
@@ -315,33 +122,23 @@ protected function validateNameInput(mixed $name): ?string
         return 'Server name cannot be empty';
     }
 
-    // Check uniqueness
-    $existing = $this->servers->findByName($name);
-    if ($existing !== null) {
+    if ($this->servers->findByName($name) !== null) {
         return "Server '{$name}' already exists";
     }
 
     return null;
 }
 
-// ❌ WRONG - Throws exception (not compatible with Laravel Prompts)
+// ❌ WRONG - Throws exception (incompatible with Laravel Prompts)
 protected function validateName(string $name): void
 {
     if (trim($name) === '') {
         throw new \InvalidArgumentException('Name cannot be empty');
     }
 }
-
-// ❌ WRONG - Type-hinted as string (not PHPStan-compliant)
-protected function validateNameInput(string $name): ?string
-{
-    // ...
-}
 ```
 
-**Using Validated Inputs:**
-
-Use `getValidatedOptionOrPrompt()` for inputs that require validation:
+**Usage:**
 
 ```php
 $name = $this->getValidatedOptionOrPrompt(
@@ -355,145 +152,66 @@ $name = $this->getValidatedOptionOrPrompt(
 );
 
 if ($name === null) {
-    return Command::FAILURE;
+    return Command::FAILURE;  // Validation failed, error already displayed
 }
 ```
 
-**How It Works:**
-
-1. Validator is passed only once (third parameter)
-2. Method automatically injects validator into prompt callback
-3. Prompts validate interactively as user types
-4. CLI options are validated after retrieval
-5. Returns `null` on validation failure (error already displayed)
-6. Returns validated value on success
+Validator injected into prompt callback, validates interactively and on CLI options.
 
 **Naming Convention:**
 
-- Validation methods: `validate*Input()` (returns `?string`)
-- Exception-throwing validators: `validate*()` (for heavy I/O operations like git repo checks)
+- `validate*Input()` - Returns `?string` (for prompts/options)
+- `validate*()` - Throws exceptions (for heavy I/O like git repo checks)
 
-**Examples:**
-
-- [ServerValidationTrait.php](mdc:app/Traits/ServerValidationTrait.php) - `validateHostInput()`, `validatePortInput()`, `validateNameInput()`
-- [SiteValidationTrait.php](mdc:app/Traits/SiteValidationTrait.php) - `validateDomainInput()`, `validateBranchInput()`
-
-**When to Use Exceptions:**
-
-For validation that involves heavy I/O operations (network calls, external processes), use exception-throwing methods:
-
-```php
-// Heavy I/O operation - throw exceptions
-protected function validateGitRepo(string $repo): void
-{
-    $process = $this->proc->run(['git', 'ls-remote', '--exit-code', $repo]);
-
-    if (!$process->isSuccessful()) {
-        throw new \RuntimeException("Cannot access git repository '{$repo}'");
-    }
-}
-
-// Used in commands with try-catch for user-friendly error display
-try {
-    $this->validateGitRepo($repo);
-    $this->success('Git repository is accessible');
-} catch (\RuntimeException $e) {
-    $this->error($e->getMessage());
-    return Command::FAILURE;
-}
-```
+**Examples:** ServerValidationTrait.php, SiteValidationTrait.php
 
 **Testing Validation Traits:**
 
-Create a test fixture class that uses the trait and exposes methods:
-
 ```php
-class TestServerValidator
-{
-    use ServerValidationTrait;
-
-    public function testValidateHost(mixed $host): ?string
-    {
+class TestValidator { use ServerValidationTrait;
+    public function testValidateHost(mixed $host): ?string {
         return $this->validateHostInput($host);
     }
 }
 
-// Test valid inputs return null
 expect($validator->testValidateHost('192.168.1.100'))->toBeNull();
-
-// Test invalid inputs return error messages
 expect($validator->testValidateHost('invalid'))->toContain('valid');
 ```
 
-**Benefits:**
-
-- **Testable:** Easy to unit test without exception handling
-- **Reusable:** Same method works for interactive prompts AND CLI options
-- **User-friendly:** Integrates with Laravel Prompts' `validate` callback
-- **Consistent:** Uniform pattern across all validation logic
-- **Type-safe:** PHPStan compliant with proper type variance
-
-**See also:** "Command Options & Input" section below for mandatory naming conventions.
-
-### ⚙️ Command Options & Input (MANDATORY)
+### Command Options & Input
 
 **Naming Convention Rules:**
 
-Command options must follow consistent naming to prevent conflicts and improve clarity:
+| Option         | Usage                    | Type             | When                 |
+| -------------- | ------------------------ | ---------------- | -------------------- |
+| `--server`     | Select existing server   | `VALUE_REQUIRED` | delete, info, deploy |
+| `--site`       | Select existing site     | `VALUE_REQUIRED` | site operations      |
+| `--name`       | Define new resource name | `VALUE_REQUIRED` | add, create          |
+| `--host`       | Host/IP address          | `VALUE_REQUIRED` | server config        |
+| `--port`       | Port number              | `VALUE_REQUIRED` | server config        |
+| `--yes` / `-y` | Skip confirmation        | `VALUE_NONE`     | all confirmations    |
+| `--skip`       | Skip validation          | `VALUE_NONE`     | validation steps     |
 
-| Option         | Usage                    | InputOption Type | When to Use                   |
-| -------------- | ------------------------ | ---------------- | ----------------------------- |
-| `--server`     | Select existing server   | `VALUE_REQUIRED` | delete, info, deploy commands |
-| `--site`       | Select existing site     | `VALUE_REQUIRED` | site management commands      |
-| `--name`       | Define new resource name | `VALUE_REQUIRED` | add, create commands          |
-| `--host`       | Host/IP address          | `VALUE_REQUIRED` | server configuration          |
-| `--port`       | Port number              | `VALUE_REQUIRED` | server configuration          |
-| `--yes` / `-y` | Skip confirmation        | `VALUE_NONE`     | all confirmation prompts      |
-| `--skip`       | Skip validation          | `VALUE_NONE`     | validation steps              |
+**Golden Rule:**
 
-**The Golden Rule:**
+- `--server` / `--site`: SELECTING existing (operation target)
+- `--name`: DEFINING new resource property
 
-- **`--server` / `--site`**: SELECTING existing resources (resource is the operation target)
-- **`--name`**: DEFINING new resource properties (name is one of many properties being set)
-
-This distinction prevents naming conflicts in commands that work with multiple resource types.
-
-**Examples:**
-
-```php
-// ✅ CORRECT - Selecting existing server (target of operation)
-// Commands: server:delete, server:info, deploy, etc.
-protected function configure(): void {
-    $this->addOption('server', null, InputOption::VALUE_REQUIRED, 'Server name');
-    $this->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip confirmation');
-}
-
-// ✅ CORRECT - Creating new server (name is a property)
-// Commands: server:add, server:create
-protected function configure(): void {
-    $this->addOption('name', null, InputOption::VALUE_REQUIRED, 'Server name');
-    $this->addOption('host', null, InputOption::VALUE_REQUIRED, 'Host/IP');
-    $this->addOption('port', null, InputOption::VALUE_REQUIRED, 'Port');
-    $this->addOption('skip', null, InputOption::VALUE_NONE, 'Skip SSH validation');
-}
-```
+Prevents conflicts in commands working with multiple resource types.
 
 **Additional Rules:**
 
-- Use **OPTIONS** only, never ARGUMENTS (enables `getOptionOrPrompt()` pattern)
+- Use OPTIONS only, never ARGUMENTS (enables `getOptionOrPrompt()`)
 - Pair all options with `getOptionOrPrompt()` for dual-mode support
-- Boolean flags always use `VALUE_NONE`
-- Data inputs always use `VALUE_REQUIRED`
-- Only `--yes` gets a short flag (`-y`)
+- Boolean flags: `VALUE_NONE`
+- Data inputs: `VALUE_REQUIRED`
+- Only `--yes` gets short flag (`-y`)
 
-**See Examples:**
+See: ServerDeleteCommand.php, ServerAddCommand.php
 
-- Selection: [ServerDeleteCommand.php](mdc:app/Console/Server/ServerDeleteCommand.php#L32-L33)
-- Creation: [ServerAddCommand.php](mdc:app/Console/Server/ServerAddCommand.php#L37-L43)
+### Command Completion
 
-### 🎯 Command Completion (MANDATORY)
-
-**Always call `showCommandHint()` before returning SUCCESS to educate users on non-interactive usage:**
+Always call `showCommandHint()` before returning SUCCESS to teach non-interactive usage:
 
 ```php
 $this->showCommandHint('command:name', [
@@ -504,14 +222,9 @@ $this->showCommandHint('command:name', [
 return Command::SUCCESS;
 ```
 
-**Why This Matters:**
+Teaches CLI syntax, improves DX, reduces support questions.
 
-- Teaches users the CLI syntax for scripting/automation
-- Improves developer experience with copy-paste ready commands
-- Reduces support questions about non-interactive usage
-- Self-documenting command behavior
-
-**Example Output:**
+**Output:**
 
 ```
 ◆ Run non-interactively:
@@ -521,4 +234,4 @@ return Command::SUCCESS;
     --yes
 ```
 
-**See:** [ServerDeleteCommand.php](mdc:app/Console/Server/ServerDeleteCommand.php#L90-L93)
+See: ServerDeleteCommand.php

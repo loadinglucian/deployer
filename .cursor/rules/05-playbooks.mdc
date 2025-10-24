@@ -1,0 +1,154 @@
+---
+alwaysApply: true
+---
+
+## Playbook Rules
+
+All rules MANDATORY.
+
+### Core Principles
+
+Playbooks are idempotent, non-interactive bash scripts that:
+
+- Execute one or more related tasks
+- MUST be idempotent (safe to run multiple times)
+- Receive context via environment variables
+- Never prompt for user input
+- Run completely unattended
+
+### Non-Interactive Operation
+
+All playbooks MUST run without user interaction:
+
+- Set `DEBIAN_FRONTEND=noninteractive` for Debian/Ubuntu
+- Use `-y` flag for package managers (apt-get, yum)
+- Use `-q` flag to suppress unnecessary output
+- Use `--batch --yes` for GPG operations
+- Use `--quiet` for systemctl where appropriate
+- Never use `read`, confirm dialogs, or interactive prompts
+
+### Environment Variables
+
+Use `DEPLOYER_` prefix for all context variables:
+
+```bash
+#!/usr/bin/env bash
+#
+# Install Package
+# -------------------------------------------------------------------------------
+# Required Environment Variables:
+#   DEPLOYER_DISTRO - Distribution (debian|redhat|amazon)
+#   DEPLOYER_PERMS  - Permission level (root|sudo)
+
+set -o pipefail
+export DEBIAN_FRONTEND=noninteractive
+
+# Validation
+if [[ -z $DEPLOYER_DISTRO ]]; then
+    echo "Error: DEPLOYER_DISTRO environment variable is required"
+    exit 1
+fi
+```
+
+### Idempotency
+
+ALL playbooks MUST be idempotent - safe to run multiple times without side effects.
+
+Check before acting - don't fail if resource exists:
+
+```bash
+# ✅ CORRECT - Idempotent
+if ! command -v caddy >/dev/null 2>&1; then
+    run_cmd apt-get install -y -q caddy
+fi
+
+if [[ ! -d /var/www/app ]]; then
+    run_cmd mkdir -p /var/www/app
+fi
+
+# ❌ WRONG - Not idempotent (fails on second run)
+run_cmd useradd deployer
+
+# ❌ WRONG - Not idempotent (duplicates each run)
+echo "export PATH=\$PATH:/usr/local/bin" >> ~/.bashrc
+```
+
+Enables recovery, resumption, drift correction.
+
+### Error Handling
+
+Fail fast with clear messages:
+
+```bash
+set -o pipefail  # Fail on pipe errors
+
+if [[ -z $DEPLOYER_DISTRO ]]; then
+    echo "Error: DEPLOYER_DISTRO environment variable is required"
+    exit 1
+fi
+```
+
+### Helper Functions
+
+```bash
+# Execute with appropriate permissions
+run_cmd() {
+    if [[ $DEPLOYER_PERMS == 'root' ]]; then
+        "$@"
+    else
+        sudo "$@"
+    fi
+}
+
+# Usage
+run_cmd apt-get install -y -q package-name
+```
+
+### Output
+
+- Use YAML for structured data output
+- Echo progress messages for logs
+- Use `✓` for success, `✗` for failure
+- Keep output clean and scannable
+
+### Complete Example
+
+```bash
+#!/usr/bin/env bash
+set -o pipefail
+export DEBIAN_FRONTEND=noninteractive
+
+# Validation
+[[ -z $DEPLOYER_DISTRO ]] && echo "Error: DEPLOYER_DISTRO required" && exit 1
+
+# Helpers
+run_cmd() { [[ $DEPLOYER_PERMS == 'root' ]] && "$@" || sudo "$@"; }
+
+# Task 1: Install package (idempotent)
+if ! command -v nginx >/dev/null 2>&1; then
+    run_cmd apt-get install -y -q nginx
+    echo "✓ Nginx installed"
+else
+    echo "✓ Nginx already installed"
+fi
+
+# Task 2: Create directory (idempotent)
+if [[ ! -d /var/www/app ]]; then
+    run_cmd mkdir -p /var/www/app
+    echo "✓ Directory created"
+else
+    echo "✓ Directory already exists"
+fi
+
+# Task 3: Configure service (idempotent)
+if ! systemctl is-enabled --quiet nginx; then
+    run_cmd systemctl enable --quiet nginx
+    echo "✓ Nginx enabled"
+else
+    echo "✓ Nginx already enabled"
+fi
+
+echo "✓ Setup complete"
+```
+
+See: server-info.sh

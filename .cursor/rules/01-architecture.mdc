@@ -4,130 +4,109 @@ alwaysApply: true
 
 ## Architecture Rules
 
-- **PHP:** PSR-12, strict types, PHP 8.x features (unions, match, attributes, readonly)
-- **Imports:** Always add `use` statements instead of fully qualified class names
-- **Type Safety:** All methods must have explicit return types with proper generics (e.g., `Collection<int, User>`)
+All rules MANDATORY.
 
-**🚨 Architecture rules are IMMUTABLE - fix violating code, not the architecture rules**
+### PHP Standards
 
-### Symfony Patterns
+- PSR-12, strict types, PHP 8.x features (unions, match, attributes, readonly)
+- Explicit return types with generics: `Collection<int, User>`
+- Dependency injection via Symfony patterns
+- Use Symfony classes over native PHP functions (Filesystem, Process) for testability
 
-- **Dependency Injection:** instead of manually resolving and instantiating classes
-- **Symfony Classes:** instead of native PHP functions for easier mocking during testing (eg. `Filesystem::`, `Process::`, etc.)
+### Imports
 
-## Dependency Injection System
-
-Use `$container->build(ClassName::class)` for all object creation instead of `new ClassName()`.
-
-**Core Flow:**
+Always add `use` statements for vendor packages and project classes. Root namespace FQDNs acceptable (`\InvalidArgumentException`, `\RuntimeException`).
 
 ```php
-// ✅ CORRECT - Auto-wires dependencies via injected container
-$service = $this->container->build(MyService::class);
-$command = $container->build(HelloCommand::class);
+// ✅ CORRECT
+use Symfony\Component\Filesystem\Filesystem;
+use Bigpixelrocket\DeployerPHP\Services\IOService;
 
-// ❌ WRONG - Manual instantiation breaks DI
+$fs = new Filesystem();
+throw new \InvalidArgumentException('Error');
+
+// ❌ WRONG - inline FQDNs for non-root namespaces
+$fs = new \Symfony\Component\Filesystem\Filesystem();
+```
+
+### Dependency Injection System
+
+Use `$container->build(ClassName::class)` for all object creation. Container uses reflection to auto-wire dependencies.
+
+```php
+// ✅ CORRECT
+$service = $this->container->build(MyService::class);
+
+// ❌ WRONG
 $service = new MyService(new Dependency());
 ```
 
-**How It Works:**
+**Rule:** ALL object creation uses `$container->build()` except DTOs, value objects, pure data structures.
 
-1. `Container->build()` uses reflection to analyze constructor parameters
-2. Recursively builds all dependencies automatically
-3. Caches reflection data for performance
-4. Handles circular dependencies and error cases
-
-**Integration Points:**
-
-- Entry point: [bin/deployer](mdc:bin/deployer) → Direct container instantiation and `$app->run()`
-- Command registration: [SymfonyApp.php](mdc:app/SymfonyApp.php) → `$this->container->build(HelloCommand::class)`
-- Services: Auto-inject dependencies like `Filesystem`, `EnvService` via constructor
-
-**Key Benefits:**
-
-- Zero configuration - pure PHP reflection
-- Type-safe with generics support
-- Automatic error detection and meaningful messages
-- Easy testing with mockable dependencies
-- No manual dependency wiring required
-
-**Rule:** ALL object creation must use `$container->build()` except for value objects, DTOs, and pure data structures.
-
-**Container Access:** In production code, access the container through constructor injection.
+**Container Access:** Constructor injection in production, direct instantiation in tests.
 
 ```php
-// ✅ PRODUCTION CODE - Container injected via DI
+// Production
 class SymfonyApp {
-    public function __construct(private readonly Container $container) { ... }
-
+    public function __construct(private readonly Container $container) {}
     private function registerCommands(): void {
         $command = $this->container->build(HelloCommand::class);
     }
 }
 
-// ✅ TESTS - Direct container instantiation for isolation
+// Tests
 $container = new Container();
 $service = $container->build(TestService::class);
 ```
 
-**Test Mocking:** The Container supports `bind()` for registering mock instances in tests.
+**Test Mocking:** Container supports `bind()` for mock instances:
 
 ```php
-// Register mocks for testing
 $container = new Container();
 $container->bind(SSHService::class, $mockSSH);
-$container->bind(EnvService::class, $mockEnv);
-
-// Container uses bound instances instead of auto-wiring
-$command = $container->build(ServerAddCommand::class);  // Gets mocks
+$command = $container->build(ServerAddCommand::class);  // Gets mock
 ```
 
-This enables isolated testing while maintaining production auto-wiring behavior.
+**Integration:** Entry point: bin/deployer. Command registration: SymfonyApp.php. Services: Auto-injected via constructor.
 
-### Command Layer
+### Layer Separation
 
-- Commands handle user interaction (input/output) and orchestrate Services
-- Commands must NOT contain business logic - delegate to Services
-- Commands must NOT duplicate orchestration logic - extract to shared Services
-- Commands are responsible for console styling, error formatting, and user prompts
-- Commands should not invoke other commands - NO proxy commands
+**Command Layer:**
 
-### Service Layer (Business Logic)
+- Handle user interaction (input/output), orchestrate Services
+- NO business logic (delegate to Services)
+- NO duplicate orchestration (extract to shared Services)
+- Responsible for console styling, error formatting, prompts
+- Never invoke other commands (NO proxy commands)
 
-- Services provide atomic, reusable functionality with no console I/O
-- Services accept plain PHP data types and return plain PHP data types
-- Services must be dependency-injected via constructor
-- Services handle core business logic, external API calls, file operations
-- Complex orchestration shared by multiple Commands should be extracted to dedicated Services
+**Service Layer:**
+
+- Atomic, reusable functionality with NO console I/O
+- Accept/return plain PHP data types
+- Dependency-injected via constructor
+- Handle business logic, external APIs, file operations
+- Complex orchestration shared by Commands extracted to dedicated Services
 
 **Service State:**
 
-- **Stateless Services:** Pure operations with no internal state (e.g., validators, calculators, API clients)
-- **Stateful Services:** Services that manage configuration or cached data (e.g., config loaders, file managers, repositories)
-- Stateful services should use lazy loading when initialization is expensive or path-dependent
-- State must be initialized explicitly via public methods before use (e.g., `load()`, `initialize()`)
-- Services should document their stateful nature and initialization requirements
+- Stateless: Pure operations, no internal state (validators, calculators, API clients)
+- Stateful: Manage configuration/cached data (config loaders, file managers, repositories)
+- Stateful services use lazy loading, explicit initialization via public methods (`load()`, `initialize()`), document requirements
 
-### Console I/O Rules
+**Console I/O:** Only Commands perform console I/O. SymfonyStyle for all output. Services return exceptions/data for Commands to display. See 03-commands.mdc.
 
-- Only Commands perform console input/output operations
-- Use SymfonyStyle consistently for all user-facing output
-- Services return exceptions or structured data for Commands to handle
-- Validation errors and business exceptions bubble up to Commands for display
-
-### Dependency Rules
+**Dependencies:**
 
 - Commands depend on Services
-- Services depend on other Services or utilities
-- All dependencies declared in constructor signatures
-
-**IMPORTANT:** No circular dependencies allowed.
+- Services depend on Services/utilities
+- All dependencies in constructor signatures
+- NO circular dependencies
 
 ### Comments
 
-**DocBlock:** Add docblock comments with minimalist descriptions, parameters and return types for classes and functions;
+**DocBlock:** Minimalist descriptions, parameters, return types for classes and functions.
 
-**Comment everything:** Use comments to separate sections and explain or summarize complex logic;
+**Comment structure:**
 
 ```
 //
@@ -140,20 +119,16 @@ This enables isolated testing while maintaining production auto-wiring behavior.
 // {Paragraph}
 ```
 
-- Use comments as visual separators to help separate different sections
-- Separate section headers, subheaders and paragraphs with a single newline
-- Avoid commenting the obvious or leaving comments behind when removing code
+Separate sections visually. One newline between headers/subheaders/paragraphs. No obvious comments. Remove comments when removing code.
 
 ### Quality Gates
 
-**ALWAYS run these commands against the files you have touched and fix any issues BEFORE considering a task complete:**
+ALWAYS run before completing task, fix all issues:
 
 ```bash
-vendor/bin/rector $CHANGED_PHP_FILES  # Code improvements (changed files only)
-vendor/bin/pint $CHANGED_PHP_FILES    # Fix code style (changed files only)
-
-# Static analysis excluding tests (never do static analysis against tests)
-vendor/bin/phpstan analyze $CHANGED_PHP_FILES_EXCEPT_TESTS
+vendor/bin/rector $CHANGED_PHP_FILES   # Code improvements
+vendor/bin/pint $CHANGED_PHP_FILES     # Fix style
+vendor/bin/phpstan analyze $CHANGED_PHP_FILES_EXCEPT_TESTS  # NEVER run on tests/
 ```
 
-**Important: ** Don't run PHPStan on test files; tests are excluded from static analysis.
+PHPStan excluded from tests - tests focus on testing functionality over type compliance.
