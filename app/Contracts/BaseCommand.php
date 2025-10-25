@@ -7,7 +7,9 @@ namespace Bigpixelrocket\DeployerPHP\Contracts;
 use Bigpixelrocket\DeployerPHP\Container;
 use Bigpixelrocket\DeployerPHP\Repositories\ServerRepository;
 use Bigpixelrocket\DeployerPHP\Repositories\SiteRepository;
+use Bigpixelrocket\DeployerPHP\Services\DigitalOceanService;
 use Bigpixelrocket\DeployerPHP\Services\EnvService;
+use Bigpixelrocket\DeployerPHP\Services\FilesystemService;
 use Bigpixelrocket\DeployerPHP\Services\GitService;
 use Bigpixelrocket\DeployerPHP\Services\InventoryService;
 use Bigpixelrocket\DeployerPHP\Services\IOService;
@@ -39,6 +41,7 @@ abstract class BaseCommand extends Command
 
         // Base services
         protected readonly EnvService $env,
+        protected readonly FilesystemService $fs,
         protected readonly GitService $git,
         protected readonly InventoryService $inventory,
         protected readonly IOService $io,
@@ -48,6 +51,9 @@ abstract class BaseCommand extends Command
         protected readonly ServerRepository $servers,
         protected readonly SiteRepository $sites,
         protected readonly SSHService $ssh,
+
+        // Providers
+        protected readonly DigitalOceanService $digitalOcean,
     ) {
         parent::__construct();
     }
@@ -74,7 +80,7 @@ abstract class BaseCommand extends Command
             'inventory',
             null,
             InputOption::VALUE_OPTIONAL,
-            'Custom path to inventory.yml file (defaults to inventory.yml in the current working directory)'
+            'Custom path to deployer.yml file (defaults to deployer.yml in the current working directory)'
         );
     }
 

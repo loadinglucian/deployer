@@ -219,7 +219,7 @@ class InventoryService
      */
     private function getInventoryPath(): string
     {
-        return $this->inventoryPath ?? rtrim($this->fs->getCwd(), '/') . '/inventory.yml';
+        return $this->inventoryPath ?? rtrim($this->fs->getCwd(), '/') . '/deployer.yml';
     }
 
     /**
