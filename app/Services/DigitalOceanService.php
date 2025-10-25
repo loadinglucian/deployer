@@ -18,7 +18,7 @@ class DigitalOceanService
 {
     private ?Client $api = null;
 
-    private ?string $apiToken = null;
+    private ?string $token = null;
 
     /** @var array<string, mixed> */
     private array $cache = [];
@@ -35,13 +35,27 @@ class DigitalOceanService
     // -------------------------------------------------------------------------------
 
     /**
+     * Initialize the DigitalOcean API with the given token.
+     *
+     * @param string $token The DigitalOcean API token
+     *
+     * @throws \RuntimeException If authentication fails or API is unreachable
+     */
+    public function initialize(string $token): void
+    {
+        $this->setToken($token);
+        $this->initializeAPI();
+        $this->verifyAuthentication();
+    }
+
+    /**
      * Set the DigitalOcean API token.
      *
      * Must be called before making any API calls.
      */
-    public function setAPIToken(string $token): void
+    public function setToken(string $token): void
     {
-        $this->apiToken = $token;
+        $this->token = $token;
 
         // Reset client every time a new token is set
         $this->api = null;
@@ -115,15 +129,15 @@ class DigitalOceanService
             return $this->api;
         }
 
-        if ($this->apiToken === null || $this->apiToken === '') {
+        if ($this->token === null || $this->token === '') {
             throw new \RuntimeException(
                 'DigitalOcean API token not set. '.
-                'Call setApiToken() before making API requests.'
+                'Set API token before making API requests.'
             );
         }
 
         $this->api = new Client();
-        $this->api->authenticate($this->apiToken);
+        $this->api->authenticate($this->token);
 
         $this->account->setAPI($this->api);
         $this->key->setAPI($this->api);
