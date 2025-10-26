@@ -37,6 +37,8 @@ class DigitalOceanService
     /**
      * Single function to initialize the DigitalOcean API and verify authentication.
      *
+     * Must be called before making any API calls.
+     *
      * @param string $token The DigitalOcean API token
      *
      * @throws \RuntimeException If authentication fails or API is unreachable
@@ -50,10 +52,8 @@ class DigitalOceanService
 
     /**
      * Set a DigitalOcean API token.
-     *
-     * Must be called before making any API calls.
      */
-    public function setToken(string $token): void
+    private function setToken(string $token): void
     {
         $this->token = $token;
 
@@ -64,11 +64,9 @@ class DigitalOceanService
     /**
      * Initialize and return the DigitalOcean API client.
      *
-     * Must be called before making any API calls.
-     *
      * @throws \RuntimeException If API token is not configured
      */
-    public function initializeAPI(): Client
+    private function initializeAPI(): Client
     {
         if ($this->api !== null) {
             return $this->api;
