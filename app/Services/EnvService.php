@@ -53,7 +53,7 @@ class EnvService
         if ($required) {
             $list = implode(', ', $keysList);
             $label = count($keysList) > 1 ? 'variables' : 'variable';
-            throw new \RuntimeException("Missing required environment {$label}: {$list}");
+            throw new \InvalidArgumentException("Missing required environment {$label}: {$list}");
         }
 
         return null;

@@ -10,5 +10,5 @@ vendor/
 .env.*
 *.cache
 *.log
-inventory.yml
+deployer.yml
 Thumbs.db
