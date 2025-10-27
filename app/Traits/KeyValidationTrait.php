@@ -29,7 +29,11 @@ trait KeyValidationTrait
             return null;
         }
 
-        $expandedPath = $this->fs->expandPath($path);
+        try {
+            $expandedPath = $this->fs->expandPath($path);
+        } catch (\Throwable $e) {
+            return $e->getMessage();
+        }
 
         // Check if file exists
         if (!$this->fs->exists($expandedPath)) {
