@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Bigpixelrocket\DeployerPHP\Traits;
 
+use Bigpixelrocket\DeployerPHP\Services\DigitalOceanService;
+use Bigpixelrocket\DeployerPHP\Services\EnvService;
+use Bigpixelrocket\DeployerPHP\Services\IOService;
 use Symfony\Component\Console\Command\Command;
 
 /**

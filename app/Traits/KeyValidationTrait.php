@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Bigpixelrocket\DeployerPHP\Traits;
 
+use Bigpixelrocket\DeployerPHP\Services\FilesystemService;
+
 /**
  * Common SSH key validation helpers for commands.
  *
