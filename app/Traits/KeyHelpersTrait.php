@@ -8,6 +8,11 @@ use Symfony\Component\Console\Command\Command;
 
 /**
  * Common SSH key helpers trait for commands.
+ *
+ * Requires classes using this trait to have IOService and FilesystemService properties.
+ *
+ * @property IOService $io
+ * @property FilesystemService $fs
  */
 trait KeyHelpersTrait
 {

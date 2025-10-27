@@ -6,6 +6,10 @@ namespace Bigpixelrocket\DeployerPHP\Traits;
 
 /**
  * Common SSH key validation helpers for commands.
+ *
+ * Requires classes using this trait to have a FilesystemService property.
+ *
+ * @property FilesystemService $fs
  */
 trait KeyValidationTrait
 {
