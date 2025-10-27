@@ -4,21 +4,23 @@ declare(strict_types=1);
 
 namespace Bigpixelrocket\DeployerPHP\Traits;
 
+use Bigpixelrocket\DeployerPHP\Services\FilesystemService;
+
 /**
- * Validation helpers for SSH key configuration.
+ * Common SSH key validation helpers for commands.
  *
- * Requires the using class to have:
- * - protected EnvService $env
- * - protected FilesystemService $fs
- * - expandKeyPath() method (from KeyHelpersTrait)
+ * Requires classes using this trait to have a FilesystemService property.
+ *
+ * @property FilesystemService $fs
  */
 trait KeyValidationTrait
 {
     /**
-     * Validate SSH public key file path.
+     * Validate SSH public key file:
      *
-     * Checks if file exists and contains valid SSH public key format.
-     * Automatically expands tilde (~) to home directory.
+     * - Checks if file exists (automatically expands tilde ~ to home directory)
+     * - Validates key format
+     * - Empty paths are allowed for default key resolution
      *
      * @return string|null Error message if invalid, null if valid
      */
@@ -28,16 +30,15 @@ trait KeyValidationTrait
             return 'Key path must be a string';
         }
 
-        // Check if empty
+        // Allow empty paths (will trigger default key resolution)
         if (trim($path) === '') {
-            return 'Key path cannot be empty';
+            return null;
         }
 
-        // Expand tilde to home directory
         try {
-            $expandedPath = $this->expandKeyPath($path);
-        } catch (\RuntimeException) {
-            return 'Could not determine home directory for path expansion';
+            $expandedPath = $this->fs->expandPath($path);
+        } catch (\Throwable $e) {
+            return $e->getMessage();
         }
 
         // Check if file exists

@@ -4,10 +4,19 @@ declare(strict_types=1);
 
 namespace Bigpixelrocket\DeployerPHP\Traits;
 
+use Bigpixelrocket\DeployerPHP\Services\DigitalOceanService;
+use Bigpixelrocket\DeployerPHP\Services\EnvService;
+use Bigpixelrocket\DeployerPHP\Services\IOService;
 use Symfony\Component\Console\Command\Command;
 
 /**
  * Common DigitalOcean actions trait for commands.
+ *
+ * Requires classes using this trait to have EnvService, IOService, and DigitalOceanService properties.
+ *
+ * @property EnvService $env
+ * @property IOService $io
+ * @property DigitalOceanService $digitalOcean
  */
 trait DigitalOceanCommandTrait
 {
