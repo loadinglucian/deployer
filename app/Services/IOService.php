@@ -547,7 +547,7 @@ class IOService
         }
 
         // Find longest key for alignment
-        $maxLength = max(array_map('strlen', array_keys($details)));
+        $maxLength = max(array_map(strlen(...), array_keys($details)));
 
         $lines = [];
         foreach ($details as $key => $value) {
