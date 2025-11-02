@@ -32,8 +32,7 @@ export DEBIAN_FRONTEND=noninteractive
 #
 # Helper Functions
 # ----
-
-run_cmd() { [[ $DEPLOYER_PERMS == 'root' ]] && "$@" || sudo "$@"; }
+# (see "Helper Functions" section below for run_cmd implementation)
 
 #
 # Main Execution
@@ -73,18 +72,9 @@ Use `DEPLOYER_` prefix. Standard variables:
 - `DEPLOYER_DISTRO` - Distribution: `debian|redhat|amazon` (if needed)
 - `DEPLOYER_PERMS` - Permissions: `root|sudo|none` (if needed)
 
-**Validation pattern:**
+**Validation:**
 
-```bash
-# Minimal validation (detection playbooks)
-[[ -z $DEPLOYER_OUTPUT_FILE ]] && echo "Error: DEPLOYER_OUTPUT_FILE required" && exit 1
-
-# Full validation (provisioning playbooks)
-[[ -z $DEPLOYER_OUTPUT_FILE ]] && echo "Error: DEPLOYER_OUTPUT_FILE required" && exit 1
-[[ -z $DEPLOYER_DISTRO ]] && echo "Error: DEPLOYER_DISTRO required" && exit 1
-[[ -z $DEPLOYER_PERMS ]] && echo "Error: DEPLOYER_PERMS required" && exit 1
-export DEPLOYER_PERMS  # Ensure available in subshells
-```
+Detection playbooks only validate `DEPLOYER_OUTPUT_FILE`. Provisioning playbooks additionally validate `DEPLOYER_DISTRO` and `DEPLOYER_PERMS`, then export `DEPLOYER_PERMS` for subshell availability. See Complete Example section for full pattern.
 
 ### Distribution Support
 
@@ -193,16 +183,12 @@ run_cmd() {
     if [[ $DEPLOYER_PERMS == 'root' ]]; then
         "$@"
     else
-        sudo "$@"
+        sudo -n "$@"
     fi
 }
 ```
 
-**One-liner shorthand:**
-
-```bash
-run_cmd() { [[ $DEPLOYER_PERMS == 'root' ]] && "$@" || sudo "$@"; }
-```
+The `-n` flag ensures sudo fails fast without prompting for a password, maintaining non-interactive operation.
 
 ### Output
 
@@ -255,7 +241,13 @@ export DEPLOYER_PERMS
 # Helper Functions
 # ----
 
-run_cmd() { [[ $DEPLOYER_PERMS == 'root' ]] && "$@" || sudo "$@"; }
+run_cmd() {
+	if [[ $DEPLOYER_PERMS == 'root' ]]; then
+		"$@"
+	else
+		sudo -n "$@"
+	fi
+}
 
 #
 # Main Execution

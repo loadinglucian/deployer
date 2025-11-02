@@ -66,7 +66,11 @@ check_permissions() {
 # ----
 
 run_cmd() {
-	[[ $DEPLOYER_PERMS == 'root' ]] && "$@" || sudo "$@"
+	if [[ $DEPLOYER_PERMS == 'root' ]]; then
+		"$@"
+	else
+		sudo -n "$@"
+	fi
 }
 
 #
