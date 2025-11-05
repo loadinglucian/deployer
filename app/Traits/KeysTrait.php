@@ -5,15 +5,13 @@ declare(strict_types=1);
 namespace Bigpixelrocket\DeployerPHP\Traits;
 
 use Bigpixelrocket\DeployerPHP\Services\FilesystemService;
-use Bigpixelrocket\DeployerPHP\Services\IOService;
 
 /**
  * Reusable SSH key things.
  *
- * Requires classes using this trait to have FilesystemService and IOService properties.
+ * Requires classes using this trait to have FilesystemService property.
  *
  * @property FilesystemService $fs
- * @property IOService $io
  */
 trait KeysTrait
 {
@@ -188,4 +186,3 @@ trait KeysTrait
         return null;
     }
 }
-
