@@ -5,33 +5,35 @@ declare(strict_types=1);
 namespace Bigpixelrocket\DeployerPHP\Console\Site;
 
 use Bigpixelrocket\DeployerPHP\Contracts\BaseCommand;
-use Bigpixelrocket\DeployerPHP\Traits\SiteHelpersTrait;
+use Bigpixelrocket\DeployerPHP\Traits\SitesTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/**
- * List all sites in the inventory.
- */
-#[AsCommand(name: 'site:list', description: 'List sites in the inventory')]
+#[AsCommand(
+    name: 'site:list',
+    description: 'List sites in the inventory'
+)]
 class SiteListCommand extends BaseCommand
 {
-    use SiteHelpersTrait;
+    use SitesTrait;
 
+    // -------------------------------------------------------------------------------
     //
     // Execution
+    //
     // -------------------------------------------------------------------------------
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         parent::execute($input, $output);
 
-        $this->io->hr();
-        $this->io->h1('List Sites');
+        $this->heading('List Sites');
 
         //
         // Get all sites
+        // -------------------------------------------------------------------------------
 
         $allSites = $this->ensureSitesAvailable();
 
@@ -41,6 +43,7 @@ class SiteListCommand extends BaseCommand
 
         //
         // Display sites
+        // -------------------------------------------------------------------------------
 
         foreach ($allSites as $count => $site) {
             $this->displaySiteDeets($site);

@@ -5,32 +5,37 @@ declare(strict_types=1);
 namespace Bigpixelrocket\DeployerPHP\Console\Server;
 
 use Bigpixelrocket\DeployerPHP\Contracts\BaseCommand;
-use Bigpixelrocket\DeployerPHP\Traits\ServerHelpersTrait;
-use Bigpixelrocket\DeployerPHP\Traits\SiteHelpersTrait;
+use Bigpixelrocket\DeployerPHP\Traits\ServersTrait;
+use Bigpixelrocket\DeployerPHP\Traits\SitesTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'server:list', description: 'List servers in the inventory')]
+#[AsCommand(
+    name: 'server:list',
+    description: 'List servers in the inventory'
+)]
 class ServerListCommand extends BaseCommand
 {
-    use ServerHelpersTrait;
-    use SiteHelpersTrait;
+    use ServersTrait;
+    use SitesTrait;
 
+    // -------------------------------------------------------------------------------
     //
     // Execution
+    //
     // -------------------------------------------------------------------------------
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         parent::execute($input, $output);
 
-        $this->io->hr();
-        $this->io->h1('List Servers');
+        $this->heading('List Servers');
 
         //
         // Get all servers
+        // -------------------------------------------------------------------------------
 
         $allServers = $this->ensureServersAvailable();
 
@@ -39,12 +44,11 @@ class ServerListCommand extends BaseCommand
         }
 
         //
-        // Display servers with their sites
+        // Display servers
+        // -------------------------------------------------------------------------------
 
         foreach ($allServers as $count => $server) {
-            // Display server with sites
-            $serverSites = $this->sites->findByServer($server->name);
-            $this->displayServerDeets($server, $serverSites);
+            $this->displayServerDeets($server);
 
             if ($count < count($allServers) - 1) {
                 $this->io->writeln([

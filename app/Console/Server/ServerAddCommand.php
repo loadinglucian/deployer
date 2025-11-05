@@ -6,26 +6,27 @@ namespace Bigpixelrocket\DeployerPHP\Console\Server;
 
 use Bigpixelrocket\DeployerPHP\Contracts\BaseCommand;
 use Bigpixelrocket\DeployerPHP\DTOs\ServerDTO;
-use Bigpixelrocket\DeployerPHP\Traits\KeyHelpersTrait;
-use Bigpixelrocket\DeployerPHP\Traits\KeyValidationTrait;
-use Bigpixelrocket\DeployerPHP\Traits\ServerHelpersTrait;
-use Bigpixelrocket\DeployerPHP\Traits\ServerValidationTrait;
+use Bigpixelrocket\DeployerPHP\Traits\KeysTrait;
+use Bigpixelrocket\DeployerPHP\Traits\ServersTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'server:add', description: 'Add a new server to the inventory')]
+#[AsCommand(
+    name: 'server:add',
+    description: 'Add a new server to the inventory'
+)]
 class ServerAddCommand extends BaseCommand
 {
-    use KeyHelpersTrait;
-    use KeyValidationTrait;
-    use ServerHelpersTrait;
-    use ServerValidationTrait;
+    use KeysTrait;
+    use ServersTrait;
 
+    // -------------------------------------------------------------------------------
     //
     // Configuration
+    //
     // -------------------------------------------------------------------------------
 
     protected function configure(): void
@@ -40,20 +41,96 @@ class ServerAddCommand extends BaseCommand
             ->addOption('username', null, InputOption::VALUE_REQUIRED, 'SSH username (default: root)');
     }
 
+    // -------------------------------------------------------------------------------
     //
     // Execution
+    //
     // -------------------------------------------------------------------------------
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         parent::execute($input, $output);
 
-        $this->io->hr();
-        $this->io->h1('Add New Server');
+        $this->heading('Add New Server');
 
         //
         // Gather server details
+        // -------------------------------------------------------------------------------
 
+        $deets = $this->gatherServerDeets();
+
+        if ($deets === null) {
+            return Command::FAILURE;
+        }
+
+        [
+            'name' => $name,
+            'host' => $host,
+            'port' => $port,
+            'username' => $username,
+            'privateKeyPath' => $privateKeyPath,
+        ] = $deets;
+
+        //
+        // Display server details
+        // -------------------------------------------------------------------------------
+
+        $server = new ServerDTO(
+            name: $name,
+            host: $host,
+            port: $port,
+            username: $username,
+            privateKeyPath: $privateKeyPath
+        );
+
+        $this->displayServerDeets($server);
+
+        //
+        // Verify SSH connection & add to inventory
+        // -------------------------------------------------------------------------------
+
+        if ($this->verifySSHConnection($server) === Command::FAILURE) {
+            return Command::FAILURE;
+        }
+
+        try {
+            $this->servers->create($server);
+        } catch (\RuntimeException $e) {
+            $this->nay('Failed to add server to inventory: ' . $e->getMessage());
+
+            return Command::FAILURE;
+        }
+
+        $this->yay('Server added to inventory');
+
+        //
+        // Show command replay
+        // -------------------------------------------------------------------------------
+
+        $this->showCommandReplay('server:add', [
+            'name' => $name,
+            'host' => $host,
+            'port' => $port,
+            'username' => $username,
+            'private-key-path' => $privateKeyPath,
+        ]);
+
+        return Command::SUCCESS;
+    }
+
+    // -------------------------------------------------------------------------------
+    //
+    // Helpers
+    //
+    // -------------------------------------------------------------------------------
+
+    /**
+     * Gather server details from user input or CLI options.
+     *
+     * @return array{name: string, host: string, port: int, username: string, privateKeyPath: string}|null
+     */
+    protected function gatherServerDeets(): ?array
+    {
         /** @var string|null $name */
         $name = $this->io->getValidatedOptionOrPrompt(
             'name',
@@ -63,11 +140,11 @@ class ServerAddCommand extends BaseCommand
                 required: true,
                 validate: $validate
             ),
-            fn ($value) => $this->validateNameInput($value)
+            fn ($value) => $this->validateServerName($value)
         );
 
         if ($name === null) {
-            return Command::FAILURE;
+            return null;
         }
 
         /** @var string|null $host */
@@ -79,11 +156,11 @@ class ServerAddCommand extends BaseCommand
                 required: true,
                 validate: $validate
             ),
-            fn ($value) => $this->validateHostInput($value)
+            fn ($value) => $this->validateServerHost($value)
         );
 
         if ($host === null) {
-            return Command::FAILURE;
+            return null;
         }
 
         /** @var string|null $portString */
@@ -95,11 +172,11 @@ class ServerAddCommand extends BaseCommand
                 required: true,
                 validate: $validate
             ),
-            fn ($value) => $this->validatePortInput($value)
+            fn ($value) => $this->validateServerPort($value)
         );
 
         if ($portString === null) {
-            return Command::FAILURE;
+            return null;
         }
 
         $port = (int) $portString;
@@ -129,54 +206,17 @@ class ServerAddCommand extends BaseCommand
         $privateKeyPath = $this->resolvePrivateKeyPath($privateKeyPathRaw);
 
         if ($privateKeyPath === null) {
-            $this->io->error('SSH private key not found.');
-            $this->io->writeln('');
+            $this->nay('SSH private key not found.');
 
-            return Command::FAILURE;
+            return null;
         }
 
-        //
-        // Create DTO and display server info
-
-        $server = new ServerDTO(
-            name: $name,
-            host: $host,
-            port: $port,
-            username: $username,
-            privateKeyPath: $privateKeyPath
-        );
-
-        $this->io->hr();
-
-        $this->displayServerDeets($server);
-        $this->io->writeln('');
-
-        //
-        // Save to repository
-
-        try {
-            $this->servers->create($server);
-        } catch (\RuntimeException $e) {
-            $this->io->error('Failed to add server: ' . $e->getMessage());
-
-            return Command::FAILURE;
-        }
-
-        $this->io->success('Server added successfully');
-        $this->io->writeln('');
-
-        //
-        // Show command hint
-
-        $this->io->showCommandHint('server:add', [
+        return [
             'name' => $name,
             'host' => $host,
             'port' => $port,
             'username' => $username,
-            'private-key-path' => $privateKeyPath,
-        ]);
-
-        return Command::SUCCESS;
+            'privateKeyPath' => $privateKeyPath,
+        ];
     }
-
 }

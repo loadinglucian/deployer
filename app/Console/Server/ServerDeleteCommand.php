@@ -5,22 +5,27 @@ declare(strict_types=1);
 namespace Bigpixelrocket\DeployerPHP\Console\Server;
 
 use Bigpixelrocket\DeployerPHP\Contracts\BaseCommand;
-use Bigpixelrocket\DeployerPHP\Traits\DigitalOceanCommandTrait;
-use Bigpixelrocket\DeployerPHP\Traits\ServerHelpersTrait;
+use Bigpixelrocket\DeployerPHP\Traits\DigitalOceanTrait;
+use Bigpixelrocket\DeployerPHP\Traits\ServersTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'server:delete', description: 'Delete a server from the inventory')]
+#[AsCommand(
+    name: 'server:delete',
+    description: 'Delete a server from the inventory'
+)]
 class ServerDeleteCommand extends BaseCommand
 {
-    use DigitalOceanCommandTrait;
-    use ServerHelpersTrait;
+    use DigitalOceanTrait;
+    use ServersTrait;
 
+    // -------------------------------------------------------------------------------
     //
     // Configuration
+    //
     // -------------------------------------------------------------------------------
 
     protected function configure(): void
@@ -29,23 +34,25 @@ class ServerDeleteCommand extends BaseCommand
 
         $this
             ->addOption('server', null, InputOption::VALUE_REQUIRED, 'Server name')
-            ->addOption('force', null, InputOption::VALUE_NONE, 'Skip typing server name (use with caution)')
-            ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip confirmation prompt');
+            ->addOption('force', null, InputOption::VALUE_NONE, 'Skip typing the server name to confirm')
+            ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip Yes/No confirmation prompt');
     }
 
+    // -------------------------------------------------------------------------------
     //
     // Execution
+    //
     // -------------------------------------------------------------------------------
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         parent::execute($input, $output);
 
-        $this->io->hr();
-        $this->io->h1('Delete Server');
+        $this->heading('Delete Server');
 
         //
-        // Select server
+        // Select server & display details
+        // -------------------------------------------------------------------------------
 
         $server = $this->selectServer();
 
@@ -53,44 +60,45 @@ class ServerDeleteCommand extends BaseCommand
             return $server;
         }
 
-        // Get sites for this server
-        $serverSites = $this->sites->findByServer($server->name);
+        $this->displayServerDeets($server);
 
         //
-        // Display server details
+        // Check if server has sites
+        // -------------------------------------------------------------------------------
 
-        $this->io->hr();
-
-        $this->displayServerDeets($server, $serverSites);
-        $this->io->writeln('');
+        $serverSites = $this->sites->findByServer($server->name);
 
         if (count($serverSites) > 0) {
-            $this->io->error("Cannot delete server '{$server->name}' because it has one or more sites.");
+            $this->io->warning("Cannot delete server '{$server->name}' because it has one or more sites.");
+            $this->io->writeln([
+                '',
+                'Use <fg=cyan>site:delete</> to delete the sites first.',
+                '',
+            ]);
 
             return Command::FAILURE;
         }
 
         //
-        // Check if DigitalOcean server and initialize API
+        // Initialize provider API
+        // -------------------------------------------------------------------------------
 
         $isDigitalOceanServer = $this->isDigitalOceanServer($server);
+        if ($isDigitalOceanServer && Command::FAILURE === $this->initializeDigitalOceanAPI()) {
+            $this->nay('Cannot delete server: DigitalOcean API authentication failed.');
+            $this->io->writeln([
+                '',
+                'You must authenticate with DigitalOcean to delete provisioned servers.',
+                'The server will not be removed from inventory to prevent orphaned cloud resources.',
+                '',
+            ]);
 
-        if ($isDigitalOceanServer) {
-            if ($this->initializeDigitalOceanAPI() === Command::FAILURE) {
-                $this->io->error('Cannot delete server: DigitalOcean API authentication failed.');
-                $this->io->writeln([
-                    '',
-                    'You must authenticate with DigitalOcean to delete provisioned servers.',
-                    'The server will not be removed from inventory to prevent orphaned cloud resources.',
-                    '',
-                ]);
-
-                return Command::FAILURE;
-            }
+            return Command::FAILURE;
         }
 
         //
         // Display warning for cloud provider servers
+        // -------------------------------------------------------------------------------
 
         if ($isDigitalOceanServer) {
             $this->io->writeln('<fg=yellow>⚠ This is a DigitalOcean server.</>');
@@ -104,6 +112,7 @@ class ServerDeleteCommand extends BaseCommand
 
         //
         // Confirm deletion with extra safety
+        // -------------------------------------------------------------------------------
 
         /** @var bool $forceSkip */
         $forceSkip = $input->getOption('force') ?? false;
@@ -115,8 +124,7 @@ class ServerDeleteCommand extends BaseCommand
             );
 
             if ($typedName !== $server->name) {
-                $this->io->error('Server name does not match. Deletion cancelled.');
-                $this->io->writeln('');
+                $this->nay('Server name does not match. Deletion cancelled.');
 
                 return Command::FAILURE;
             }
@@ -140,6 +148,7 @@ class ServerDeleteCommand extends BaseCommand
 
         //
         // Destroy cloud provider resources
+        // -------------------------------------------------------------------------------
 
         if ($isDigitalOceanServer && $server->dropletId !== null) {
             try {
@@ -147,9 +156,10 @@ class ServerDeleteCommand extends BaseCommand
                     fn () => $this->digitalOcean->droplet->destroyDroplet($server->dropletId),
                     "Destroying droplet (ID: {$server->dropletId})"
                 );
-                $this->io->success('Droplet destroyed');
+
+                $this->yay('Droplet destroyed (ID: ' . $server->dropletId . ')');
             } catch (\RuntimeException $e) {
-                $this->io->error($e->getMessage());
+                $this->nay($e->getMessage());
                 $this->io->writeln('');
 
                 $continueAnyway = $this->io->promptConfirm(
@@ -165,16 +175,17 @@ class ServerDeleteCommand extends BaseCommand
 
         //
         // Delete server from inventory
+        // -------------------------------------------------------------------------------
 
         $this->servers->delete($server->name);
 
-        $this->io->success("Server '{$server->name}' deleted successfully");
-        $this->io->writeln('');
+        $this->yay("Server '{$server->name}' deleted successfully");
 
         //
-        // Show command hint
+        // Show command replay
+        // -------------------------------------------------------------------------------
 
-        $this->io->showCommandHint('server:delete', [
+        $this->showCommandReplay('server:delete', [
             'server' => $server->name,
             'yes' => $confirmed,
             'force' => true,

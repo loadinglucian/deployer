@@ -5,30 +5,26 @@ declare(strict_types=1);
 namespace Bigpixelrocket\DeployerPHP\Console\Site;
 
 use Bigpixelrocket\DeployerPHP\Contracts\BaseCommand;
+use Bigpixelrocket\DeployerPHP\DTOs\ServerDTO;
 use Bigpixelrocket\DeployerPHP\DTOs\SiteDTO;
-use Bigpixelrocket\DeployerPHP\Traits\ServerHelpersTrait;
-use Bigpixelrocket\DeployerPHP\Traits\SiteHelpersTrait;
-use Bigpixelrocket\DeployerPHP\Traits\SiteValidationTrait;
+use Bigpixelrocket\DeployerPHP\Traits\ServersTrait;
+use Bigpixelrocket\DeployerPHP\Traits\SitesTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/**
- * Add and register a new site to the inventory.
- *
- * Prompts for site details and saves to inventory.
- */
 #[AsCommand(name: 'site:add', description: 'Add a new site to the inventory')]
 class SiteAddCommand extends BaseCommand
 {
-    use ServerHelpersTrait;
-    use SiteHelpersTrait;
-    use SiteValidationTrait;
+    use ServersTrait;
+    use SitesTrait;
 
+    // -------------------------------------------------------------------------------
     //
     // Configuration
+    //
     // -------------------------------------------------------------------------------
 
     protected function configure(): void
@@ -43,28 +39,109 @@ class SiteAddCommand extends BaseCommand
             ->addOption('server', null, InputOption::VALUE_REQUIRED, 'Server name');
     }
 
+    // -------------------------------------------------------------------------------
     //
     // Execution
+    //
     // -------------------------------------------------------------------------------
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         parent::execute($input, $output);
 
-        $this->io->hr();
-        $this->io->h1('Add New Site');
+        $this->heading('Add New Site');
 
         //
+        // Gather site details
+        // -------------------------------------------------------------------------------
+
+        $deets = $this->gatherSiteDeets();
+
+        if ($deets === null) {
+            return Command::FAILURE;
+        }
+
+        [
+            'domain' => $domain,
+            'siteSource' => $siteSource,
+            'repo' => $repo,
+            'branch' => $branch,
+            'server' => $server,
+        ] = $deets;
+
+        //
+        // Display site details
+        // -------------------------------------------------------------------------------
+
+        $site = new SiteDTO(
+            domain: $domain,
+            repo: $repo,
+            branch: $branch,
+            servers: [$server->name]
+        );
+
+        $this->displaySiteDeets($site);
+
+        //
+        // Save to inventory
+        // -------------------------------------------------------------------------------
+
+        try {
+            $this->sites->create($site);
+        } catch (\RuntimeException $e) {
+            $this->nay($e->getMessage());
+
+            return Command::FAILURE;
+        }
+
+        $this->yay('Site added to inventory');
+
+        //
+        // Show command replay
+        // -------------------------------------------------------------------------------
+
+        $hintOptions = [
+            'domain' => $domain,
+            'source' => $siteSource,
+            'server' => $server->name,
+        ];
+
+        if ($siteSource !== 'local') {
+            $hintOptions['repo'] = $repo;
+            $hintOptions['branch'] = $branch;
+        }
+
+        $this->showCommandReplay('site:add', $hintOptions);
+
+        return Command::SUCCESS;
+    }
+
+    // -------------------------------------------------------------------------------
+    //
+    // Helpers
+    //
+    // -------------------------------------------------------------------------------
+
+    /**
+     * Gather site details from user input or CLI options.
+     *
+     * @return array{domain: string, siteSource: string, repo: ?string, branch: ?string, server: ServerDTO}|null
+     */
+    protected function gatherSiteDeets(): ?array
+    {
+        //
         // Select server
+        // -------------------------------------------------------------------------------
 
         $server = $this->selectServer();
 
         if (is_int($server)) {
-            return $server;
+            return null;
         }
 
         //
         // Gather site details
+        // -------------------------------------------------------------------------------
 
         /** @var string|null $domain */
         $domain = $this->io->getValidatedOptionOrPrompt(
@@ -75,15 +152,16 @@ class SiteAddCommand extends BaseCommand
                 required: true,
                 validate: $validate
             ),
-            fn ($value) => $this->validateDomainInput($value)
+            fn ($value) => $this->validateSiteDomain($value)
         );
 
         if ($domain === null) {
-            return Command::FAILURE;
+            return null;
         }
 
         //
         // Select site source
+        // -------------------------------------------------------------------------------
 
         /** @var string $siteSource */
         $siteSource = $this->io->getOptionOrPrompt(
@@ -99,6 +177,7 @@ class SiteAddCommand extends BaseCommand
 
         //
         // Gather git-specific details
+        // -------------------------------------------------------------------------------
 
         $repo = null;
         $branch = null;
@@ -116,11 +195,11 @@ class SiteAddCommand extends BaseCommand
                     required: true,
                     validate: $validate
                 ),
-                fn ($value) => $this->validateRepoInput($value)
+                fn ($value) => $this->validateSiteRepo($value)
             );
 
             if ($repo === null) {
-                return Command::FAILURE;
+                return null;
             }
 
             $defaultBranch = $this->git->detectCurrentBranch() ?? 'main';
@@ -135,59 +214,20 @@ class SiteAddCommand extends BaseCommand
                     required: true,
                     validate: $validate
                 ),
-                fn ($value) => $this->validateBranchInput($value)
+                fn ($value) => $this->validateSiteBranch($value)
             );
 
             if ($branch === null) {
-                return Command::FAILURE;
+                return null;
             }
         }
 
-        //
-        // Create DTO and display site info
-
-        $site = new SiteDTO(
-            domain: $domain,
-            repo: $repo,
-            branch: $branch,
-            servers: [$server->name]
-        );
-
-        $this->io->hr();
-
-        $this->displaySiteDeets($site);
-        $this->io->writeln('');
-
-        //
-        // Save to repository
-
-        try {
-            $this->sites->create($site);
-        } catch (\RuntimeException $e) {
-            $this->io->error('Failed to add site: ' . $e->getMessage());
-
-            return Command::FAILURE;
-        }
-
-        $this->io->success('Site added successfully');
-        $this->io->writeln('');
-
-        //
-        // Show command hint
-
-        $hintOptions = [
+        return [
             'domain' => $domain,
-            'source' => $siteSource,
-            'server' => $server->name,
+            'siteSource' => $siteSource,
+            'repo' => $repo,
+            'branch' => $branch,
+            'server' => $server,
         ];
-
-        if (!$isLocal) {
-            $hintOptions['repo'] = $repo;
-            $hintOptions['branch'] = $branch;
-        }
-
-        $this->io->showCommandHint('site:add', $hintOptions);
-
-        return Command::SUCCESS;
     }
 }
