@@ -34,7 +34,7 @@ $this->info('Configuration loaded');       // Cyan info
 - Base: BaseCommand.php
 - Output: ConsoleOutputTrait.php
 - Input: ConsoleInputTrait.php
-- Methods: `writeln()`, `info()`, `hr()`, `h1()`, `success()`, `error()`, `warning()`, `getOptionOrPrompt()`, `getValidatedOptionOrPrompt()`, `promptText()`, `promptPassword()`, `promptConfirm()`, `promptSelect()`, `promptMultiselect()`, `promptSuggest()`, `promptSearch()`, `promptPause()`, `promptSpin()`, `showCommandHint()`
+- Methods: `writeln()`, `info()`, `hr()`, `h1()`, `success()`, `error()`, `warning()`, `getOptionOrPrompt()`, `getValidatedOptionOrPrompt()`, `promptText()`, `promptPassword()`, `promptConfirm()`, `promptSelect()`, `promptMultiselect()`, `promptSuggest()`, `promptSearch()`, `promptPause()`, `promptSpin()`, `showCommandReplay()`
 
 **Trait Organization:**
 
@@ -211,10 +211,10 @@ See: ServerDeleteCommand.php, ServerAddCommand.php
 
 ### Command Completion
 
-Always call `showCommandHint()` before returning SUCCESS to teach non-interactive usage:
+Always call `showCommandReplay()` before returning SUCCESS to teach non-interactive usage:
 
 ```php
-$this->showCommandHint('command:name', [
+$this->showCommandReplay('command:name', [
     'option1' => $value1,
     'option2' => $value2,
 ]);

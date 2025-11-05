@@ -12,6 +12,7 @@ All rules MANDATORY.
 - Explicit return types with generics: `Collection<int, User>`
 - Dependency injection via Symfony patterns
 - Use Symfony classes over native PHP functions (Filesystem, Process) for testability
+- **Yoda conditions:** Always place constants on the left side of comparisons to prevent accidental assignment
 
 ### Imports
 
