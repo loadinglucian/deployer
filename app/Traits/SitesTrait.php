@@ -36,14 +36,15 @@ trait SitesTrait
     /**
      * Display a warning to add a site if no sites are available. Otherwise, return all sites.
      *
+     * @param array<int, SiteDTO>|null $sites Optional pre-fetched sites; if null, fetches from repository
      * @return array<int, SiteDTO>|int Returns array of sites or Command::SUCCESS if no sites available
      */
-    protected function ensureSitesAvailable(): array|int
+    protected function ensureSitesAvailable(?array $sites = null): array|int
     {
         //
         // Get all sites
 
-        $allSites = $this->sites->all();
+        $allSites = $sites ?? $this->sites->all();
 
         //
         // Check if no sites are available
@@ -52,7 +53,7 @@ trait SitesTrait
             $this->io->warning('No sites found in inventory');
             $this->io->writeln([
                 '',
-                'Use <fg=cyan>site:add</> to add a site',
+                'Run <fg=cyan>site:add</> to add a site',
                 '',
             ]);
 
@@ -65,14 +66,15 @@ trait SitesTrait
     /**
      * Select a site from inventory by domain option or interactive prompt.
      *
+     * @param array<int, SiteDTO>|null $sites Optional pre-fetched sites; if null, fetches from repository
      * @return SiteDTO|int Returns SiteDTO on success, or Command::SUCCESS if empty inventory, or Command::FAILURE if not found
      */
-    protected function selectSite(string $optionName = 'site', string $promptLabel = 'Select site:'): SiteDTO|int
+    protected function selectSite(?array $sites = null): SiteDTO|int
     {
         //
         // Get all sites
 
-        $allSites = $this->ensureSitesAvailable();
+        $allSites = $this->ensureSitesAvailable($sites);
 
         if (is_int($allSites)) {
             return $allSites;
@@ -84,9 +86,9 @@ trait SitesTrait
         $siteDomains = array_map(fn (SiteDTO $site) => $site->domain, $allSites);
 
         $domain = (string) $this->io->getOptionOrPrompt(
-            $optionName,
+            'site',
             fn () => $this->io->promptSelect(
-                label: $promptLabel,
+                label: 'Select site:',
                 options: $siteDomains,
             )
         );

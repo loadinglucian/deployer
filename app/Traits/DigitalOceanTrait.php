@@ -102,7 +102,7 @@ trait DigitalOceanTrait
             $this->io->warning('No public SSH keys found in your DigitalOcean account');
             $this->io->writeln([
                 '',
-                'Use <fg=cyan>key:add:digitalocean</> to add a public SSH key',
+                'Run <fg=cyan>key:add:digitalocean</> to add a public SSH key',
                 '',
             ]);
 
