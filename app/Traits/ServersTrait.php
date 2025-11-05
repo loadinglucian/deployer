@@ -37,7 +37,7 @@ trait ServersTrait
      * Display a warning to add a server if no servers are available. Otherwise, return all servers.
      *
      * @param array<int, ServerDTO>|null $servers Optional pre-fetched servers; if null, fetches from repository
-     * @return array<int, ServerDTO>|int Returns array of servers or Command::SUCCESS if no servers available
+     * @return array<int, ServerDTO>|int Returns array of servers or Command::FAILURE if no servers available
      */
     protected function ensureServersAvailable(?array $servers = null): array|int
     {
