@@ -1,0 +1,278 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Bigpixelrocket\DeployerPHP\Traits;
+
+use Bigpixelrocket\DeployerPHP\DTOs\ServerDTO;
+use Bigpixelrocket\DeployerPHP\DTOs\SiteDTO;
+use Bigpixelrocket\DeployerPHP\Repositories\ServerRepository;
+use Bigpixelrocket\DeployerPHP\Services\IOService;
+use Bigpixelrocket\DeployerPHP\Services\SSHService;
+use Symfony\Component\Console\Command\Command;
+
+/**
+ * Reusable server things.
+ *
+ * Requires classes using this trait to have IOService, ServerRepository, SSHService, and SiteRepository properties.
+ *
+ * @property IOService $io
+ * @property ServerRepository $servers
+ * @property SSHService $ssh
+ * @property SiteRepository $sites
+ */
+trait ServersTrait
+{
+    // -------------------------------------------------------------------------------
+    //
+    // Helpers
+    //
+    // -------------------------------------------------------------------------------
+
+    //
+    // UI
+    // -------------------------------------------------------------------------------
+
+    /**
+     * Display a warning to add a server if no servers are available. Otherwise, return all servers.
+     *
+     * @param array<int, ServerDTO>|null $servers Optional pre-fetched servers; if null, fetches from repository
+     * @return array<int, ServerDTO>|int Returns array of servers or Command::SUCCESS if no servers available
+     */
+    protected function ensureServersAvailable(?array $servers = null): array|int
+    {
+        //
+        // Get all servers
+
+        $allServers = $servers ?? $this->servers->all();
+
+        //
+        // Check if no servers are available
+
+        if (count($allServers) === 0) {
+            $this->io->warning('No servers available');
+            $this->io->writeln([
+                '',
+                'Run <fg=cyan>server:provision</> to provision your first server,',
+                'or run <fg=cyan>server:add</> to add an existing server.',
+                '',
+            ]);
+
+            return Command::FAILURE;
+        }
+
+        return $allServers;
+    }
+
+    /**
+     * Select a server from inventory by name option or interactive prompt.
+     *
+     * @param array<int, ServerDTO>|null $servers Optional pre-fetched servers; if null, fetches from repository
+     * @return ServerDTO|int Returns ServerDTO on success, or Command::FAILURE on error
+     */
+    protected function selectServer(?array $servers = null): ServerDTO|int
+    {
+        //
+        // Get all servers
+
+        if ($servers === null) {
+            $servers = $this->ensureServersAvailable();
+
+            if (is_int($servers)) {
+                return Command::FAILURE;
+            }
+        }
+
+        //
+        // Extract server names and prompt for selection
+
+        $serverNames = array_map(fn (ServerDTO $server) => $server->name, $servers);
+
+        $name = (string) $this->io->getOptionOrPrompt(
+            'server',
+            fn () => $this->io->promptSelect(
+                label: 'Select server:',
+                options: $serverNames,
+            )
+        );
+
+        //
+        // Find server by name
+
+        $server = $this->servers->findByName($name);
+
+        if ($server === null) {
+            $this->nay("Server '{$name}' not found in inventory");
+
+            return Command::FAILURE;
+        }
+
+        return $server;
+    }
+
+    /**
+     * Display server details including associated sites.
+     */
+    protected function displayServerDeets(ServerDTO $server): void
+    {
+        $deets = [
+            'Name' => $server->name,
+            'Host' => $server->host,
+            'Port' => $server->port,
+            'User' => $server->username,
+            'Key' => $server->privateKeyPath ?? 'default (~/.ssh/id_ed25519 or ~/.ssh/id_rsa)',
+        ];
+
+        $sites = $this->sites->findByServer($server->name);
+
+        if (count($sites) > 1) {
+            $deets['Sites'] = array_map(fn (SiteDTO $site) => $site->domain, $sites);
+        } elseif (count($sites) === 1) {
+            $deets['Site'] = $sites[0]->domain;
+        }
+
+        $this->io->displayDeets($deets);
+        $this->io->writeln('');
+    }
+
+    /**
+     * Verify SSH connection to a server with proper error handling.
+     *
+     * Differentiates between fatal errors (authentication/key issues) and non-fatal
+     * connection timeouts (expected for newly provisioned servers).
+     *
+     * @return int Returns Command::SUCCESS if verification succeeds or connection timeout (non-fatal), Command::FAILURE on fatal errors
+     */
+    protected function verifySSHConnection(ServerDTO $server): int
+    {
+        try {
+            $this->io->promptSpin(
+                callback: function () use ($server) {
+                    $this->ssh->assertCanConnect($server);
+                },
+                message: 'Verifying SSH connection...'
+            );
+
+            $this->yay('SSH connection established');
+
+            return Command::SUCCESS;
+        } catch (\RuntimeException $e) {
+            // Differentiate between connection issues (expected) and configuration errors (fatal)
+            $message = $e->getMessage();
+            if (str_contains($message, 'authentication') ||
+                str_contains($message, 'key does not exist') ||
+                str_contains($message, 'key permissions')) {
+                $this->nay($e->getMessage());
+
+                return Command::FAILURE;
+            }
+
+            // Connection timeout - expected for newly provisioned servers
+            $this->io->warning('SSH is not responding');
+            $this->io->writeln([
+                '',
+                '<fg=yellow>The server will be added to the inventory regardless. You can either:</>',
+                '  • Wait a minute and run <fg=cyan>server:info --server=' . $server->name . '</> to check again',
+                '  • Or run <fg=cyan>server:install --server=' . $server->name . '</> to install software when ready',
+                '',
+            ]);
+
+            return Command::SUCCESS;
+        }
+    }
+
+    //
+    // Provider helpers
+    // -------------------------------------------------------------------------------
+
+    /**
+     * Check if a server is provisioned on DigitalOcean.
+     */
+    protected function isDigitalOceanServer(ServerDTO $server): bool
+    {
+        return $server->provider === 'digitalocean' && $server->dropletId !== null;
+    }
+
+    // -------------------------------------------------------------------------------
+    //
+    // Validation
+    //
+    // -------------------------------------------------------------------------------
+
+    /**
+         * Validate server name format and uniqueness.
+         *
+         * @return string|null Error message if invalid, null if valid
+         */
+    protected function validateServerName(mixed $name): ?string
+    {
+        if (!is_string($name)) {
+            return 'Server name must be a string';
+        }
+
+        // Check if empty
+        if (trim($name) === '') {
+            return 'Server name cannot be empty';
+        }
+
+        // Check uniqueness
+        $existing = $this->servers->findByName($name);
+        if ($existing !== null) {
+            return "Server '{$name}' already exists in inventory";
+        }
+
+        return null;
+    }
+
+    /**
+     * Validate host is a valid IP or domain and unique.
+     *
+     * @return string|null Error message if invalid, null if valid
+     */
+    protected function validateServerHost(mixed $host): ?string
+    {
+        if (!is_string($host)) {
+            return 'Host must be a string';
+        }
+
+        // Check format
+        $isValidIp = filter_var($host, FILTER_VALIDATE_IP) !== false;
+        $isValidDomain = filter_var($host, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME) !== false;
+
+        if (!$isValidIp && !$isValidDomain) {
+            return 'Must be a valid IP address or domain name (e.g., 192.168.1.100, example.com)';
+        }
+
+        // Check uniqueness
+        $existing = $this->servers->findByHost($host);
+        if ($existing !== null) {
+            return "Host '{$host}' is already used by server '{$existing->name}'";
+        }
+
+        return null;
+    }
+
+    /**
+     * Validate port is in valid range.
+     *
+     * @return string|null Error message if invalid, null if valid
+     */
+    protected function validateServerPort(mixed $portString): ?string
+    {
+        if (!is_string($portString)) {
+            return 'Port must be a string';
+        }
+
+        if (!ctype_digit($portString)) {
+            return 'Port must be a number';
+        }
+
+        $port = (int) $portString;
+        if ($port < 1 || $port > 65535) {
+            return 'Port must be between 1 and 65535 (common SSH ports: 22, 2222, 22000)';
+        }
+
+        return null;
+    }
+
+}
