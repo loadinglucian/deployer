@@ -41,6 +41,7 @@ trait DigitalOceanTrait
     protected function initializeDigitalOceanAPI(): int
     {
         try {
+            /** @var string $apiToken */
             $apiToken = $this->env->get(['DIGITALOCEAN_API_TOKEN', 'DO_API_TOKEN']);
 
             // Initialize DigitalOcean API
