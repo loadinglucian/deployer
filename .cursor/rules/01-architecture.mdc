@@ -12,6 +12,21 @@ All rules MANDATORY.
 - Explicit return types with generics: `Collection<int, User>`
 - Dependency injection via Symfony patterns
 - Use Symfony classes over native PHP functions (Filesystem, Process) for testability
+- **Yoda conditions:** Always place constants on the left side of comparisons to prevent accidental assignment
+
+### PHPStan Type Hints
+
+Use `@var` annotations to help PHPStan understand types it cannot infer, not `assert()` in production code.
+
+```php
+// ✅ CORRECT - @var annotation (zero runtime impact)
+/** @var string $apiToken */
+$apiToken = $this->env->get(['API_TOKEN']);
+
+// ❌ WRONG - assert() in production code (runtime cost, can be disabled)
+$apiToken = $this->env->get(['API_TOKEN']);
+assert(is_string($apiToken));
+```
 
 ### Imports
 

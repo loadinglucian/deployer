@@ -5,28 +5,27 @@ declare(strict_types=1);
 namespace Bigpixelrocket\DeployerPHP\Console\Key;
 
 use Bigpixelrocket\DeployerPHP\Contracts\BaseCommand;
-use Bigpixelrocket\DeployerPHP\Traits\DigitalOceanCommandTrait;
-use Bigpixelrocket\DeployerPHP\Traits\KeyHelpersTrait;
+use Bigpixelrocket\DeployerPHP\Traits\DigitalOceanTrait;
+use Bigpixelrocket\DeployerPHP\Traits\KeysTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/**
- * Delete a SSH key from the user's DigitalOcean account.
- */
 #[AsCommand(
     name: 'key:delete:digitalocean',
-    description: 'Delete a SSH key from DigitalOcean'
+    description: 'Delete a public SSH key from DigitalOcean'
 )]
 class KeyDeleteDigitalOceanCommand extends BaseCommand
 {
-    use DigitalOceanCommandTrait;
-    use KeyHelpersTrait;
+    use DigitalOceanTrait;
+    use KeysTrait;
 
+    // -------------------------------------------------------------------------------
     //
     // Configuration
+    //
     // -------------------------------------------------------------------------------
 
     protected function configure(): void
@@ -34,63 +33,62 @@ class KeyDeleteDigitalOceanCommand extends BaseCommand
         parent::configure();
 
         $this
-            ->addOption('key', null, InputOption::VALUE_REQUIRED, 'SSH key ID')
-            ->addOption('force', null, InputOption::VALUE_NONE, 'Skip typing key ID (use with caution)')
-            ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip confirmation prompt');
+            ->addOption('key', null, InputOption::VALUE_REQUIRED, 'DigitalOcean public SSH key ID')
+            ->addOption('force', null, InputOption::VALUE_NONE, 'Skip typing the key ID to confirm')
+            ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip Yes/No confirmation prompt');
     }
 
+    // -------------------------------------------------------------------------------
     //
     // Execution
+    //
     // -------------------------------------------------------------------------------
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         parent::execute($input, $output);
 
-        $this->io->hr();
-        $this->io->h1('Delete SSH Key from DigitalOcean');
+        $this->heading('Delete a public SSH key from DigitalOcean');
+
+        //
+        // Retrieve DigitalOcean account data
+        // -------------------------------------------------------------------------------
 
         if ($this->initializeDigitalOceanAPI() === Command::FAILURE) {
             return Command::FAILURE;
         }
 
         //
-        // Fetch available keys
+        // Select key
+        // -------------------------------------------------------------------------------
 
-        try {
-            $availableKeys = $this->digitalOcean->account->getUserSshKeys();
-        } catch (\RuntimeException $e) {
-            $this->io->error('Failed to fetch SSH keys: ' . $e->getMessage());
-            $this->io->writeln('');
+        $selectedKey = $this->selectKey();
 
+        if (is_int($selectedKey)) {
             return Command::FAILURE;
         }
 
-        //
-        // Select key
-
-        $selection = $this->selectKey($availableKeys);
-
-        if ($selection['key'] === null) {
-            return $selection['exit_code'];
-        }
-
-        $keyId = (int) $selection['key'];
-        $keyDescription = $availableKeys[$keyId];
+        [
+            'id' => $keyId,
+            'description' => $keyDescription,
+        ] = $selectedKey;
 
         //
-        // Display key details
+        // Display key
+        // -------------------------------------------------------------------------------
 
         $this->io->hr();
 
-        $this->io->writeln([
-            "  ID:   <fg=gray>{$keyId}</>",
-            "  Name: <fg=gray>{$keyDescription}</>",
-            '',
+        $this->io->displayDeets([
+            'ID' => (string) $keyId,
+            'Name' => $keyDescription,
         ]);
+
+        $this->io->writeln('');
 
         //
         // Confirm deletion with extra safety
+        // -------------------------------------------------------------------------------
 
         /** @var bool $forceSkip */
         $forceSkip = $input->getOption('force') ?? false;
@@ -104,8 +102,7 @@ class KeyDeleteDigitalOceanCommand extends BaseCommand
             );
 
             if ($typedKeyId !== (string) $keyId) {
-                $this->io->error('Key ID does not match. Deletion cancelled.');
-                $this->io->writeln('');
+                $this->nay('Key ID does not match. Deletion cancelled.');
 
                 return Command::FAILURE;
             }
@@ -121,7 +118,7 @@ class KeyDeleteDigitalOceanCommand extends BaseCommand
         );
 
         if (!$confirmed) {
-            $this->io->warning('Cancelled deleting SSH key');
+            $this->io->warning('Cancelled deleting public SSH key');
             $this->io->writeln('');
 
             return Command::SUCCESS;
@@ -129,26 +126,26 @@ class KeyDeleteDigitalOceanCommand extends BaseCommand
 
         //
         // Delete key
+        // -------------------------------------------------------------------------------
 
         try {
             $this->io->promptSpin(
-                fn () => $this->digitalOcean->key->deleteKey($keyId),
-                'Deleting SSH key...'
+                fn () => $this->digitalOcean->key->deletePublicKey((int) $keyId),
+                'Deleting public SSH key...'
             );
 
-            $this->io->success('SSH key deleted successfully');
-            $this->io->writeln('');
+            $this->yay('Public SSH key deleted successfully');
         } catch (\RuntimeException $e) {
-            $this->io->error('Failed to delete SSH key: ' . $e->getMessage());
-            $this->io->writeln('');
+            $this->nay('Failed to delete public SSH key: ' . $e->getMessage());
 
             return Command::FAILURE;
         }
 
         //
-        // Show command hint
+        // Show command replay
+        // -------------------------------------------------------------------------------
 
-        $this->io->showCommandHint('key:delete:digitalocean', [
+        $this->showCommandReplay('key:delete:digitalocean', [
             'key' => (string) $keyId,
             'yes' => $confirmed,
             'force' => true,
@@ -156,4 +153,5 @@ class KeyDeleteDigitalOceanCommand extends BaseCommand
 
         return Command::SUCCESS;
     }
+
 }

@@ -10,7 +10,10 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'hello', description: 'Display a friendly hello message')]
+#[AsCommand(
+    name: 'hello',
+    description: 'Display a friendly hello message'
+)]
 class HelloCommand extends BaseCommand
 {
     /**
@@ -22,7 +25,7 @@ class HelloCommand extends BaseCommand
 
         $user = $this->env->get(['USER', 'USERNAME'], false) ?? 'there';
 
-        $this->io->success('Hello ' . $user . '!');
+        $this->yay('Hello ' . $user . '!');
 
         return Command::SUCCESS;
     }

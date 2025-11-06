@@ -6,12 +6,9 @@ namespace Bigpixelrocket\DeployerPHP\Console\Server;
 
 use Bigpixelrocket\DeployerPHP\Contracts\BaseCommand;
 use Bigpixelrocket\DeployerPHP\DTOs\ServerDTO;
-use Bigpixelrocket\DeployerPHP\Traits\DigitalOceanCommandTrait;
-use Bigpixelrocket\DeployerPHP\Traits\DigitalOceanValidationTrait;
-use Bigpixelrocket\DeployerPHP\Traits\KeyHelpersTrait;
-use Bigpixelrocket\DeployerPHP\Traits\KeyValidationTrait;
-use Bigpixelrocket\DeployerPHP\Traits\ServerHelpersTrait;
-use Bigpixelrocket\DeployerPHP\Traits\ServerValidationTrait;
+use Bigpixelrocket\DeployerPHP\Traits\DigitalOceanTrait;
+use Bigpixelrocket\DeployerPHP\Traits\KeysTrait;
+use Bigpixelrocket\DeployerPHP\Traits\ServersTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -24,15 +21,14 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class ServerProvisionDigitalOceanCommand extends BaseCommand
 {
-    use DigitalOceanCommandTrait;
-    use DigitalOceanValidationTrait;
-    use ServerHelpersTrait;
-    use ServerValidationTrait;
-    use KeyHelpersTrait;
-    use KeyValidationTrait;
+    use DigitalOceanTrait;
+    use ServersTrait;
+    use KeysTrait;
 
+    // -------------------------------------------------------------------------------
     //
     // Configuration
+    //
     // -------------------------------------------------------------------------------
 
     protected function configure(): void
@@ -52,27 +48,29 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
             ->addOption('monitoring', null, InputOption::VALUE_NONE, 'Enable monitoring');
     }
 
+    // -------------------------------------------------------------------------------
     //
     // Execution
+    //
     // -------------------------------------------------------------------------------
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         parent::execute($input, $output);
 
-        $this->io->hr();
-        $this->io->h1('Provision DigitalOcean Droplet');
+        $this->heading('Provision DigitalOcean Droplet');
+
+        //
+        // Retrieve DigitalOcean account data
+        // -------------------------------------------------------------------------------
 
         if ($this->initializeDigitalOceanAPI() === Command::FAILURE) {
             return Command::FAILURE;
         }
 
-        //
-        // Retrieve DigitalOcean data
-
         $accountData = $this->io->promptSpin(
             fn () => [
-                'keys' => $this->digitalOcean->account->getUserSshKeys(),
+                'keys' => $this->digitalOcean->account->getPublicKeys(),
                 'regions' => $this->digitalOcean->account->getAvailableRegions(),
                 'sizes' => $this->digitalOcean->account->getAvailableSizes(),
                 'images' => $this->digitalOcean->account->getAvailableImages(),
@@ -80,21 +78,157 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
             'Retrieving account information...'
         );
 
-        if (count($accountData['keys']) === 0) {
-            $this->io->warning('No SSH keys found in your DigitalOcean account');
-            $this->io->writeln([
-                '',
-                'You must add at least one SSH key before provisioning a server.',
-                'Run <fg=cyan>key:add:digitalocean</> to add an SSH key.',
-                '',
-            ]);
+        $keys = $this->ensureKeysAvailable($accountData['keys']);
+
+        if ($keys === Command::FAILURE) {
+            return Command::FAILURE;
+        }
+
+        //
+        // Gather provisioning details
+        // -------------------------------------------------------------------------------
+
+        $deets = $this->gatherProvisioningDeets($accountData);
+
+        if ($deets === null) {
+            return Command::FAILURE;
+        }
+
+        [
+            'name' => $name,
+            'region' => $region,
+            'size' => $size,
+            'image' => $image,
+            'sshKeyId' => $sshKeyId,
+            'sshKeyIds' => $sshKeyIds,
+            'privateKeyPath' => $privateKeyPath,
+            'backups' => $backups,
+            'monitoring' => $monitoring,
+            'ipv6' => $ipv6,
+            'vpcUuid' => $vpcUuid,
+        ] = $deets;
+
+        //
+        // Provision droplet
+        // -------------------------------------------------------------------------------
+
+        try {
+            $dropletData = $this->io->promptSpin(
+                fn () => $this->digitalOcean->droplet->createDroplet(
+                    name: $name,
+                    region: $region,
+                    size: $size,
+                    image: $image,
+                    sshKeys: $sshKeyIds,
+                    backups: $backups,
+                    monitoring: $monitoring,
+                    ipv6: $ipv6,
+                    vpcUuid: $vpcUuid
+                ),
+                'Provisioning droplet...'
+            );
+
+            $dropletId = $dropletData['id'];
+            $this->yay("Droplet provisioned (ID: {$dropletId})");
+        } catch (\RuntimeException $e) {
+            $this->nay('Failed to provision droplet: ' . $e->getMessage());
 
             return Command::FAILURE;
         }
 
         //
-        // Gather droplet configuration
+        // Wait for droplet to become active
+        // -------------------------------------------------------------------------------
 
+        try {
+            $this->io->promptSpin(
+                fn () => $this->digitalOcean->droplet->waitForDropletReady($dropletId),
+                'Waiting for droplet to become active...'
+            );
+
+            $this->yay('Droplet is active');
+        } catch (\RuntimeException $e) {
+            $this->nay($e->getMessage());
+            $this->rollbackDroplet($dropletId);
+
+            return Command::FAILURE;
+        }
+
+        //
+        // Get droplet IP address & display server details
+        // -------------------------------------------------------------------------------
+
+        try {
+            $ipAddress = $this->digitalOcean->droplet->getDropletIp($dropletId);
+        } catch (\RuntimeException $e) {
+            $this->nay('Failed to get droplet IP address: ' . $e->getMessage());
+            $this->rollbackDroplet($dropletId);
+
+            return Command::FAILURE;
+        }
+
+        $server = new ServerDTO(
+            name: $name,
+            host: $ipAddress,
+            port: 22,
+            username: 'root',
+            privateKeyPath: $privateKeyPath,
+            provider: 'digitalocean',
+            dropletId: $dropletId
+        );
+
+        $this->displayServerDeets($server);
+
+        //
+        // Verify SSH connection & add to inventory
+        // -------------------------------------------------------------------------------
+
+        $this->verifySSHConnection($server); // SSH failure is not a blocker
+
+        try {
+            $this->servers->create($server);
+        } catch (\RuntimeException $e) {
+            $this->nay('Failed to add server to inventory: ' . $e->getMessage());
+            $this->rollbackDroplet($dropletId);
+
+            return Command::FAILURE;
+        }
+
+        $this->yay('Server added to inventory');
+
+        //
+        // Show command replay
+        // -------------------------------------------------------------------------------
+
+        $this->showCommandReplay('server:provision:digitalocean', [
+            'name' => $name,
+            'region' => $region,
+            'size' => $size,
+            'image' => $image,
+            'ssh-key-id' => $sshKeyId,
+            'backups' => $backups,
+            'monitoring' => $monitoring,
+            'ipv6' => $ipv6,
+            'vpc-uuid' => $vpcUuid,
+        ]);
+
+        return Command::SUCCESS;
+    }
+
+    // -------------------------------------------------------------------------------
+    //
+    // Helpers
+    //
+    // -------------------------------------------------------------------------------
+
+    /**
+     * Gather provisioning details from user input or CLI options.
+     *
+     * @param array{keys: array<int|string, string>, regions: array<string, string>, sizes: array<string, string>, images: array<string, string>} $accountData
+     * @return array{name: string, region: string, size: string, image: string, sshKeyId: int, sshKeyIds: array<int, int>, privateKeyPath: string, backups: bool, monitoring: bool, ipv6: bool, vpcUuid: string|null}|null
+     */
+    protected function gatherProvisioningDeets(array $accountData): ?array
+    {
         /** @var string|null $name */
         $name = $this->io->getValidatedOptionOrPrompt(
             'name',
@@ -104,11 +238,11 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
                 required: true,
                 validate: $validate
             ),
-            fn ($value) => $this->validateNameInput($value)
+            fn ($value) => $this->validateServerName($value)
         );
 
         if ($name === null) {
-            return Command::FAILURE;
+            return null;
         }
 
         /** @var string|null $region */
@@ -119,11 +253,11 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
                 options: $accountData['regions'],
                 hint: 'Choose the datacenter location'
             ),
-            fn ($value) => $this->validateRegionInput($value, $accountData['regions'])
+            fn ($value) => $this->validateDigitalOceanRegion($value, $accountData['regions'])
         );
 
         if ($region === null) {
-            return Command::FAILURE;
+            return null;
         }
 
         /** @var string|null $size */
@@ -134,11 +268,11 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
                 options: $accountData['sizes'],
                 hint: 'Choose CPU, RAM, and storage'
             ),
-            fn ($value) => $this->validateSizeInput($value, $accountData['sizes'])
+            fn ($value) => $this->validateDigitalOceanDropletSize($value, $accountData['sizes'])
         );
 
         if ($size === null) {
-            return Command::FAILURE;
+            return null;
         }
 
         /** @var string|null $image */
@@ -149,29 +283,32 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
                 options: $accountData['images'],
                 hint: 'Ubuntu and Debian only'
             ),
-            fn ($value) => $this->validateImageInput($value, $accountData['images'])
+            fn ($value) => $this->validateDigitalOceanDropletImage($value, $accountData['images'])
         );
 
         if ($image === null) {
-            return Command::FAILURE;
+            return null;
         }
 
         //
         // Select SSH key
 
+        /** @var array<int, string> $keys */
+        $keys = $accountData['keys'];
+
         /** @var int|string|null $selectedKey */
         $selectedKey = $this->io->getValidatedOptionOrPrompt(
             'ssh-key-id',
             fn ($validate) => $this->io->promptSelect(
-                label: 'Select SSH key for droplet access:',
+                label: 'Select public SSH key for droplet access:',
                 options: $accountData['keys'],
                 validate: $validate
             ),
-            fn (mixed $value): ?string => $this->validateSshKeyInput($value, $accountData['keys'])
+            fn (mixed $value): ?string => $this->validateDigitalOceanSSHKey($value, $keys)
         );
 
         if ($selectedKey === null) {
-            return Command::FAILURE;
+            return null;
         }
 
         // Convert to integer if string was provided
@@ -199,10 +336,9 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
         $privateKeyPath = $this->resolvePrivateKeyPath($privateKeyPathRaw);
 
         if ($privateKeyPath === null) {
-            $this->io->error('SSH private key not found.');
-            $this->io->writeln('');
+            $this->nay('SSH private key not found.');
 
-            return Command::FAILURE;
+            return null;
         }
 
         //
@@ -246,11 +382,11 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
                 options: $this->digitalOcean->account->getUserVpcs($region),
                 hint: 'Virtual Private Cloud for network isolation'
             ),
-            fn ($value) => $this->validateVpcUuidInput($value)
+            fn ($value) => $this->validateDigitalOceanVPCUUID($value)
         );
 
         if ($vpcUuid === null) {
-            return Command::FAILURE;
+            return null;
         }
 
         // Convert "default" to null for API
@@ -258,154 +394,35 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
             $vpcUuid = null;
         }
 
-        //
-        // Display provisioning summary
-
-        $this->io->hr();
-
-        $this->io->writeln([
-            "  Name:       <fg=gray>{$name}</>",
-            "  Region:     <fg=gray>{$region}</>",
-            "  Size:       <fg=gray>{$size}</>",
-            "  Image:      <fg=gray>{$image}</>",
-            "  SSH Key:    <fg=gray>{$accountData['keys'][$sshKeyId]}</>",
-            '  Backups:    <fg=gray>' . ($backups ? 'enabled' : 'disabled') . '</>',
-            '  Monitoring: <fg=gray>' . ($monitoring ? 'enabled' : 'disabled') . '</>',
-            '  IPv6:       <fg=gray>' . ($ipv6 ? 'enabled' : 'disabled') . '</>',
-            '  VPC:        <fg=gray>' . ($vpcUuid ?? 'default') . '</>',
-            '',
-        ]);
-
-        //
-        // Create droplet
-
-        try {
-            $dropletData = $this->io->promptSpin(
-                fn () => $this->digitalOcean->droplet->createDroplet(
-                    name: $name,
-                    region: $region,
-                    size: $size,
-                    image: $image,
-                    sshKeys: $sshKeyIds,
-                    backups: $backups,
-                    monitoring: $monitoring,
-                    ipv6: $ipv6,
-                    vpcUuid: $vpcUuid
-                ),
-                'Creating droplet...'
-            );
-
-            $dropletId = $dropletData['id'];
-            $this->io->success("Droplet created (ID: {$dropletId})");
-        } catch (\RuntimeException $e) {
-            $this->io->error('Failed to create droplet: ' . $e->getMessage());
-
-            return Command::FAILURE;
-        }
-
-        //
-        // Wait for droplet to become active
-
-        $this->io->writeln('');
-
-        try {
-            $this->io->promptSpin(
-                fn () => $this->digitalOcean->droplet->waitForDropletReady($dropletId),
-                'Waiting for droplet to become active...'
-            );
-
-            $this->io->success('Droplet is now active');
-        } catch (\RuntimeException $e) {
-            $this->io->error($e->getMessage());
-            $this->rollbackDroplet($dropletId);
-
-            return Command::FAILURE;
-        }
-
-        //
-        // Get droplet IP address
-
-        try {
-            $ipAddress = $this->digitalOcean->droplet->getDropletIp($dropletId);
-            $this->io->writeln('');
-            $this->io->writeln("  Public IP: <fg=gray>{$ipAddress}</>");
-        } catch (\RuntimeException $e) {
-            $this->io->error('Failed to retrieve IP address: ' . $e->getMessage());
-            $this->rollbackDroplet($dropletId);
-
-            return Command::FAILURE;
-        }
-
-        //
-        // Add to inventory
-
-        $server = new ServerDTO(
-            name: $name,
-            host: $ipAddress,
-            port: 22,
-            username: 'root',
-            privateKeyPath: $privateKeyPath,
-            provider: 'digitalocean',
-            dropletId: $dropletId
-        );
-
-        try {
-            $this->servers->create($server);
-        } catch (\RuntimeException $e) {
-            $this->io->error('Failed to add server to inventory: ' . $e->getMessage());
-            $this->rollbackDroplet($dropletId);
-
-            return Command::FAILURE;
-        }
-
-        $this->io->writeln('');
-        $this->io->success('Server added to inventory');
-        $this->io->writeln('');
-
-        //
-        // Display server details
-        // -------------------------------------------------------------------------------
-
-        $this->displayServerDeets($server);
-
-        //
-        // Show command hint
-        // -------------------------------------------------------------------------------
-
-        $this->io->showCommandHint('server:provision:digitalocean', [
+        return [
             'name' => $name,
             'region' => $region,
             'size' => $size,
             'image' => $image,
-            'ssh-key-id' => $sshKeyId,
+            'sshKeyId' => $sshKeyId,
+            'sshKeyIds' => $sshKeyIds,
+            'privateKeyPath' => $privateKeyPath,
             'backups' => $backups,
             'monitoring' => $monitoring,
             'ipv6' => $ipv6,
-            'vpc-uuid' => $vpcUuid,
-        ]);
-
-        return Command::SUCCESS;
+            'vpcUuid' => $vpcUuid,
+        ];
     }
-
-    //
-    // Rollback
-    // -------------------------------------------------------------------------------
 
     /**
      * Destroy a droplet after failed provisioning.
      *
      * @param int $dropletId The droplet ID to destroy
      */
-    private function rollbackDroplet(int $dropletId): void
+    protected function rollbackDroplet(int $dropletId): void
     {
         try {
-            $this->io->writeln('');
             $this->io->promptSpin(
                 fn () => $this->digitalOcean->droplet->destroyDroplet($dropletId),
-                'Destroying droplet...'
+                'Rolling back droplet...'
             );
 
-            $this->io->warning('Rolled back provisioning of droplet.');
+            $this->io->warning('Rolled back droplet');
         } catch (\Throwable $cleanupError) {
             $this->io->warning($cleanupError->getMessage());
         }

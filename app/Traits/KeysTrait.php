@@ -7,14 +7,86 @@ namespace Bigpixelrocket\DeployerPHP\Traits;
 use Bigpixelrocket\DeployerPHP\Services\FilesystemService;
 
 /**
- * Common SSH key validation helpers for commands.
+ * Reusable SSH key things.
  *
- * Requires classes using this trait to have a FilesystemService property.
+ * Requires classes using this trait to have FilesystemService property.
  *
  * @property FilesystemService $fs
  */
-trait KeyValidationTrait
+trait KeysTrait
 {
+    // -------------------------------------------------------------------------------
+    //
+    // Helpers
+    //
+    // -------------------------------------------------------------------------------
+
+    //
+    // Key resolution
+    // -------------------------------------------------------------------------------
+
+    /**
+     * Resolve a usable private key path.
+     *
+     * Priority order:
+     * 1. Provided path (with ~ expansion)
+     * 2. ~/.ssh/id_ed25519
+     * 3. ~/.ssh/id_rsa
+     */
+    protected function resolvePrivateKeyPath(?string $path): ?string
+    {
+        return $this->resolveKeyWithFallback($path, [
+            '~/.ssh/id_ed25519',
+            '~/.ssh/id_rsa',
+        ]);
+    }
+
+    /**
+     * Resolve a usable public key path.
+     *
+     * Priority order:
+     * 1. Provided path (with ~ expansion)
+     * 2. ~/.ssh/id_ed25519.pub
+     * 3. ~/.ssh/id_rsa.pub
+     */
+    protected function resolvePublicKeyPath(?string $path): ?string
+    {
+        return $this->resolveKeyWithFallback($path, [
+            '~/.ssh/id_ed25519.pub',
+            '~/.ssh/id_rsa.pub',
+        ]);
+    }
+
+    /**
+     * Resolve a key path with fallback to default locations.
+     *
+     * Priority order:
+     * 1. Provided path (with ~ expansion)
+     * 2. Fallback paths
+     *
+     * @param string|null $path The path to resolve
+     * @param array<int, string> $fallback The fallback paths
+     * @return string|null The resolved path, or null if not found
+     */
+    protected function resolveKeyWithFallback(?string $path, array $fallback): ?string
+    {
+        $candidates = [];
+
+        if (is_string($path) && $path !== '') {
+            $candidates[] = $path;
+        }
+
+        $candidates = array_merge($candidates, $fallback);
+
+        return $this->fs->getFirstExisting($candidates);
+    }
+
+    // -------------------------------------------------------------------------------
+    //
+    // Validation
+    //
+    // -------------------------------------------------------------------------------
+
     /**
      * Validate SSH public key file:
      *
@@ -48,8 +120,8 @@ trait KeyValidationTrait
 
         // Read and validate key format
         try {
-            $publicKey = $this->fs->readFile($expandedPath);
-            $publicKey = trim((string) $publicKey);
+            $key = $this->fs->readFile($expandedPath);
+            $key = trim((string) $key);
 
             // Validate key format (should start with supported SSH key types)
             $validPrefixes = [
@@ -67,7 +139,7 @@ trait KeyValidationTrait
 
             $isValid = false;
             foreach ($validPrefixes as $prefix) {
-                if (str_starts_with($publicKey, $prefix)) {
+                if (str_starts_with($key, $prefix)) {
                     $isValid = true;
                     break;
                 }
@@ -75,7 +147,7 @@ trait KeyValidationTrait
 
             if (!$isValid) {
                 // Explicit error for obsolete DSA keys
-                if (str_starts_with($publicKey, 'ssh-dss')) {
+                if (str_starts_with($key, 'ssh-dss')) {
                     return 'DSA (ssh-dss) keys are obsolete and insecure';
                 }
 

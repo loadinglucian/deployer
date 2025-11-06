@@ -5,23 +5,22 @@ declare(strict_types=1);
 namespace Bigpixelrocket\DeployerPHP\Console\Site;
 
 use Bigpixelrocket\DeployerPHP\Contracts\BaseCommand;
-use Bigpixelrocket\DeployerPHP\Traits\SiteHelpersTrait;
+use Bigpixelrocket\DeployerPHP\Traits\SitesTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/**
- * Delete a site from the inventory.
- */
 #[AsCommand(name: 'site:delete', description: 'Delete a site from the inventory')]
 class SiteDeleteCommand extends BaseCommand
 {
-    use SiteHelpersTrait;
+    use SitesTrait;
 
+    // -------------------------------------------------------------------------------
     //
     // Configuration
+    //
     // -------------------------------------------------------------------------------
 
     protected function configure(): void
@@ -30,50 +29,51 @@ class SiteDeleteCommand extends BaseCommand
 
         $this
             ->addOption('site', null, InputOption::VALUE_REQUIRED, 'Site domain')
-            ->addOption('force', null, InputOption::VALUE_NONE, 'Skip typing site domain (use with caution)')
-            ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip confirmation prompt');
+            ->addOption('force', null, InputOption::VALUE_NONE, 'Skip typing the site domain to confirm')
+            ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip Yes/No confirmation prompt');
     }
 
+    // -------------------------------------------------------------------------------
     //
     // Execution
+    //
     // -------------------------------------------------------------------------------
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         parent::execute($input, $output);
 
-        $this->io->hr();
-        $this->io->h1('Delete Site');
+        $this->heading('Delete Site');
 
         //
-        // Select site
+        // Select site & display details
+        // -------------------------------------------------------------------------------
 
         $site = $this->selectSite();
 
-        if (!$site instanceof \Bigpixelrocket\DeployerPHP\DTOs\SiteDTO) {
+        if (is_int($site)) {
             return $site;
         }
 
-        $this->io->hr();
-
         $this->displaySiteDeets($site);
-        $this->io->writeln('');
 
         //
         // Confirm deletion with extra safety
+        // -------------------------------------------------------------------------------
 
         /** @var bool $forceSkip */
         $forceSkip = $input->getOption('force') ?? false;
 
         if (!$forceSkip) {
+            $this->io->writeln('');
+
             $typedDomain = $this->io->promptText(
                 label: "Type the site domain '{$site->domain}' to confirm deletion:",
                 required: true
             );
 
             if ($typedDomain !== $site->domain) {
-                $this->io->error('Site domain does not match. Deletion cancelled.');
-                $this->io->writeln('');
+                $this->nay('Site domain does not match. Deletion cancelled.');
 
                 return Command::FAILURE;
             }
@@ -96,17 +96,18 @@ class SiteDeleteCommand extends BaseCommand
         }
 
         //
-        // Delete site
+        // Delete site from inventory
+        // -------------------------------------------------------------------------------
 
         $this->sites->delete($site->domain);
 
-        $this->io->success("Site '{$site->domain}' deleted successfully");
-        $this->io->writeln('');
+        $this->yay("Site '{$site->domain}' deleted successfully");
 
         //
-        // Show command hint
+        // Show command replay
+        // -------------------------------------------------------------------------------
 
-        $this->io->showCommandHint('site:delete', [
+        $this->showCommandReplay('site:delete', [
             'site' => $site->domain,
             'yes' => $confirmed,
             'force' => true,

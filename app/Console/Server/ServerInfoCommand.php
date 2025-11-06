@@ -5,22 +5,28 @@ declare(strict_types=1);
 namespace Bigpixelrocket\DeployerPHP\Console\Server;
 
 use Bigpixelrocket\DeployerPHP\Contracts\BaseCommand;
-use Bigpixelrocket\DeployerPHP\Traits\ServerHelpersTrait;
-use Bigpixelrocket\DeployerPHP\Traits\ServerInfoTrait;
+use Bigpixelrocket\DeployerPHP\DTOs\ServerDTO;
+use Bigpixelrocket\DeployerPHP\Traits\PlaybooksTrait;
+use Bigpixelrocket\DeployerPHP\Traits\ServersTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'server:info', description: 'Display server information')]
+#[AsCommand(
+    name: 'server:info',
+    description: 'Display server information'
+)]
 class ServerInfoCommand extends BaseCommand
 {
-    use ServerHelpersTrait;
-    use ServerInfoTrait;
+    use ServersTrait;
+    use PlaybooksTrait;
 
+    // -------------------------------------------------------------------------------
     //
     // Configuration
+    //
     // -------------------------------------------------------------------------------
 
     protected function configure(): void
@@ -30,19 +36,21 @@ class ServerInfoCommand extends BaseCommand
         $this->addOption('server', null, InputOption::VALUE_REQUIRED, 'Server name');
     }
 
+    // -------------------------------------------------------------------------------
     //
     // Execution
+    //
     // -------------------------------------------------------------------------------
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         parent::execute($input, $output);
 
-        $this->io->hr();
-        $this->io->h1('Server Information');
+        $this->heading('Server Information');
 
         //
-        // Select server
+        // Select server & display details
+        // -------------------------------------------------------------------------------
 
         $server = $this->selectServer();
 
@@ -50,18 +58,11 @@ class ServerInfoCommand extends BaseCommand
             return $server;
         }
 
-        // Get sites for this server
-        $serverSites = $this->sites->findByServer($server->name);
+        $this->displayServerDeets($server);
 
         //
-        // Display server details
-
-        $this->io->hr();
-
-        $this->displayServerDeets($server, $serverSites);
-
-        //
-        // Display server information
+        // Get and display server information
+        // -------------------------------------------------------------------------------
 
         $info = $this->getServerInfo($server);
 
@@ -69,17 +70,85 @@ class ServerInfoCommand extends BaseCommand
             return $info;
         }
 
-        $this->io->writeln('');
         $this->displayServerInfo($info);
 
         //
-        // Show command hint
+        // Show command replay
+        // -------------------------------------------------------------------------------
 
-        $this->io->showCommandHint('server:info', [
+        $this->showCommandReplay('server:info', [
             'server' => $server->name,
         ]);
 
         return Command::SUCCESS;
+    }
+
+    // -------------------------------------------------------------------------------
+    //
+    // Helpers
+    //
+    // -------------------------------------------------------------------------------
+
+    /**
+     * Get server information by executing server-info playbook.
+     *
+     * @param ServerDTO $server Server to get information for
+     * @return array<string, mixed>|int Returns parsed server info or failure code on failure
+     */
+    protected function getServerInfo(ServerDTO $server): array|int
+    {
+        return $this->executePlaybook(
+            $server,
+            'server-info',
+            'Retrieving server information...',
+        );
+    }
+
+    /**
+     * Display formatted server information.
+     *
+     * @param array<string, mixed> $info
+     */
+    protected function displayServerInfo(array $info): void
+    {
+        $distroName = match ($info['distro'] ?? 'unknown') {
+            'debian' => 'Debian/Ubuntu',
+            'redhat' => 'RedHat/CentOS/Fedora',
+            'amazon' => 'Amazon Linux',
+            default => 'Unknown',
+        };
+
+        $permissionsText = match ($info['permissions'] ?? 'none') {
+            'root' => 'root',
+            'sudo' => 'sudo',
+            default => 'insufficient',
+        };
+
+        $deets = [
+            'Distro' => $distroName,
+            'User' => $permissionsText,
+        ];
+
+        $this->io->displayDeets($deets);
+        $this->io->writeln('');
+
+        $services = [];
+
+        // Add listening ports if any
+        if (isset($info['ports']) && is_array($info['ports']) && count($info['ports']) > 0) {
+            $portsList = [];
+            foreach ($info['ports'] as $port => $process) {
+                if (is_numeric($port) && is_string($process)) {
+                    $portsList[] = "Port {$port}: {$process}";
+                }
+            }
+            if (count($portsList) > 0) {
+                $services = $portsList;
+            }
+        }
+
+        $this->io->displayDeets(['Services' => $services]);
+        $this->io->writeln('');
     }
 
 }
