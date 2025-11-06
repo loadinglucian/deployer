@@ -165,6 +165,34 @@ trait DigitalOceanTrait
     // -------------------------------------------------------------------------------
 
     /**
+     * Validate value against available DigitalOcean options.
+     *
+     * @param array<string, string> $validOptions Available options
+     * @param string $fieldName Field name for error messages
+     *
+     * @return string|null Error message if invalid, null if valid
+     */
+    private function validateDigitalOceanOption(
+        mixed $value,
+        array $validOptions,
+        string $fieldName
+    ): ?string {
+        if (!is_string($value)) {
+            return "{$fieldName} must be a string";
+        }
+
+        if (trim($value) === '') {
+            return "{$fieldName} cannot be empty";
+        }
+
+        if (!isset($validOptions[$value])) {
+            return "Invalid {$fieldName}: '{$value}' is not available in your DigitalOcean account";
+        }
+
+        return null;
+    }
+
+    /**
      * Validate region against available regions.
      *
      * @param array<string, string> $validRegions Available regions from account
@@ -173,20 +201,7 @@ trait DigitalOceanTrait
      */
     protected function validateDigitalOceanRegion(mixed $region, array $validRegions): ?string
     {
-        if (!is_string($region)) {
-            return 'Region must be a string';
-        }
-
-        if (trim($region) === '') {
-            return 'Region cannot be empty';
-        }
-
-        // Check if region exists in account's available regions
-        if (!isset($validRegions[$region])) {
-            return "Invalid region: '{$region}' is not available in your DigitalOcean account";
-        }
-
-        return null;
+        return $this->validateDigitalOceanOption($region, $validRegions, 'region');
     }
 
     /**
@@ -198,20 +213,7 @@ trait DigitalOceanTrait
      */
     protected function validateDigitalOceanDropletSize(mixed $size, array $validSizes): ?string
     {
-        if (!is_string($size)) {
-            return 'Droplet size must be a string';
-        }
-
-        if (trim($size) === '') {
-            return 'Droplet size cannot be empty';
-        }
-
-        // Check if size exists in account's available sizes
-        if (!isset($validSizes[$size])) {
-            return "Invalid droplet size: '{$size}' is not available in your DigitalOcean account";
-        }
-
-        return null;
+        return $this->validateDigitalOceanOption($size, $validSizes, 'droplet size');
     }
 
     /**
@@ -223,20 +225,7 @@ trait DigitalOceanTrait
      */
     protected function validateDigitalOceanDropletImage(mixed $image, array $validImages): ?string
     {
-        if (!is_string($image)) {
-            return 'Droplet image must be a string';
-        }
-
-        if (trim($image) === '') {
-            return 'Droplet image cannot be empty';
-        }
-
-        // Check if image exists in account's available images
-        if (!isset($validImages[$image])) {
-            return "Invalid droplet image: '{$image}' is not available in your DigitalOcean account";
-        }
-
-        return null;
+        return $this->validateDigitalOceanOption($image, $validImages, 'droplet image');
     }
 
     /**
