@@ -180,16 +180,23 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
         $this->displayServerDeets($server);
 
         //
-        // Verify SSH connection & add to inventory
+        // Get server info (verifies SSH connection and validates distribution)
         // -------------------------------------------------------------------------------
 
-        $this->verifySSHConnection($server); // SSH failure is not a blocker
+        $info = $this->getServerInfo($server);
+
+        if (is_int($info)) {
+            return $info;
+        }
+
+        //
+        // Add to inventory
+        // -------------------------------------------------------------------------------
 
         try {
             $this->servers->create($server);
         } catch (\RuntimeException $e) {
-            $this->nay('Failed to add server to inventory: ' . $e->getMessage());
-            $this->rollbackDroplet($dropletId);
+            $this->nay($e->getMessage());
 
             return Command::FAILURE;
         }
