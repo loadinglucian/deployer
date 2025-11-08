@@ -20,8 +20,7 @@ class ServerRunCommand extends BaseCommand
 {
     use ServersTrait;
 
-    // ----
-    // Configuration
+    // ---- Configuration
     // ----
 
     protected function configure(): void
@@ -32,8 +31,7 @@ class ServerRunCommand extends BaseCommand
         $this->addOption('command', null, InputOption::VALUE_REQUIRED, 'Command to execute');
     }
 
-    // ----
-    // Execution
+    // ---- Execution
     // ----
 
     protected function execute(InputInterface $input, OutputInterface $output): int

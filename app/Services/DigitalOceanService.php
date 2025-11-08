@@ -32,7 +32,7 @@ class DigitalOceanService
 
     //
     // API Initialization
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Single function to initialize the DigitalOcean API and verify authentication.
@@ -108,7 +108,7 @@ class DigitalOceanService
 
     //
     // Cache management
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Check if a cache key exists.

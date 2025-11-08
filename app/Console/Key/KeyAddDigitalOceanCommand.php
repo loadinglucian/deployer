@@ -22,11 +22,9 @@ class KeyAddDigitalOceanCommand extends BaseCommand
     use DigitalOceanTrait;
     use KeysTrait;
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Configuration
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function configure(): void
     {
@@ -37,11 +35,9 @@ class KeyAddDigitalOceanCommand extends BaseCommand
             ->addOption('public-key-path', null, InputOption::VALUE_REQUIRED, 'SSH public key path');
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Execution
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -51,7 +47,7 @@ class KeyAddDigitalOceanCommand extends BaseCommand
 
         //
         // Retrieve DigitalOcean account data
-        // -------------------------------------------------------------------------------
+        // ----
 
         if ($this->initializeDigitalOceanAPI() === Command::FAILURE) {
             return Command::FAILURE;
@@ -59,7 +55,7 @@ class KeyAddDigitalOceanCommand extends BaseCommand
 
         //
         // Gather key details
-        // -------------------------------------------------------------------------------
+        // ----
 
         $deets = $this->gatherKeyDeets();
 
@@ -74,7 +70,7 @@ class KeyAddDigitalOceanCommand extends BaseCommand
 
         //
         // Upload public key
-        // -------------------------------------------------------------------------------
+        // ----
 
         try {
             $keyId = $this->io->promptSpin(
@@ -91,7 +87,7 @@ class KeyAddDigitalOceanCommand extends BaseCommand
 
         //
         // Show command replay
-        // -------------------------------------------------------------------------------
+        // ----
 
         $this->showCommandReplay('key:add:digitalocean', [
             'public-key-path' => $publicKeyPath,
@@ -101,11 +97,9 @@ class KeyAddDigitalOceanCommand extends BaseCommand
         return Command::SUCCESS;
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Helpers
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Gather key details from user input or CLI options.

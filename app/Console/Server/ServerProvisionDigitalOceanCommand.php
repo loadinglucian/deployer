@@ -25,11 +25,9 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
     use ServersTrait;
     use KeysTrait;
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Configuration
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function configure(): void
     {
@@ -48,11 +46,9 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
             ->addOption('monitoring', null, InputOption::VALUE_NONE, 'Enable monitoring');
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Execution
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -62,7 +58,7 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
 
         //
         // Retrieve DigitalOcean account data
-        // -------------------------------------------------------------------------------
+        // ----
 
         if ($this->initializeDigitalOceanAPI() === Command::FAILURE) {
             return Command::FAILURE;
@@ -86,7 +82,7 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
 
         //
         // Gather provisioning details
-        // -------------------------------------------------------------------------------
+        // ----
 
         $deets = $this->gatherProvisioningDeets($accountData);
 
@@ -110,7 +106,7 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
 
         //
         // Provision droplet
-        // -------------------------------------------------------------------------------
+        // ----
 
         try {
             $dropletData = $this->io->promptSpin(
@@ -138,7 +134,7 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
 
         //
         // Configure droplet with automatic rollback on failure
-        // -------------------------------------------------------------------------------
+        // ----
 
         $shouldKeepDroplet = false;
 
@@ -193,7 +189,7 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
 
         //
         // Show command replay
-        // -------------------------------------------------------------------------------
+        // ----
 
         $this->showCommandReplay('server:provision:digitalocean', [
             'name' => $name,
@@ -210,11 +206,9 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
         return Command::SUCCESS;
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Helpers
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Gather provisioning details from user input or CLI options.

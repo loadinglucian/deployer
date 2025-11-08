@@ -22,11 +22,9 @@ class ServerInfoCommand extends BaseCommand
     use ServersTrait;
     use PlaybooksTrait;
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Configuration
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function configure(): void
     {
@@ -35,11 +33,9 @@ class ServerInfoCommand extends BaseCommand
         $this->addOption('server', null, InputOption::VALUE_REQUIRED, 'Server name');
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Execution
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -49,7 +45,7 @@ class ServerInfoCommand extends BaseCommand
 
         //
         // Select server & display details
-        // -------------------------------------------------------------------------------
+        // ----
 
         $server = $this->selectServer();
 
@@ -61,7 +57,7 @@ class ServerInfoCommand extends BaseCommand
 
         //
         // Get server info (verifies SSH connection and validates distribution)
-        // -------------------------------------------------------------------------------
+        // ----
 
         $info = $this->getServerInfo($server);
 
@@ -71,7 +67,7 @@ class ServerInfoCommand extends BaseCommand
 
         //
         // Show command replay
-        // -------------------------------------------------------------------------------
+        // ----
 
         $this->showCommandReplay('server:info', [
             'server' => $server->name,

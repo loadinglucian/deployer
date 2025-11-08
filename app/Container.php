@@ -31,9 +31,9 @@ final class Container
     /** @var array<class-string, object> */
     private array $bindings = [];
 
-    //
+    // ----
     // Public
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Bind a concrete instance to a class name for testing.
@@ -84,12 +84,13 @@ final class Container
         }
     }
 
-    //
+    // ----
     // Private
-    // -------------------------------------------------------------------------------
+    // ----
 
     //
     // Dependency Resolution
+    // ----
 
     /**
      * Build dependencies for constructor parameters.
@@ -140,6 +141,7 @@ final class Container
 
     //
     // Parameter Resolution
+    // ----
 
     /**
      * Resolve a class-type parameter by building its dependency.
@@ -182,6 +184,7 @@ final class Container
 
     //
     // Reflection Caching
+    // ----
 
     /**
      * Get cached reflection data for a class.
@@ -214,6 +217,7 @@ final class Container
 
     //
     // Guard Methods
+    // ----
 
     /**
      * Guard against circular dependencies.

@@ -8,7 +8,7 @@ use Bigpixelrocket\DeployerPHP\SymfonyApp;
 
 //
 // Bootstrap the autoloader
-// -------------------------------------------------------------------------------
+// ----
 
 $autoloadPaths = [
     __DIR__ . '/../vendor/autoload.php', // local
@@ -33,7 +33,7 @@ if (! $autoloadFound) {
 
 //
 // Run the app
-// -------------------------------------------------------------------------------
+// ----
 
 try {
     $container = new Container();

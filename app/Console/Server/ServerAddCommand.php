@@ -25,11 +25,9 @@ class ServerAddCommand extends BaseCommand
     use PlaybooksTrait;
     use ServersTrait;
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Configuration
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function configure(): void
     {
@@ -43,11 +41,9 @@ class ServerAddCommand extends BaseCommand
             ->addOption('username', null, InputOption::VALUE_REQUIRED, 'SSH username (default: root)');
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Execution
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -57,7 +53,7 @@ class ServerAddCommand extends BaseCommand
 
         //
         // Gather server details
-        // -------------------------------------------------------------------------------
+        // ----
 
         $deets = $this->gatherServerDeets();
 
@@ -75,7 +71,7 @@ class ServerAddCommand extends BaseCommand
 
         //
         // Display server details
-        // -------------------------------------------------------------------------------
+        // ----
 
         $server = new ServerDTO(
             name: $name,
@@ -89,7 +85,7 @@ class ServerAddCommand extends BaseCommand
 
         //
         // Get server info (verifies SSH connection and validates distribution)
-        // -------------------------------------------------------------------------------
+        // ----
 
         $info = $this->getServerInfo($server);
 
@@ -99,7 +95,7 @@ class ServerAddCommand extends BaseCommand
 
         //
         // Add to inventory
-        // -------------------------------------------------------------------------------
+        // ----
 
         try {
             $this->servers->create($server);
@@ -113,7 +109,7 @@ class ServerAddCommand extends BaseCommand
 
         //
         // Show command replay
-        // -------------------------------------------------------------------------------
+        // ----
 
         $this->showCommandReplay('server:add', [
             'name' => $name,
@@ -126,11 +122,9 @@ class ServerAddCommand extends BaseCommand
         return Command::SUCCESS;
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Helpers
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Gather server details from user input or CLI options.

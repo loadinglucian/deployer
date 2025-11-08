@@ -19,11 +19,9 @@ class SiteListCommand extends BaseCommand
 {
     use SitesTrait;
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Execution
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -33,7 +31,7 @@ class SiteListCommand extends BaseCommand
 
         //
         // Get all sites
-        // -------------------------------------------------------------------------------
+        // ----
 
         $allSites = $this->ensureSitesAvailable();
 
@@ -43,7 +41,7 @@ class SiteListCommand extends BaseCommand
 
         //
         // Display sites
-        // -------------------------------------------------------------------------------
+        // ----
 
         foreach ($allSites as $count => $site) {
             $this->displaySiteDeets($site);

@@ -23,7 +23,7 @@ final class ServerRepository
 
     //
     // Public
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Set the inventory service instance to use for storage operations.
@@ -134,7 +134,7 @@ final class ServerRepository
 
     //
     // Private
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Ensure inventory service is loaded before operations.
