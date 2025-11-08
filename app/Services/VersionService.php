@@ -54,7 +54,7 @@ class VersionService
 
     //
     // Version Detection Methods
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Get version from Composer's runtime API.
@@ -104,7 +104,7 @@ class VersionService
 
     //
     // Git Detection Helpers
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Check if directory is a git repository.

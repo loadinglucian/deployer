@@ -21,11 +21,9 @@ class ServerListCommand extends BaseCommand
     use ServersTrait;
     use SitesTrait;
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Execution
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -35,7 +33,7 @@ class ServerListCommand extends BaseCommand
 
         //
         // Get all servers
-        // -------------------------------------------------------------------------------
+        // ----
 
         $allServers = $this->ensureServersAvailable();
 
@@ -45,7 +43,7 @@ class ServerListCommand extends BaseCommand
 
         //
         // Display servers
-        // -------------------------------------------------------------------------------
+        // ----
 
         foreach ($allServers as $count => $server) {
             $this->displayServerDeets($server);

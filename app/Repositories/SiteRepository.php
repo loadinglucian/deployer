@@ -23,7 +23,7 @@ final class SiteRepository
 
     //
     // Public
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Configure the repository with an InventoryService and load site entries from storage.
@@ -148,7 +148,7 @@ final class SiteRepository
 
     //
     // Private
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Asserts that the repository's inventory service has been loaded.

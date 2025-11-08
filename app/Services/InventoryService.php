@@ -46,7 +46,7 @@ class InventoryService
 
     //
     // Public
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Set a value using dot notation path.
@@ -120,7 +120,7 @@ class InventoryService
 
     //
     // Private
-    // -------------------------------------------------------------------------------
+    // ----
 
     //
     // Dot Notation Helpers

@@ -47,7 +47,7 @@ class IOService
 
     //
     // Input Gathering
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Get option value or prompt user interactively.
@@ -183,7 +183,7 @@ class IOService
 
     //
     // Laravel Prompts Wrappers
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Prompt for text input.
@@ -437,7 +437,7 @@ class IOService
 
     //
     // Output Methods
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Write output without newline.

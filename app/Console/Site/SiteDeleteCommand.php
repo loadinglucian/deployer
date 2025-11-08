@@ -17,11 +17,9 @@ class SiteDeleteCommand extends BaseCommand
 {
     use SitesTrait;
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Configuration
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function configure(): void
     {
@@ -33,11 +31,9 @@ class SiteDeleteCommand extends BaseCommand
             ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip Yes/No confirmation prompt');
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Execution
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -47,7 +43,7 @@ class SiteDeleteCommand extends BaseCommand
 
         //
         // Select site & display details
-        // -------------------------------------------------------------------------------
+        // ----
 
         $site = $this->selectSite();
 
@@ -59,7 +55,7 @@ class SiteDeleteCommand extends BaseCommand
 
         //
         // Confirm deletion with extra safety
-        // -------------------------------------------------------------------------------
+        // ----
 
         /** @var bool $forceSkip */
         $forceSkip = $input->getOption('force') ?? false;
@@ -97,7 +93,7 @@ class SiteDeleteCommand extends BaseCommand
 
         //
         // Delete site from inventory
-        // -------------------------------------------------------------------------------
+        // ----
 
         $this->sites->delete($site->domain);
 
@@ -105,7 +101,7 @@ class SiteDeleteCommand extends BaseCommand
 
         //
         // Show command replay
-        // -------------------------------------------------------------------------------
+        // ----
 
         $this->showCommandReplay('site:delete', [
             'site' => $site->domain,

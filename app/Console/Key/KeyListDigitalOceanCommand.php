@@ -19,11 +19,9 @@ class KeyListDigitalOceanCommand extends BaseCommand
 {
     use DigitalOceanTrait;
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Execution
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -33,7 +31,7 @@ class KeyListDigitalOceanCommand extends BaseCommand
 
         //
         // Retrieve DigitalOcean account data
-        // -------------------------------------------------------------------------------
+        // ----
 
         if ($this->initializeDigitalOceanAPI() === Command::FAILURE) {
             return Command::FAILURE;
@@ -47,7 +45,7 @@ class KeyListDigitalOceanCommand extends BaseCommand
 
         //
         // Display keys
-        // -------------------------------------------------------------------------------
+        // ----
 
         foreach ($keys as $keyId => $description) {
             $this->io->writeln("  <fg=cyan>{$keyId}</> - {$description}");

@@ -58,11 +58,9 @@ abstract class BaseCommand extends Command
         parent::__construct();
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Configuration
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Add custom env and inventory options.
@@ -128,11 +126,9 @@ abstract class BaseCommand extends Command
         $this->sites->loadInventory($this->inventory);
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Execution
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Common execution logic.
@@ -160,11 +156,9 @@ abstract class BaseCommand extends Command
         return Command::SUCCESS;
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Helper Methods
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Display a heading with a horizontal rule and title.
