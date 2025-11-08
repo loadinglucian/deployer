@@ -319,6 +319,11 @@ trait ServersTrait
             return 'Server name cannot be empty';
         }
 
+        // Validate format: alphanumeric, hyphens, underscores only
+        if (!preg_match('/^[a-zA-Z0-9_-]+$/', $name)) {
+            return 'Server name can only contain letters, numbers, hyphens, and underscores';
+        }
+
         // Check uniqueness
         $existing = $this->servers->findByName($name);
         if ($existing !== null) {
