@@ -231,7 +231,7 @@ configure_caddy() {
 			}
 
 		# This single line handles everything: PHP files, index.php routing, and static files
-		php_fastcgi unix${php_fpm_socket}
+		php_fastcgi unix/${php_fpm_socket}
 		}
 	EOF
 		echo "Error: Failed to create Caddyfile" >&2
