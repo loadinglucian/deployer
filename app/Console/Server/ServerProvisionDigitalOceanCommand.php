@@ -25,11 +25,9 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
     use ServersTrait;
     use KeysTrait;
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Configuration
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function configure(): void
     {
@@ -48,11 +46,9 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
             ->addOption('monitoring', null, InputOption::VALUE_NONE, 'Enable monitoring');
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Execution
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -62,7 +58,7 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
 
         //
         // Retrieve DigitalOcean account data
-        // -------------------------------------------------------------------------------
+        // ----
 
         if ($this->initializeDigitalOceanAPI() === Command::FAILURE) {
             return Command::FAILURE;
@@ -86,7 +82,7 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
 
         //
         // Gather provisioning details
-        // -------------------------------------------------------------------------------
+        // ----
 
         $deets = $this->gatherProvisioningDeets($accountData);
 
@@ -110,7 +106,7 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
 
         //
         // Provision droplet
-        // -------------------------------------------------------------------------------
+        // ----
 
         try {
             $dropletData = $this->io->promptSpin(
@@ -138,7 +134,7 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
 
         //
         // Wait for droplet to become active
-        // -------------------------------------------------------------------------------
+        // ----
 
         try {
             $this->io->promptSpin(
@@ -156,7 +152,7 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
 
         //
         // Get droplet IP address & display server details
-        // -------------------------------------------------------------------------------
+        // ----
 
         try {
             $ipAddress = $this->digitalOcean->droplet->getDropletIp($dropletId);
@@ -181,7 +177,7 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
 
         //
         // Get server info (verifies SSH connection and validates distribution)
-        // -------------------------------------------------------------------------------
+        // ----
 
         $info = $this->getServerInfo($server);
 
@@ -191,7 +187,7 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
 
         //
         // Add to inventory
-        // -------------------------------------------------------------------------------
+        // ----
 
         try {
             $this->servers->create($server);
@@ -205,7 +201,7 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
 
         //
         // Show command replay
-        // -------------------------------------------------------------------------------
+        // ----
 
         $this->showCommandReplay('server:provision:digitalocean', [
             'name' => $name,
@@ -222,11 +218,9 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
         return Command::SUCCESS;
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Helpers
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Gather provisioning details from user input or CLI options.

@@ -18,7 +18,7 @@ class DigitalOceanAccountService extends BaseDigitalOceanService
 {
     //
     // Account data retrieval
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Get available regions.

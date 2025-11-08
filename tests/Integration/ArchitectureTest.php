@@ -8,7 +8,7 @@ use Symfony\Component\Console\Command\Command;
 
 //
 // Architecture tests
-// -------------------------------------------------------------------------------
+// ----
 
 arch('commands extend BaseCommand', function () {
     expect('Bigpixelrocket\\DeployerPHP\\Console\\')

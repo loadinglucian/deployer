@@ -27,15 +27,13 @@ trait ServersTrait
 {
     use PlaybooksTrait;
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Helpers
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     //
     // Server info
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Get server information by executing server-info playbook.
@@ -139,7 +137,7 @@ trait ServersTrait
 
     //
     // UI
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Display a warning to add a server if no servers are available. Otherwise, return all servers.
@@ -291,7 +289,7 @@ trait ServersTrait
 
     //
     // Provider helpers
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Check if a server is provisioned on DigitalOcean.
@@ -301,11 +299,9 @@ trait ServersTrait
         return $server->provider === 'digitalocean' && $server->dropletId !== null;
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Validation
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
          * Validate server name format and uniqueness.

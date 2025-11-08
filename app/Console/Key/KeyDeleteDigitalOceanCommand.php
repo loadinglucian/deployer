@@ -22,11 +22,9 @@ class KeyDeleteDigitalOceanCommand extends BaseCommand
     use DigitalOceanTrait;
     use KeysTrait;
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Configuration
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function configure(): void
     {
@@ -38,11 +36,9 @@ class KeyDeleteDigitalOceanCommand extends BaseCommand
             ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip Yes/No confirmation prompt');
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Execution
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -52,7 +48,7 @@ class KeyDeleteDigitalOceanCommand extends BaseCommand
 
         //
         // Retrieve DigitalOcean account data
-        // -------------------------------------------------------------------------------
+        // ----
 
         if ($this->initializeDigitalOceanAPI() === Command::FAILURE) {
             return Command::FAILURE;
@@ -60,7 +56,7 @@ class KeyDeleteDigitalOceanCommand extends BaseCommand
 
         //
         // Select key
-        // -------------------------------------------------------------------------------
+        // ----
 
         $selectedKey = $this->selectKey();
 
@@ -75,7 +71,7 @@ class KeyDeleteDigitalOceanCommand extends BaseCommand
 
         //
         // Display key
-        // -------------------------------------------------------------------------------
+        // ----
 
         $this->io->hr();
 
@@ -88,7 +84,7 @@ class KeyDeleteDigitalOceanCommand extends BaseCommand
 
         //
         // Confirm deletion with extra safety
-        // -------------------------------------------------------------------------------
+        // ----
 
         /** @var bool $forceSkip */
         $forceSkip = $input->getOption('force') ?? false;
@@ -126,7 +122,7 @@ class KeyDeleteDigitalOceanCommand extends BaseCommand
 
         //
         // Delete key
-        // -------------------------------------------------------------------------------
+        // ----
 
         try {
             $this->io->promptSpin(
@@ -143,7 +139,7 @@ class KeyDeleteDigitalOceanCommand extends BaseCommand
 
         //
         // Show command replay
-        // -------------------------------------------------------------------------------
+        // ----
 
         $this->showCommandReplay('key:delete:digitalocean', [
             'key' => (string) $keyId,

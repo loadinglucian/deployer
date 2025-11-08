@@ -51,7 +51,7 @@ final class SymfonyApp extends SymfonyApplication
 
     //
     // Public
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Override default input definition to remove unwanted options.
@@ -93,7 +93,7 @@ final class SymfonyApp extends SymfonyApplication
 
     //
     // Private
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Display retro BBS-style ASCII art banner.

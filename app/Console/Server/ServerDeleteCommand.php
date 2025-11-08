@@ -22,11 +22,9 @@ class ServerDeleteCommand extends BaseCommand
     use DigitalOceanTrait;
     use ServersTrait;
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Configuration
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function configure(): void
     {
@@ -38,11 +36,9 @@ class ServerDeleteCommand extends BaseCommand
             ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip Yes/No confirmation prompt');
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Execution
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -52,7 +48,7 @@ class ServerDeleteCommand extends BaseCommand
 
         //
         // Select server & display details
-        // -------------------------------------------------------------------------------
+        // ----
 
         $server = $this->selectServer();
 
@@ -64,7 +60,7 @@ class ServerDeleteCommand extends BaseCommand
 
         //
         // Check if server has sites
-        // -------------------------------------------------------------------------------
+        // ----
 
         $serverSites = $this->sites->findByServer($server->name);
 
@@ -81,7 +77,7 @@ class ServerDeleteCommand extends BaseCommand
 
         //
         // Initialize provider API
-        // -------------------------------------------------------------------------------
+        // ----
 
         $isDigitalOceanServer = $this->isDigitalOceanServer($server);
         if ($isDigitalOceanServer && Command::FAILURE === $this->initializeDigitalOceanAPI()) {
@@ -98,7 +94,7 @@ class ServerDeleteCommand extends BaseCommand
 
         //
         // Display warning for cloud provider servers
-        // -------------------------------------------------------------------------------
+        // ----
 
         if ($isDigitalOceanServer) {
             $this->io->writeln('<fg=yellow>⚠ This is a DigitalOcean server.</>');
@@ -112,7 +108,7 @@ class ServerDeleteCommand extends BaseCommand
 
         //
         // Confirm deletion with extra safety
-        // -------------------------------------------------------------------------------
+        // ----
 
         /** @var bool $forceSkip */
         $forceSkip = $input->getOption('force') ?? false;
@@ -148,7 +144,7 @@ class ServerDeleteCommand extends BaseCommand
 
         //
         // Destroy cloud provider resources
-        // -------------------------------------------------------------------------------
+        // ----
 
         $destroyed = false;
 
@@ -178,7 +174,7 @@ class ServerDeleteCommand extends BaseCommand
 
         //
         // Delete server from inventory
-        // -------------------------------------------------------------------------------
+        // ----
 
         $this->servers->delete($server->name);
 
@@ -195,7 +191,7 @@ class ServerDeleteCommand extends BaseCommand
 
         //
         // Show command replay
-        // -------------------------------------------------------------------------------
+        // ----
 
         $this->showCommandReplay('server:delete', [
             'server' => $server->name,

@@ -43,7 +43,7 @@ class SSHService
 
     //
     // Public API
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Assert that SSH connection and authentication can be established.
@@ -159,7 +159,7 @@ class SSHService
 
     //
     // Connection Management
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Execute an operation with retry logic and exponential backoff.
@@ -303,7 +303,7 @@ class SSHService
 
     //
     // Private Key Management
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Load and validate private key from resolved path.

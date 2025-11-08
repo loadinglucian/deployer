@@ -28,8 +28,7 @@ class ServerLogsCommand extends BaseCommand
      */
     private ?array $processedServices = null;
 
-    // ----
-    // Configuration
+    // ---- Configuration
     // ----
 
     protected function configure(): void
@@ -41,8 +40,7 @@ class ServerLogsCommand extends BaseCommand
         $this->addOption('service', 's', InputOption::VALUE_REQUIRED, 'Service name (all|system|detected service name)');
     }
 
-    // ----
-    // Execution
+    // ---- Execution
     // ----
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -119,8 +117,7 @@ class ServerLogsCommand extends BaseCommand
         return Command::SUCCESS;
     }
 
-    // ----
-    // Helpers
+    // ---- Helpers
     // ----
 
     /**

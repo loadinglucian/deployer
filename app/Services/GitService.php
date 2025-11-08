@@ -17,7 +17,7 @@ final readonly class GitService
 
     //
     // Git Detection
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Detect git remote origin URL from a working directory.
@@ -49,7 +49,7 @@ final readonly class GitService
 
     //
     // Helpers
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Run a git command and return trimmed output or null on failure.

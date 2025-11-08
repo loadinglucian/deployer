@@ -34,7 +34,7 @@ final readonly class FilesystemService
 
     //
     // Symfony Filesystem Wrappers
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Check if a file or directory exists.
@@ -66,7 +66,7 @@ final readonly class FilesystemService
 
     //
     // Gap-Filling Methods (Native PHP Functions)
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Get current working directory.

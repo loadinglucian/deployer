@@ -21,11 +21,9 @@ class SiteAddCommand extends BaseCommand
     use ServersTrait;
     use SitesTrait;
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Configuration
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function configure(): void
     {
@@ -39,11 +37,9 @@ class SiteAddCommand extends BaseCommand
             ->addOption('server', null, InputOption::VALUE_REQUIRED, 'Server name');
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Execution
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -53,7 +49,7 @@ class SiteAddCommand extends BaseCommand
 
         //
         // Gather site details
-        // -------------------------------------------------------------------------------
+        // ----
 
         $deets = $this->gatherSiteDeets();
 
@@ -71,7 +67,7 @@ class SiteAddCommand extends BaseCommand
 
         //
         // Display site details
-        // -------------------------------------------------------------------------------
+        // ----
 
         $site = new SiteDTO(
             domain: $domain,
@@ -84,7 +80,7 @@ class SiteAddCommand extends BaseCommand
 
         //
         // Save to inventory
-        // -------------------------------------------------------------------------------
+        // ----
 
         try {
             $this->sites->create($site);
@@ -98,7 +94,7 @@ class SiteAddCommand extends BaseCommand
 
         //
         // Show command replay
-        // -------------------------------------------------------------------------------
+        // ----
 
         $hintOptions = [
             'domain' => $domain,
@@ -116,11 +112,9 @@ class SiteAddCommand extends BaseCommand
         return Command::SUCCESS;
     }
 
-    // -------------------------------------------------------------------------------
-    //
+    // ----
     // Helpers
-    //
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Gather site details from user input or CLI options.
@@ -131,7 +125,7 @@ class SiteAddCommand extends BaseCommand
     {
         //
         // Select server
-        // -------------------------------------------------------------------------------
+        // ----
 
         $server = $this->selectServer();
 
@@ -141,7 +135,7 @@ class SiteAddCommand extends BaseCommand
 
         //
         // Gather site details
-        // -------------------------------------------------------------------------------
+        // ----
 
         /** @var string|null $domain */
         $domain = $this->io->getValidatedOptionOrPrompt(
@@ -161,7 +155,7 @@ class SiteAddCommand extends BaseCommand
 
         //
         // Select site source
-        // -------------------------------------------------------------------------------
+        // ----
 
         /** @var string $siteSource */
         $siteSource = $this->io->getOptionOrPrompt(
@@ -177,7 +171,7 @@ class SiteAddCommand extends BaseCommand
 
         //
         // Gather git-specific details
-        // -------------------------------------------------------------------------------
+        // ----
 
         $repo = null;
         $branch = null;

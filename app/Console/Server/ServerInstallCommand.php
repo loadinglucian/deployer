@@ -24,8 +24,7 @@ class ServerInstallCommand extends BaseCommand
     use PlaybooksTrait;
     use ServersTrait;
 
-    // ----
-    // Configuration
+    // ---- Configuration
     // ----
 
     protected function configure(): void

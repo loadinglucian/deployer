@@ -26,7 +26,7 @@ class EnvService
 
     //
     // Public
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Get first non-empty value for given key(s).
@@ -99,7 +99,7 @@ class EnvService
 
     //
     // Private
-    // -------------------------------------------------------------------------------
+    // ----
 
     /**
      * Get the resolved .env path (custom or default).
