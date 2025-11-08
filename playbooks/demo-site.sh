@@ -3,7 +3,7 @@
 #
 # Demo Site Setup Playbook
 #
-# Create deployer user, configure permissions, setup demo site
+# Provision demo site (requires deployer user pre-configured)
 # ----
 #
 # Required Environment Variables:
@@ -42,94 +42,17 @@ run_cmd() {
 }
 
 #
-# Get PHP-FPM user dynamically
-
-get_php_fpm_user() {
-	if [[ $DEPLOYER_FAMILY == 'debian' ]]; then
-		echo 'www-data'
-	else
-		local config_file='/etc/php-fpm.d/www.conf'
-		if [[ -f $config_file ]]; then
-			local user
-			user=$(grep -E '^\s*user\s*=' "$config_file" | awk '{print $3}' | tr -d ';')
-			if [[ -n $user ]]; then
-				echo "$user"
-			else
-				echo 'apache'
-			fi
-		else
-			echo 'apache'
-		fi
-	fi
-}
-
-#
-# Get PHP-FPM service name
-
-get_php_fpm_service() {
-	if [[ $DEPLOYER_FAMILY == 'debian' ]]; then
-		echo 'php8.4-fpm'
-	else
-		echo 'php-fpm'
-	fi
-}
-
-#
 # Setup Functions
 
-create_deployer_user() {
-	if id -u deployer > /dev/null 2>&1; then
-		echo "✓ Deployer user already exists"
-	else
-		echo "✓ Creating deployer user..."
-		if ! run_cmd useradd -m -s /bin/bash deployer; then
-			echo "Error: Failed to create deployer user" >&2
-			exit 1
-		fi
+require_deployer_user() {
+	if ! id -u deployer > /dev/null 2>&1; then
+		echo "Error: Deployer user not found. Run server:install before demo-site." >&2
+		exit 1
 	fi
 
-	# Add caddy user to deployer group so it can access deployer's files
-	if ! id -nG caddy 2> /dev/null | grep -qw deployer; then
-		echo "✓ Adding caddy user to deployer group..."
-		if ! run_cmd usermod -aG deployer caddy; then
-			echo "Error: Failed to add caddy to deployer group" >&2
-			exit 1
-		fi
-
-		# Restart Caddy so it picks up the new group membership
-		if systemctl is-active --quiet caddy 2> /dev/null; then
-			echo "✓ Restarting Caddy to apply group membership..."
-			if ! run_cmd systemctl restart caddy; then
-				echo "Error: Failed to restart Caddy" >&2
-				exit 1
-			fi
-		fi
-	fi
-
-	# Add PHP-FPM user to deployer group so it can access files
-	local php_fpm_user php_fpm_service
-	php_fpm_user=$(get_php_fpm_user)
-	php_fpm_service=$(get_php_fpm_service)
-
-	if id -u "$php_fpm_user" > /dev/null 2>&1; then
-		if ! id -nG "$php_fpm_user" 2> /dev/null | grep -qw deployer; then
-			echo "✓ Adding $php_fpm_user user to deployer group..."
-			if ! run_cmd usermod -aG deployer "$php_fpm_user"; then
-				echo "Error: Failed to add $php_fpm_user to deployer group" >&2
-				exit 1
-			fi
-
-			# Restart PHP-FPM so it picks up the new group membership
-			if systemctl is-active --quiet "$php_fpm_service" 2> /dev/null; then
-				echo "✓ Restarting PHP-FPM to apply group membership..."
-				if ! run_cmd systemctl restart "$php_fpm_service"; then
-					echo "Error: Failed to restart PHP-FPM" >&2
-					exit 1
-				fi
-			fi
-		fi
-	else
-		echo "Warning: PHP-FPM user '$php_fpm_user' not found, skipping group assignment"
+	if ! run_cmd test -d /home/deployer; then
+		echo "Error: Deployer home directory missing. Run server:install before demo-site." >&2
+		exit 1
 	fi
 }
 
@@ -137,7 +60,7 @@ setup_demo_site() {
 	echo "✓ Setting up demo site..."
 
 	# Create directory structure
-	if [[ ! -d /home/deployer/demo/public ]]; then
+	if ! run_cmd test -d /home/deployer/demo/public; then
 		if ! run_cmd mkdir -p /home/deployer/demo/public; then
 			echo "Error: Failed to create demo site directory" >&2
 			exit 1
@@ -145,7 +68,7 @@ setup_demo_site() {
 	fi
 
 	# Create index.php
-	if [[ ! -f /home/deployer/demo/public/index.php ]]; then
+	if ! run_cmd test -f /home/deployer/demo/public/index.php; then
 		if ! run_cmd tee /home/deployer/demo/public/index.php > /dev/null <<- 'EOF'; then
 			<?php echo 'hello, world';
 		EOF
@@ -265,7 +188,7 @@ configure_caddy() {
 
 main() {
 	# Execute setup tasks
-	create_deployer_user
+	require_deployer_user
 	setup_demo_site
 	configure_caddy
 
@@ -273,7 +196,7 @@ main() {
 	if ! cat > "$DEPLOYER_OUTPUT_FILE" <<- EOF; then
 		status: success
 		demo_site_path: /home/deployer/demo/public
-		deployer_user: created
+		deployer_user: existing
 		caddy_configured: true
 	EOF
 		echo "Error: Failed to write output file" >&2
