@@ -24,7 +24,8 @@ class ServerInstallCommand extends BaseCommand
     use PlaybooksTrait;
     use ServersTrait;
 
-    // ---- Configuration
+    // ----
+    // Configuration
     // ----
 
     protected function configure(): void
@@ -34,7 +35,7 @@ class ServerInstallCommand extends BaseCommand
         $this->addOption('server', null, InputOption::VALUE_REQUIRED, 'Server name');
     }
 
-    //
+    // ----
     // Execution
     // ----
 
@@ -57,7 +58,7 @@ class ServerInstallCommand extends BaseCommand
         $this->displayServerDeets($server);
 
         //
-        // Get server info (verifies SSH connection and validates distribution)
+        // Get server info (verifies SSH connection and validates distribution & permissions)
         // ----
 
         $info = $this->getServerInfo($server);
@@ -66,29 +67,14 @@ class ServerInstallCommand extends BaseCommand
             return $info;
         }
 
-        //
-        // Validate server info
-        // ----
-
-        /** @var string $distro */
-        $distro = $info['distro'] ?? 'unknown';
-        $distribution = Distribution::tryFrom($distro);
-        if ($distribution === null) {
-            $this->nay("Distribution validation failed: {$distro}");
-
-            return Command::FAILURE;
-        }
-
-        $permissions = $info['permissions'] ?? null;
-        if (!is_string($permissions) || !in_array($permissions, ['root', 'sudo'])) {
-            $this->nay('Server requires root or sudo permissions to install software');
-
-            return Command::FAILURE;
-        }
+        [
+            'distro' => $distro,
+            'permissions' => $permissions,
+        ] = $info;
 
         //
         // Execute installation playbook
-        // ---
+        // ----
 
         $result = $this->executePlaybook(
             $server,
@@ -109,16 +95,6 @@ class ServerInstallCommand extends BaseCommand
         }
 
         $this->yay('Server installed successfully');
-
-        // Display deploy public key
-        if (isset($result['deploy_public_key']) && is_string($result['deploy_public_key']) && $result['deploy_public_key'] !== 'unknown') {
-            $this->io->writeln('');
-            $this->io->writeln('<fg=cyan>Deploy Public Key:</>');
-            $this->io->writeln('Add this key to your Git provider (GitHub, GitLab, etc.) to enable deployments:');
-            $this->io->writeln('');
-            $this->io->writeln('<fg=green>' . $result['deploy_public_key'] . '</>');
-            $this->io->writeln('');
-        }
 
         //
         // Setup demo site
@@ -147,8 +123,12 @@ class ServerInstallCommand extends BaseCommand
         // ----
 
         $url = 'http://' . $server->host;
+        $deployKey = isset($result['deploy_public_key']) && is_string($result['deploy_public_key']) && $result['deploy_public_key'] !== 'unknown'
+            ? $result['deploy_public_key']
+            : null;
+
         $verification = $this->io->promptSpin(
-            fn () => $this->verifyInstallation($url),
+            fn () => $this->verifyInstallation($url, $deployKey),
             'Verifying installation...'
         );
 
@@ -182,7 +162,7 @@ class ServerInstallCommand extends BaseCommand
      *
      * @return array{status: 'success'|'warning', message: string, lines: array<int, string>}
      */
-    private function verifyInstallation(string $url): array
+    private function verifyInstallation(string $url, ?string $deployKey): array
     {
         try {
             $client = new Client([
@@ -210,15 +190,24 @@ class ServerInstallCommand extends BaseCommand
                 ];
             }
 
+            $nextSteps = [
+                'Next steps:',
+                '  • Caddy running at <fg=cyan>' . $url . '</>',
+                '  • Run <fg=cyan>site:add</> to deploy your first application',
+            ];
+
+            if ($deployKey !== null) {
+                $nextSteps[] = '  • Add this key to your Git provider (GitHub, GitLab, etc.) to enable deployments:';
+                $nextSteps[] = '';
+                $nextSteps[] = '<fg=cyan>' . $deployKey . '</>';
+            }
+
+            $nextSteps[] = '';
+
             return [
                 'status' => 'success',
                 'message' => 'Server installation completed successfully',
-                'lines' => [
-                    'Next steps:',
-                    '  • Caddy running at <fg=cyan>' . $url . '</>',
-                    '  • Run <fg=cyan>site:add</> to deploy your first application',
-                    '',
-                ],
+                'lines' => $nextSteps,
             ];
         } catch (\Throwable $e) {
             return [
