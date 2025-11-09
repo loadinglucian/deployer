@@ -34,8 +34,7 @@ trait PlaybooksTrait
      *
      * Standard playbook environment variables:
      *   - DEPLOYER_OUTPUT_FILE: Output file path (provided automatically)
-     *   - DEPLOYER_DISTRO: Exact distribution - caller must provide via $playbookVars
-     *   - DEPLOYER_FAMILY: Distribution family - caller must provide via $playbookVars
+     *   - DEPLOYER_DISTRO: Exact distribution (ubuntu|debian) - caller must provide via $playbookVars
      *   - DEPLOYER_PERMS: User permissions (root|sudo|none) - caller must provide via $playbookVars
      *
      * @param string $playbookName Playbook name without .sh extension (e.g., 'server-info', 'install-php', etc)

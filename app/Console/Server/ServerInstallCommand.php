@@ -86,8 +86,6 @@ class ServerInstallCommand extends BaseCommand
             return Command::FAILURE;
         }
 
-        $family = $distribution->family()->value;
-
         //
         // Execute installation playbook
         // ---
@@ -98,7 +96,6 @@ class ServerInstallCommand extends BaseCommand
             'Installing server...',
             [
                 'DEPLOYER_DISTRO' => $distro,
-                'DEPLOYER_FAMILY' => $family,
                 'DEPLOYER_PERMS' => $permissions,
                 'DEPLOYER_SERVER_NAME' => $server->name,
             ],
@@ -132,7 +129,6 @@ class ServerInstallCommand extends BaseCommand
             'demo-site',
             'Setting up demo site...',
             [
-                'DEPLOYER_FAMILY' => $family,
                 'DEPLOYER_PERMS' => $permissions,
             ],
             true

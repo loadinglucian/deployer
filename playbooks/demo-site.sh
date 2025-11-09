@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
 
 #
-# Demo Site Setup Playbook
+# Demo Site Setup Playbook - Ubuntu/Debian Only
 #
 # Provision demo site (requires deployer user pre-configured)
 # ----
 #
+# This playbook only supports Ubuntu and Debian distributions (debian family).
+#
 # Required Environment Variables:
 #   DEPLOYER_OUTPUT_FILE - Output file path
-#   DEPLOYER_FAMILY      - Distribution family: debian|fedora|redhat|amazon
 #   DEPLOYER_PERMS       - Permissions: root|sudo
 #
 # Returns YAML with:
 #   - status: success
 #   - demo_site_path: /home/deployer/demo/public
-#   - deployer_user: created
+#   - deployer_user: existing
 #   - caddy_configured: true
 #
 
@@ -22,7 +23,6 @@ set -o pipefail
 export DEBIAN_FRONTEND=noninteractive
 
 [[ -z $DEPLOYER_OUTPUT_FILE ]] && echo "Error: DEPLOYER_OUTPUT_FILE required" && exit 1
-[[ -z $DEPLOYER_FAMILY ]] && echo "Error: DEPLOYER_FAMILY required" && exit 1
 [[ -z $DEPLOYER_PERMS ]] && echo "Error: DEPLOYER_PERMS required" && exit 1
 export DEPLOYER_PERMS
 
@@ -109,13 +109,8 @@ setup_demo_site() {
 configure_caddy() {
 	echo "✓ Configuring Caddy..."
 
-	# Determine PHP-FPM socket path
-	local php_fpm_socket
-	if [[ $DEPLOYER_FAMILY == 'debian' ]]; then
-		php_fpm_socket='/run/php/php8.4-fpm.sock'
-	else
-		php_fpm_socket='/run/php-fpm/www.sock'
-	fi
+	# PHP-FPM socket path (debian family)
+	local php_fpm_socket='/run/php/php8.4-fpm.sock'
 
 	# Create log directory
 	if [[ ! -d /var/log/caddy ]]; then

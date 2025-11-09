@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 
 #
-# Server Installation Playbook - Debian Family (Ubuntu, Debian)
+# Server Installation Playbook - Ubuntu/Debian Only
 #
 # Install Caddy, PHP 8.4, PHP-FPM, Git, Bun
 # ----
 #
+# This playbook only supports Ubuntu and Debian distributions (debian family).
+# Both distributions use apt package manager and follow debian conventions.
+#
 # Required Environment Variables:
 #   DEPLOYER_OUTPUT_FILE - Output file path
 #   DEPLOYER_DISTRO      - Exact distribution: ubuntu|debian
-#   DEPLOYER_FAMILY      - Distribution family: debian
 #   DEPLOYER_PERMS       - Permissions: root|sudo
+#   DEPLOYER_SERVER_NAME - Server name for deploy key generation
 #
 # Returns YAML with:
 #   - status: success
@@ -19,6 +22,7 @@
 #   - caddy_version: installed Caddy version
 #   - git_version: installed Git version
 #   - bun_version: installed Bun version
+#   - deploy_public_key: public key for git deployments
 #   - tasks_completed: list of completed tasks
 #
 
@@ -27,7 +31,6 @@ export DEBIAN_FRONTEND=noninteractive
 
 [[ -z $DEPLOYER_OUTPUT_FILE ]] && echo "Error: DEPLOYER_OUTPUT_FILE required" && exit 1
 [[ -z $DEPLOYER_DISTRO ]] && echo "Error: DEPLOYER_DISTRO required" && exit 1
-[[ -z $DEPLOYER_FAMILY ]] && echo "Error: DEPLOYER_FAMILY required" && exit 1
 [[ -z $DEPLOYER_PERMS ]] && echo "Error: DEPLOYER_PERMS required" && exit 1
 [[ -z $DEPLOYER_SERVER_NAME ]] && echo "Error: DEPLOYER_SERVER_NAME required" && exit 1
 export DEPLOYER_PERMS
@@ -127,43 +130,30 @@ apt_get_with_retry() {
 # Installation Functions
 # ----
 
-install_all_packages() {
-	echo "✓ Installing all packages..."
+#
+# Setup distribution-specific repositories
 
+setup_repositories() {
+	echo "✓ Setting up repositories..."
+
+	# Caddy repository (same for both Ubuntu and Debian)
+	if ! [[ -f /usr/share/keyrings/caddy-stable-archive-keyring.gpg ]]; then
+		if ! curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | run_cmd gpg --batch --yes --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg; then
+			echo "Error: Failed to add Caddy GPG key" >&2
+			exit 1
+		fi
+	fi
+
+	if ! [[ -f /etc/apt/sources.list.d/caddy-stable.list ]]; then
+		if ! curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | run_cmd tee /etc/apt/sources.list.d/caddy-stable.list > /dev/null; then
+			echo "Error: Failed to add Caddy repository" >&2
+			exit 1
+		fi
+	fi
+
+	# PHP repository (distribution-specific)
 	case $DEPLOYER_DISTRO in
 		ubuntu)
-			# Update package lists FIRST
-			echo "✓ Updating package lists..."
-			if ! apt_get_with_retry update -q; then
-				echo "Error: Failed to update package lists" >&2
-				exit 1
-			fi
-
-			# Install prerequisites (now that package lists are updated)
-			echo "✓ Installing prerequisites..."
-			if ! apt_get_with_retry install -y -q curl software-properties-common; then
-				echo "Error: Failed to install prerequisites" >&2
-				exit 1
-			fi
-
-			# Add all repositories (now that prerequisites are installed)
-			echo "✓ Setting up repositories..."
-
-			# Caddy repository (curl is now available)
-			if ! [[ -f /usr/share/keyrings/caddy-stable-archive-keyring.gpg ]]; then
-				if ! curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | run_cmd gpg --batch --yes --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg; then
-					echo "Error: Failed to add Caddy GPG key" >&2
-					exit 1
-				fi
-			fi
-
-			if ! [[ -f /etc/apt/sources.list.d/caddy-stable.list ]]; then
-				if ! curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | run_cmd tee /etc/apt/sources.list.d/caddy-stable.list > /dev/null; then
-					echo "Error: Failed to add Caddy repository" >&2
-					exit 1
-				fi
-			fi
-
 			# PHP PPA (Ubuntu only)
 			if ! grep -qr "ondrej/php" /etc/apt/sources.list /etc/apt/sources.list.d/ 2> /dev/null; then
 				if ! run_cmd env DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:ondrej/php 2>&1; then
@@ -171,79 +161,9 @@ install_all_packages() {
 					exit 1
 				fi
 			fi
-
-			# Update package lists again (after adding repositories)
-			echo "✓ Updating package lists..."
-			if ! apt_get_with_retry update -q; then
-				echo "Error: Failed to update package lists" >&2
-				exit 1
-			fi
-
-			# Install remaining packages in batched groups
-			echo "✓ Installing system utilities..."
-			if ! apt_get_with_retry install -y -q unzip; then
-				echo "Error: Failed to install system utilities" >&2
-				exit 1
-			fi
-
-			echo "✓ Installing main packages..."
-			if ! apt_get_with_retry install -y -q caddy git rsync; then
-				echo "Error: Failed to install main packages" >&2
-				exit 1
-			fi
-
-			echo "✓ Installing PHP 8.4..."
-			if ! apt_get_with_retry install -y -q --no-install-recommends \
-				php8.4-cli \
-				php8.4-fpm \
-				php8.4-common \
-				php8.4-opcache \
-				php8.4-bcmath \
-				php8.4-curl \
-				php8.4-mbstring \
-				php8.4-xml \
-				php8.4-zip \
-				php8.4-gd \
-				php8.4-intl \
-				php8.4-soap 2>&1; then
-				echo "Error: Failed to install PHP 8.4 packages" >&2
-				exit 1
-			fi
 			;;
 		debian)
-			# Update package lists FIRST
-			echo "✓ Updating package lists..."
-			if ! apt_get_with_retry update -q; then
-				echo "Error: Failed to update package lists" >&2
-				exit 1
-			fi
-
-			# Install prerequisites (now that package lists are updated)
-			echo "✓ Installing prerequisites..."
-			if ! apt_get_with_retry install -y -q curl apt-transport-https lsb-release ca-certificates; then
-				echo "Error: Failed to install prerequisites" >&2
-				exit 1
-			fi
-
-			# Add all repositories (now that prerequisites are installed)
-			echo "✓ Setting up repositories..."
-
-			# Caddy repository (curl is now available)
-			if ! [[ -f /usr/share/keyrings/caddy-stable-archive-keyring.gpg ]]; then
-				if ! curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | run_cmd gpg --batch --yes --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg; then
-					echo "Error: Failed to add Caddy GPG key" >&2
-					exit 1
-				fi
-			fi
-
-			if ! [[ -f /etc/apt/sources.list.d/caddy-stable.list ]]; then
-				if ! curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | run_cmd tee /etc/apt/sources.list.d/caddy-stable.list > /dev/null; then
-					echo "Error: Failed to add Caddy repository" >&2
-					exit 1
-				fi
-			fi
-
-			# Sury PHP repository (Debian native - NOT a PPA)
+			# Sury PHP repository (Debian only)
 			if ! [[ -f /usr/share/keyrings/php-sury-archive-keyring.gpg ]]; then
 				if ! curl -fsSL 'https://packages.sury.org/php/apt.gpg' | run_cmd gpg --batch --yes --dearmor -o /usr/share/keyrings/php-sury-archive-keyring.gpg; then
 					echo "Error: Failed to add Sury PHP GPG key" >&2
@@ -259,46 +179,79 @@ install_all_packages() {
 					exit 1
 				fi
 			fi
+			;;
+	esac
+}
 
-			# Update package lists again (after adding repositories)
-			echo "✓ Updating package lists..."
-			if ! apt_get_with_retry update -q; then
-				echo "Error: Failed to update package lists" >&2
+install_all_packages() {
+	echo "✓ Installing all packages..."
+
+	# Update package lists
+	echo "✓ Updating package lists..."
+	if ! apt_get_with_retry update -q; then
+		echo "Error: Failed to update package lists" >&2
+		exit 1
+	fi
+
+	# Install prerequisites based on distribution
+	echo "✓ Installing prerequisites..."
+	case $DEPLOYER_DISTRO in
+		ubuntu)
+			if ! apt_get_with_retry install -y -q curl software-properties-common; then
+				echo "Error: Failed to install prerequisites" >&2
 				exit 1
 			fi
-
-			# Install remaining packages in batched groups
-			echo "✓ Installing system utilities..."
-			if ! apt_get_with_retry install -y -q unzip; then
-				echo "Error: Failed to install system utilities" >&2
-				exit 1
-			fi
-
-			echo "✓ Installing main packages..."
-			if ! apt_get_with_retry install -y -q caddy git rsync; then
-				echo "Error: Failed to install main packages" >&2
-				exit 1
-			fi
-
-			echo "✓ Installing PHP 8.4..."
-			if ! apt_get_with_retry install -y -q --no-install-recommends \
-				php8.4-cli \
-				php8.4-fpm \
-				php8.4-common \
-				php8.4-opcache \
-				php8.4-bcmath \
-				php8.4-curl \
-				php8.4-mbstring \
-				php8.4-xml \
-				php8.4-zip \
-				php8.4-gd \
-				php8.4-intl \
-				php8.4-soap 2>&1; then
-				echo "Error: Failed to install PHP 8.4 packages" >&2
+			;;
+		debian)
+			if ! apt_get_with_retry install -y -q curl apt-transport-https lsb-release ca-certificates; then
+				echo "Error: Failed to install prerequisites" >&2
 				exit 1
 			fi
 			;;
 	esac
+
+	# Setup repositories (requires prerequisites)
+	setup_repositories
+
+	# Update package lists again (after adding repositories)
+	echo "✓ Updating package lists..."
+	if ! apt_get_with_retry update -q; then
+		echo "Error: Failed to update package lists" >&2
+		exit 1
+	fi
+
+	# Install system utilities
+	echo "✓ Installing system utilities..."
+	if ! apt_get_with_retry install -y -q unzip; then
+		echo "Error: Failed to install system utilities" >&2
+		exit 1
+	fi
+
+	# Install main packages
+	echo "✓ Installing main packages..."
+	if ! apt_get_with_retry install -y -q caddy git rsync; then
+		echo "Error: Failed to install main packages" >&2
+		exit 1
+	fi
+
+	# Install PHP 8.4
+	echo "✓ Installing PHP 8.4..."
+	if ! apt_get_with_retry install -y -q --no-install-recommends \
+		php8.4-cli \
+		php8.4-fpm \
+		php8.4-common \
+		php8.4-opcache \
+		php8.4-bcmath \
+		php8.4-curl \
+		php8.4-mbstring \
+		php8.4-xml \
+		php8.4-zip \
+		php8.4-gd \
+		php8.4-intl \
+		php8.4-soap 2>&1; then
+		echo "Error: Failed to install PHP 8.4 packages" >&2
+		exit 1
+	fi
 
 	# Configure PHP-FPM
 	echo "✓ Configuring PHP-FPM..."
@@ -360,9 +313,6 @@ ensure_deployer_user() {
 }
 
 configure_deployer_groups() {
-	local php_fpm_user
-	php_fpm_user=$(get_php_fpm_user)
-
 	# Add caddy user to deployer group so it can access deployer's files
 	if ! id -nG caddy 2> /dev/null | grep -qw deployer; then
 		echo "✓ Adding caddy user to deployer group..."
@@ -381,55 +331,26 @@ configure_deployer_groups() {
 		fi
 	fi
 
-	# Add PHP-FPM user to deployer group so it can access files
-	if id -u "$php_fpm_user" > /dev/null 2>&1; then
-		if ! id -nG "$php_fpm_user" 2> /dev/null | grep -qw deployer; then
-			echo "✓ Adding $php_fpm_user user to deployer group..."
-			if ! run_cmd usermod -aG deployer "$php_fpm_user"; then
-				echo "Error: Failed to add $php_fpm_user to deployer group" >&2
+	# Add www-data (PHP-FPM user) to deployer group so it can access files
+	if id -u www-data > /dev/null 2>&1; then
+		if ! id -nG www-data 2> /dev/null | grep -qw deployer; then
+			echo "✓ Adding www-data user to deployer group..."
+			if ! run_cmd usermod -aG deployer www-data; then
+				echo "Error: Failed to add www-data to deployer group" >&2
 				exit 1
 			fi
 
 			# Restart PHP-FPM so it picks up the new group membership
-			local php_fpm_service
-			php_fpm_service=$(get_php_fpm_service)
-			if systemctl is-active --quiet "$php_fpm_service" 2> /dev/null; then
+			if systemctl is-active --quiet php8.4-fpm 2> /dev/null; then
 				echo "✓ Restarting PHP-FPM to apply group membership..."
-				if ! run_cmd systemctl restart "$php_fpm_service"; then
+				if ! run_cmd systemctl restart php8.4-fpm; then
 					echo "Error: Failed to restart PHP-FPM" >&2
 					exit 1
 				fi
 			fi
 		fi
 	else
-		echo "Warning: PHP-FPM user '$php_fpm_user' not found, skipping group assignment"
-	fi
-}
-
-get_php_fpm_user() {
-	if [[ $DEPLOYER_FAMILY == 'debian' ]]; then
-		echo 'www-data'
-	else
-		local config_file='/etc/php-fpm.d/www.conf'
-		if [[ -f $config_file ]]; then
-			local user
-			user=$(grep -E '^\s*user\s*=' "$config_file" | awk '{print $3}' | tr -d ';')
-			if [[ -n $user ]]; then
-				echo "$user"
-			else
-				echo 'apache'
-			fi
-		else
-			echo 'apache'
-		fi
-	fi
-}
-
-get_php_fpm_service() {
-	if [[ $DEPLOYER_FAMILY == 'debian' ]]; then
-		echo 'php8.4-fpm'
-	else
-		echo 'php-fpm'
+		echo "Warning: PHP-FPM user 'www-data' not found, skipping group assignment"
 	fi
 }
 
