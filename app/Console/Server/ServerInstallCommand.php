@@ -72,6 +72,9 @@ class ServerInstallCommand extends BaseCommand
             'permissions' => $permissions,
         ] = $info;
 
+        /** @var string $distro */
+        /** @var string $permissions */
+
         //
         // Execute installation playbook
         // ----
@@ -100,6 +103,7 @@ class ServerInstallCommand extends BaseCommand
         // Setup demo site
         // ----
 
+        /** @var string $permissions */
         $demoResult = $this->executePlaybook(
             $server,
             'demo-site',
