@@ -184,7 +184,7 @@ detect_disk_type() {
 
 	# Primary detection: Check discard granularity (TRIM support = SSD)
 	# Works reliably in virtualized environments (cloud VMs)
-	disc_gran=$(lsblk -d -o name,disc-gran 2> /dev/null | grep -E "^[sv]da" | head -n1 | awk '{print $2}')
+	disc_gran=$(lsblk -d -o name,disc-gran 2> /dev/null | grep -E "^([sv]da|nvme)" | head -n1 | awk '{print $2}')
 
 	# If disc-gran is non-zero (e.g., "512B"), it's an SSD
 	if [[ -n $disc_gran && $disc_gran != "0B" ]]; then
@@ -193,7 +193,7 @@ detect_disk_type() {
 	fi
 
 	# Fallback: Check rotation flag (works for physical disks)
-	rotation=$(lsblk -d -o name,rota 2> /dev/null | grep -E "^[sv]da" | head -n1 | awk '{print $2}')
+	rotation=$(lsblk -d -o name,rota 2> /dev/null | grep -E "^([sv]da|nvme)" | head -n1 | awk '{print $2}')
 	if [[ $rotation == "0" ]]; then
 		echo "ssd"
 	else
