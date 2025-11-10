@@ -181,14 +181,14 @@ detect_ram_mb() {
 # Detect disk type (ssd or hdd)
 
 detect_disk_type() {
-	local disc_gran rotation
+	local disk_gran rotation
 
 	# Primary detection: Check discard granularity (TRIM support = SSD)
 	# Works reliably in virtualized environments (cloud VMs)
-	disc_gran=$(lsblk -d -o name,disc-gran 2> /dev/null | grep -E "^([sv]d|nvme)" | head -n1 | awk '{print $2}')
+	disk_gran=$(lsblk -d -o name,disc-gran 2> /dev/null | grep -E "^([sv]d|nvme)" | head -n1 | awk '{print $2}')
 
 	# If disc-gran is non-zero (e.g., "512B"), it's an SSD
-	if [[ -n $disc_gran && $disc_gran != "0B" ]]; then
+	if [[ -n $disk_gran && $disk_gran != "0B" ]]; then
 		echo "ssd"
 		return
 	fi
