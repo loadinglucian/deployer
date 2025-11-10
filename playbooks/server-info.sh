@@ -386,13 +386,13 @@ main() {
 	echo "✓ Checking permissions..."
 	permissions=$(check_permissions)
 
+	echo "✓ Cataloging services..."
+	ensure_tools "$family" "$permissions"
+
 	echo "✓ Detecting hardware..."
 	cpu_cores=$(detect_cpu_cores)
 	ram_mb=$(detect_ram_mb)
 	disk_type=$(detect_disk_type)
-
-	echo "✓ Cataloging services..."
-	ensure_tools "$family" "$permissions"
 
 	echo "✓ Checking Caddy status..."
 	local caddy_metrics caddy_available="false"
