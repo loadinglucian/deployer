@@ -253,9 +253,8 @@ get_caddy_metrics() {
 	active_requests=$(echo "$metrics" | grep '^caddy_http_requests_in_flight{' | awk '{sum+=$2} END {print sum+0}')
 	[[ -z $active_requests ]] && active_requests="0"
 
-	# Total requests: use first handler "vars" to avoid counting same request multiple times
-	# (each request goes through multiple handlers: vars -> encode -> rewrite -> reverse_proxy)
-	total_requests=$(echo "$metrics" | grep '^caddy_http_requests_total{handler="vars"' | awk '{print $2}' | head -n1)
+	# Total requests: sum across all handlers
+	total_requests=$(echo "$metrics" | grep '^caddy_http_requests_total{' | awk '{sum+=$2} END {print sum+0}')
 	[[ -z $total_requests ]] && total_requests="0"
 
 	# Memory usage (process RSS in MB)
