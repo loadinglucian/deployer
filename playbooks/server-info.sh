@@ -26,6 +26,9 @@ if [[ -z $DEPLOYER_OUTPUT_FILE ]]; then
 	exit 1
 fi
 
+# Shared helpers are automatically inlined when executing playbooks remotely
+# source "$(dirname "$0")/helpers.sh"
+
 # ----
 # Detection Functions
 # ----
@@ -120,21 +123,6 @@ check_permissions() {
 # ----
 
 #
-# Command Execution
-# ----
-
-#
-# Execute command with appropriate permissions
-
-run_cmd() {
-	if [[ $DEPLOYER_PERMS == 'root' ]]; then
-		"$@"
-	else
-		sudo -n "$@"
-	fi
-}
-
-#
 # Tool Installation
 # ----
 
@@ -227,31 +215,6 @@ detect_php_versions() {
 			IFS=,
 			echo "${version_list[*]}"
 		)"
-	fi
-}
-
-#
-# Detect default PHP version
-
-detect_php_default() {
-	local default_version
-
-	# Try update-alternatives first
-	if command -v update-alternatives > /dev/null 2>&1; then
-		default_version=$(update-alternatives --query php 2> /dev/null | grep '^Value:' | awk '{print $2}')
-		if [[ -n $default_version && $default_version =~ php([0-9]+\.[0-9]+)$ ]]; then
-			echo "${BASH_REMATCH[1]}"
-			return
-		fi
-	fi
-
-	# Fallback: check /usr/bin/php directly
-	if [[ -x /usr/bin/php ]]; then
-		default_version=$(/usr/bin/php -v 2> /dev/null | head -n1 | grep -oP 'PHP \K[0-9]+\.[0-9]+')
-		if [[ -n $default_version ]]; then
-			echo "$default_version"
-			return
-		fi
 	fi
 }
 
