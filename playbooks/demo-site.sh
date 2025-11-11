@@ -42,6 +42,31 @@ run_cmd() {
 	fi
 }
 
+#
+# Detect default PHP version
+
+detect_php_default() {
+	local default_version
+
+	# Try update-alternatives first
+	if command -v update-alternatives > /dev/null 2>&1; then
+		default_version=$(update-alternatives --query php 2> /dev/null | grep '^Value:' | awk '{print $2}')
+		if [[ -n $default_version && $default_version =~ php([0-9]+\.[0-9]+)$ ]]; then
+			echo "${BASH_REMATCH[1]}"
+			return
+		fi
+	fi
+
+	# Fallback: check /usr/bin/php directly
+	if [[ -x /usr/bin/php ]]; then
+		default_version=$(/usr/bin/php -v 2> /dev/null | head -n1 | grep -oP 'PHP \K[0-9]+\.[0-9]+')
+		if [[ -n $default_version ]]; then
+			echo "$default_version"
+			return
+		fi
+	fi
+}
+
 # ----
 # Setup Functions
 # ----
@@ -132,8 +157,19 @@ setup_demo_site() {
 configure_demo_site() {
 	echo "✓ Configuring demo site..."
 
+	# Detect default PHP version
+	local php_version
+	php_version=$(detect_php_default)
+
+	if [[ -z $php_version ]]; then
+		echo "Error: No default PHP version found. Run server:install to install PHP first." >&2
+		exit 1
+	fi
+
+	echo "✓ Using PHP ${php_version} (default)"
+
 	# PHP-FPM socket path (debian family)
-	local php_fpm_socket='/run/php/php8.4-fpm.sock'
+	local php_fpm_socket="/run/php/php${php_version}-fpm.sock"
 
 	# Create log directory
 	if [[ ! -d /var/log/caddy ]]; then
