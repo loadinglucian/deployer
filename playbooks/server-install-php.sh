@@ -100,7 +100,7 @@ install_php_packages() {
 	fi
 
 	# Install PHP packages
-	if ! apt_get_with_retry install -y -q --no-install-recommends \
+	if ! apt_get_with_retry install -y -q \
 		php${DEPLOYER_PHP_VERSION}-bcmath \
 		php${DEPLOYER_PHP_VERSION}-cli \
 		php${DEPLOYER_PHP_VERSION}-common \
