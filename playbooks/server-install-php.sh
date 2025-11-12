@@ -101,18 +101,30 @@ install_php_packages() {
 
 	# Install PHP packages
 	if ! apt_get_with_retry install -y -q --no-install-recommends \
-		php${DEPLOYER_PHP_VERSION}-cli \
-		php${DEPLOYER_PHP_VERSION}-fpm \
-		php${DEPLOYER_PHP_VERSION}-common \
-		php${DEPLOYER_PHP_VERSION}-opcache \
 		php${DEPLOYER_PHP_VERSION}-bcmath \
+		php${DEPLOYER_PHP_VERSION}-cli \
+		php${DEPLOYER_PHP_VERSION}-common \
 		php${DEPLOYER_PHP_VERSION}-curl \
-		php${DEPLOYER_PHP_VERSION}-mbstring \
-		php${DEPLOYER_PHP_VERSION}-xml \
-		php${DEPLOYER_PHP_VERSION}-zip \
+		php${DEPLOYER_PHP_VERSION}-fpm \
 		php${DEPLOYER_PHP_VERSION}-gd \
+		php${DEPLOYER_PHP_VERSION}-gmp \
+		php${DEPLOYER_PHP_VERSION}-igbinary \
+		php${DEPLOYER_PHP_VERSION}-imagick \
+		php${DEPLOYER_PHP_VERSION}-imap \
 		php${DEPLOYER_PHP_VERSION}-intl \
-		php${DEPLOYER_PHP_VERSION}-soap 2>&1; then
+		php${DEPLOYER_PHP_VERSION}-mbstring \
+		php${DEPLOYER_PHP_VERSION}-memcached \
+		php${DEPLOYER_PHP_VERSION}-msgpack \
+		php${DEPLOYER_PHP_VERSION}-mysql \
+		php${DEPLOYER_PHP_VERSION}-opcache \
+		php${DEPLOYER_PHP_VERSION}-pgsql \
+		php${DEPLOYER_PHP_VERSION}-readline \
+		php${DEPLOYER_PHP_VERSION}-redis \
+		php${DEPLOYER_PHP_VERSION}-soap \
+		php${DEPLOYER_PHP_VERSION}-sqlite3 \
+		php${DEPLOYER_PHP_VERSION}-swoole \
+		php${DEPLOYER_PHP_VERSION}-xml \
+		php${DEPLOYER_PHP_VERSION}-zip 2>&1; then
 		echo "Error: Failed to install PHP ${DEPLOYER_PHP_VERSION} packages" >&2
 		exit 1
 	fi
