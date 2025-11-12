@@ -44,7 +44,7 @@ trait ServersTrait
      * @param ServerDTO $server Server to get information for
      * @return array<string, mixed>|int Returns parsed server info or failure code on failure
      */
-    protected function getServerInfo(ServerDTO $server): array|int
+    protected function serverInfo(ServerDTO $server): array|int
     {
         $info = $this->executePlaybook(
             $server,
@@ -264,12 +264,10 @@ trait ServersTrait
                 }
             }
 
-            if (count($phpItems) === 0) {
-                $phpItems[] = '<fg=yellow>No PHP installed</>';
+            if (count($phpItems) > 0) {
+                $this->io->displayDeets(['PHP' => $phpItems]);
+                $this->io->writeln('');
             }
-
-            $this->io->displayDeets(['PHP' => $phpItems]);
-            $this->io->writeln('');
         }
 
         // Display PHP-FPM information if available (multiple versions)
