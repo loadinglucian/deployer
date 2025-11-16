@@ -59,21 +59,10 @@ class ServerDeleteCommand extends BaseCommand
         $this->displayServerDeets($server);
 
         //
-        // Check if server has sites
+        // Get associated sites
         // ----
 
         $serverSites = $this->sites->findByServer($server->name);
-
-        if (count($serverSites) > 0) {
-            $this->io->warning("Cannot delete server '{$server->name}' because it has one or more sites.");
-            $this->io->writeln([
-                '',
-                'Use <fg=cyan>site:delete</> to delete the sites first.',
-                '',
-            ]);
-
-            return Command::FAILURE;
-        }
 
         //
         // Initialize provider API
@@ -103,6 +92,22 @@ class ServerDeleteCommand extends BaseCommand
             $this->io->warning('This will:');
             $this->io->writeln('  • Destroy the droplet on DigitalOcean');
             $this->io->writeln('  • Remove the server from inventory');
+
+            if (count($serverSites) > 0) {
+                $siteCount = count($serverSites);
+                $siteDomains = array_map(fn ($site) => $site->domain, $serverSites);
+                $sitesList = implode(', ', $siteDomains);
+                $this->io->writeln("  • Delete {$siteCount} associated site(s): {$sitesList}");
+            }
+
+            $this->io->writeln('');
+        } elseif (count($serverSites) > 0) {
+            $siteCount = count($serverSites);
+            $siteDomains = array_map(fn ($site) => $site->domain, $serverSites);
+            $sitesList = implode(', ', $siteDomains);
+            $this->io->warning('This will:');
+            $this->io->writeln('  • Remove the server from inventory');
+            $this->io->writeln("  • Delete {$siteCount} associated site(s): {$sitesList}");
             $this->io->writeln('');
         }
 
@@ -179,6 +184,20 @@ class ServerDeleteCommand extends BaseCommand
         $this->servers->delete($server->name);
 
         $this->yay("Server '{$server->name}' deleted from inventory");
+
+        //
+        // Delete associated sites
+        // ----
+
+        if (count($serverSites) > 0) {
+            foreach ($serverSites as $site) {
+                $this->sites->delete($site->domain);
+            }
+
+            $siteCount = count($serverSites);
+            $sitesText = $siteCount === 1 ? 'site' : 'sites';
+            $this->yay("Deleted {$siteCount} associated {$sitesText}");
+        }
 
         if (!$destroyed) {
             $this->io->warning('Your server may still be running and incurring costs!');
