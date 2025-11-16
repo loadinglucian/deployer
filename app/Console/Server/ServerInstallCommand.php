@@ -321,6 +321,15 @@ class ServerInstallCommand extends BaseCommand
             )
         );
 
+        // Validate CLI-provided version exists in available versions
+        if (!in_array($phpVersion, $phpVersions, true)) {
+            $this->io->error(
+                "PHP version {$phpVersion} is not available. Available versions: " . implode(', ', $phpVersions)
+            );
+
+            return Command::FAILURE;
+        }
+
         //
         // Select PHP extensions
         // ----
@@ -365,7 +374,23 @@ class ServerInstallCommand extends BaseCommand
             );
         }
 
-        if (!is_array($selectedExtensions) || $selectedExtensions === []) {
+        if (!is_array($selectedExtensions)) {
+            $this->io->error('Invalid PHP extensions selection');
+
+            return Command::FAILURE;
+        }
+
+        // Validate all selected extensions exist for this PHP version
+        $unknownExtensions = array_diff($selectedExtensions, $availableExtensions);
+        if ($unknownExtensions !== []) {
+            $this->io->error(
+                'Unknown PHP extensions for PHP ' . $phpVersion . ': ' . implode(', ', $unknownExtensions)
+            );
+
+            return Command::FAILURE;
+        }
+
+        if ($selectedExtensions === []) {
             $this->io->error('At least one extension must be selected');
 
             return Command::FAILURE;
