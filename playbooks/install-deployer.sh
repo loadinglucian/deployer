@@ -156,10 +156,10 @@ configure_deployer_sudo() {
 	echo "→ Configuring sudo permissions..."
 
 	if ! run_cmd tee "$sudoers_file" > /dev/null <<- 'EOF'; then
-		deployer ALL=(ALL) NOPASSWD: /bin/systemctl reload caddy
-		deployer ALL=(ALL) NOPASSWD: /bin/systemctl restart caddy
-		deployer ALL=(ALL) NOPASSWD: /bin/systemctl reload php*-fpm
-		deployer ALL=(ALL) NOPASSWD: /bin/systemctl restart php*-fpm
+		deployer ALL=(ALL) NOPASSWD: systemctl reload caddy
+		deployer ALL=(ALL) NOPASSWD: systemctl restart caddy
+		deployer ALL=(ALL) NOPASSWD: systemctl reload php*-fpm
+		deployer ALL=(ALL) NOPASSWD: systemctl restart php*-fpm
 	EOF
 		echo "Error: Failed to write sudoers configuration" >&2
 		exit 1
