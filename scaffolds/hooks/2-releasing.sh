@@ -48,6 +48,18 @@ if [[ $framework == "laravel" ]]; then
 	"${DEPLOYER_PHP}" artisan storage:link
 
 	#
+	# SQLite Database (Optional)
+	# ----
+	# Uncomment if using SQLite
+	#
+	# echo "→ Ensuring shared SQLite database..."
+	# mkdir -p "${DEPLOYER_SHARED_PATH}/database"
+	# if [[ ! -f "${DEPLOYER_SHARED_PATH}/database/database.sqlite" ]]; then
+	# 	touch "${DEPLOYER_SHARED_PATH}/database/database.sqlite"
+	# fi
+	# ln -sf "${DEPLOYER_SHARED_PATH}/database/database.sqlite" "${DEPLOYER_RELEASE_PATH}/database/database.sqlite"
+
+	#
 	# Run migrations
 	# ----
 
