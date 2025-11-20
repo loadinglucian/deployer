@@ -426,18 +426,19 @@ class ServerLogsCommand extends BaseCommand
      */
     protected function highlightErrors(string $content): string
     {
-        $keywords = [
+        // 1. Text keywords (substring match)
+        $textKeywords = [
             'error',
             'exception',
             'fail',
             'failed',
             'fatal',
             'panic',
-            ' 500 ', // HTTP 500
-            ' 502 ', // HTTP 502
-            ' 503 ', // HTTP 503
-            ' 504 ', // HTTP 504
         ];
+
+        // 2. Numeric status codes (regex word boundary match)
+        // Matches 500, 502, 503, 504 as distinct words
+        $statusPattern = '/\b(500|502|503|504)\b/';
 
         $lines = explode("\n", $content);
         $processedLines = [];
@@ -446,11 +447,17 @@ class ServerLogsCommand extends BaseCommand
             $lowerLine = strtolower($line);
             $hasError = false;
 
-            foreach ($keywords as $keyword) {
-                if (str_contains($lowerLine, strtolower($keyword))) {
+            // Check text keywords
+            foreach ($textKeywords as $keyword) {
+                if (str_contains($lowerLine, $keyword)) {
                     $hasError = true;
                     break;
                 }
+            }
+
+            // Check numeric status codes if no text error found yet
+            if (!$hasError && preg_match($statusPattern, $line)) {
+                $hasError = true;
             }
 
             if ($hasError) {
