@@ -103,11 +103,11 @@ class SiteHttpsCommand extends BaseCommand
             return Command::SUCCESS;
         }
 
-        $this->io->writeln([
-            "  • PHP Version: <fg=cyan>{$config['php_version']}</>",
-            "  • WWW Mode: <fg=cyan>{$config['www_mode']}</>",
-            '',
-        ]);
+        if ($config['php_version'] === 'unknown') {
+            $this->nay("Could not detect PHP version for '{$site->domain}' from server config; re-provision the site or run server:info to debug.");
+
+            return Command::FAILURE;
+        }
 
         //
         // Execute playbook
