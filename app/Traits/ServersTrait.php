@@ -71,6 +71,37 @@ trait ServersTrait
     }
 
     /**
+     * Get configuration for a specific site from server info.
+     *
+     * @param array<string, mixed> $info Server information array
+     * @param string $domain Site domain
+     * @return array{php_version: string, www_mode: string, https_enabled: bool}|null Returns config or null if not found
+     */
+    protected function getSiteConfig(array $info, string $domain): ?array
+    {
+        if (! isset($info['sites_config']) || ! is_array($info['sites_config'])) {
+            return null;
+        }
+
+        $config = $info['sites_config'][$domain] ?? null;
+
+        if (! is_array($config)) {
+            return null;
+        }
+
+        /** @var mixed $phpVer */
+        $phpVer = $config['php_version'] ?? 'unknown';
+        /** @var mixed $mode */
+        $mode = $config['www_mode'] ?? 'unknown';
+
+        return [
+            'php_version' => is_scalar($phpVer) ? (string) $phpVer : 'unknown',
+            'www_mode' => is_scalar($mode) ? (string) $mode : 'unknown',
+            'https_enabled' => filter_var($config['https_enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+        ];
+    }
+
+    /**
      * Validate that server is running a supported distribution.
      *
      * @param  array<string, mixed>  $info  Server information array from server-info playbook
@@ -388,6 +419,29 @@ trait ServersTrait
                     $this->io->displayDeets(["PHP-FPM {$version}" => $phpFpmItems]);
                     $this->io->writeln('');
                 }
+            }
+        }
+
+        // Display Sites Configuration if available
+        if (isset($info['sites_config']) && is_array($info['sites_config']) && count($info['sites_config']) > 0) {
+            $sitesItems = [];
+            foreach (array_keys($info['sites_config']) as $domain) {
+                $config = $this->getSiteConfig($info, (string) $domain);
+
+                if ($config === null) {
+                    continue;
+                }
+
+                $php = $config['php_version'] === 'unknown' ? '?' : $config['php_version'];
+                $mode = $config['www_mode'] === 'unknown' ? '?' : $config['www_mode'];
+                $https = $config['https_enabled'] ? '<fg=green>HTTPS</>' : '<fg=yellow>HTTP</>';
+
+                $sitesItems[] = "{$domain}: PHP {$php}, {$mode}, {$https}";
+            }
+
+            if (count($sitesItems) > 0) {
+                $this->io->displayDeets(['Sites Config' => $sitesItems]);
+                $this->io->writeln('');
             }
         }
     }
