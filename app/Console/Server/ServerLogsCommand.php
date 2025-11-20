@@ -161,7 +161,9 @@ class ServerLogsCommand extends BaseCommand
             foreach ($info['php']['versions'] as $versionData) {
                 $version = null;
                 if (is_array($versionData) && isset($versionData['version'])) {
-                    $version = (string) $versionData['version'];
+                    /** @var string|int|float $rawVersion */
+                    $rawVersion = $versionData['version'];
+                    $version = (string) $rawVersion;
                 } elseif (is_string($versionData) || is_numeric($versionData)) {
                     $version = (string) $versionData;
                 }
