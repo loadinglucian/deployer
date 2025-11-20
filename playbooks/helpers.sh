@@ -14,6 +14,7 @@
 
 #
 # Execute command with appropriate permissions
+#
 
 run_cmd() {
 	if [[ $DEPLOYER_PERMS == 'root' ]]; then
@@ -23,12 +24,42 @@ run_cmd() {
 	fi
 }
 
+#
+# Execute command as deployer user with environment preservation
+#
+# Arguments:
+#   $@ - Command and arguments to execute
+
+run_as_deployer() {
+	if [[ $DEPLOYER_PERMS == 'root' || $DEPLOYER_PERMS == 'sudo' ]]; then
+		sudo -n -u deployer --preserve-env="$PRESERVE_ENV_VARS" "$@"
+	else
+		"$@"
+	fi
+}
+
+# ----
+# Error Handling
+# ----
+
+#
+# Print error message and exit
+#
+# Arguments:
+#   $1 - Error message to display
+
+fail() {
+	echo "Error: $1" >&2
+	exit 1
+}
+
 # ----
 # PHP Detection
 # ----
 
 #
 # Detect default PHP version
+#
 
 detect_php_default() {
 	local default_version
@@ -58,6 +89,7 @@ detect_php_default() {
 
 #
 # Wait for dpkg lock to be released
+#
 
 wait_for_dpkg_lock() {
 	local max_wait=60
@@ -93,6 +125,7 @@ wait_for_dpkg_lock() {
 
 #
 # apt-get with retry
+#
 
 apt_get_with_retry() {
 	local max_attempts=5
@@ -130,4 +163,46 @@ apt_get_with_retry() {
 	done
 
 	return 1
+}
+
+# ----
+# Shared Resources Management
+# ----
+
+#
+# Link shared resources to release
+#
+# Iterates through all items in shared directory and creates symlinks in the release.
+# Removes conflicting files/directories from the release before linking.
+# Requires environment variables:
+#   $SHARED_PATH - Path to shared directory
+#   $RELEASE_PATH - Path to release directory
+#
+
+link_shared_resources() {
+	if [[ ! -d $SHARED_PATH ]]; then
+		return 0
+	fi
+
+	local shared_items=()
+	mapfile -t shared_items < <(find "$SHARED_PATH" -mindepth 1 -maxdepth 1 -printf '%f\n') || true
+
+	if ((${#shared_items[@]} == 0)); then
+		return 0
+	fi
+
+	echo "→ Linking shared resources..."
+
+	for item in "${shared_items[@]}"; do
+		local shared_item="${SHARED_PATH}/${item}"
+		local release_item="${RELEASE_PATH}/${item}"
+
+		# Remove conflicting item from release if it exists
+		if [[ -e $release_item ]]; then
+			run_cmd rm -rf "$release_item" || fail "Failed to remove ${item} from release"
+		fi
+
+		# Create symlink
+		run_as_deployer ln -sf "$shared_item" "$release_item" || fail "Failed to link shared ${item}"
+	done
 }

@@ -85,6 +85,14 @@ class SiteSharedPushCommand extends BaseCommand
             return $info;
         }
 
+        [
+            'distro' => $distro,
+            'permissions' => $permissions,
+        ] = $info;
+
+        /** @var string $distro */
+        /** @var string $permissions */
+
         //
         // Validate site is provisioned on server
         // ----
@@ -138,6 +146,25 @@ class SiteSharedPushCommand extends BaseCommand
         }
 
         $this->yay('Shared file uploaded');
+
+        //
+        // Link shared file
+        // ----
+
+        $result = $this->executePlaybook(
+            $server,
+            'site-link-shared',
+            'Linking shared file...',
+            [
+                'DEPLOYER_DISTRO' => $distro,
+                'DEPLOYER_PERMS' => $permissions,
+                'DEPLOYER_SITE_DOMAIN' => $site->domain,
+            ]
+        );
+
+        if (is_int($result)) {
+            return $result;
+        }
 
         //
         // Show command replay
