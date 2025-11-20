@@ -16,6 +16,7 @@
 #   - caddy: Caddy metrics (available, version, sites_count, domains, uptime_seconds, active_requests, total_requests, memory_mb)
 #   - php_fpm: map of PHP versions to metrics (pool, process_manager, uptime_seconds, accepted_conn, listen_queue, idle_processes, active_processes, total_processes, max_children_reached, slow_requests)
 #   - ports: map of port numbers to process names
+#   - sites_config: map of domain to config (php_version, www_mode, https_enabled)
 
 set -o pipefail
 export DEBIAN_FRONTEND=noninteractive
@@ -598,9 +599,9 @@ main() {
 	while IFS=$'\t' read -r domain php_ver mode https_status; do
 		has_sites_config=true
 		sites_config_yaml+="  ${domain}:
-    php_version: ${php_ver}
-    www_mode: ${mode}
-    https_enabled: ${https_status}
+    php_version: \"${php_ver}\"
+    www_mode: \"${mode}\"
+    https_enabled: \"${https_status}\"
 "
 	done < <(get_sites_config)
 
