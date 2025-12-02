@@ -184,8 +184,8 @@ class SiteDeleteCommand extends BaseCommand
 
         $this->commandReplay('site:delete', [
             'domain' => $site->domain,
-            'yes' => $confirmed,
             'force' => true,
+            'yes' => $confirmed,
         ]);
 
         return Command::SUCCESS;
