@@ -115,7 +115,7 @@ class SiteAddCommand extends BaseCommand
         // Provision site on server
         // ----
 
-        $result = $this->executePlaybook(
+        $result = $this->executePlaybookSilently(
             $server,
             'site-add',
             'Provisioning site...',
@@ -125,8 +125,7 @@ class SiteAddCommand extends BaseCommand
                 'DEPLOYER_SITE_DOMAIN' => $domain,
                 'DEPLOYER_PHP_VERSION' => $phpVersion,
                 'DEPLOYER_WWW_MODE' => $wwwMode,
-            ],
-            true
+            ]
         );
 
         if (is_int($result)) {

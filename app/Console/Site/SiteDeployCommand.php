@@ -183,7 +183,7 @@ class SiteDeployCommand extends BaseCommand
         // Execute deployment playbook
         // ----
 
-        $result = $this->executePlaybook(
+        $result = $this->executePlaybookSilently(
             $server,
             'site-deploy',
             'Deploying site...',
@@ -195,8 +195,7 @@ class SiteDeployCommand extends BaseCommand
                 'DEPLOYER_SITE_BRANCH' => $branch,
                 'DEPLOYER_PHP_VERSION' => (string) $phpVersion,
                 'DEPLOYER_KEEP_RELEASES' => (string) $keepReleases,
-            ],
-            true
+            ]
         );
 
         if (is_int($result)) {

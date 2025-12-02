@@ -111,7 +111,7 @@ class SiteHttpsCommand extends BaseCommand
         // Execute playbook
         // ----
 
-        $result = $this->executePlaybook(
+        $result = $this->executePlaybookSilently(
             $server,
             'site-https',
             'Enabling HTTPS...',
@@ -121,8 +121,7 @@ class SiteHttpsCommand extends BaseCommand
                 'DEPLOYER_SITE_DOMAIN' => $site->domain,
                 'DEPLOYER_PHP_VERSION' => $config['php_version'],
                 'DEPLOYER_WWW_MODE' => $config['www_mode'],
-            ],
-            true
+            ]
         );
 
         if (is_int($result)) {

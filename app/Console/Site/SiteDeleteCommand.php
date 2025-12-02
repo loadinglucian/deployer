@@ -128,7 +128,7 @@ class SiteDeleteCommand extends BaseCommand
                 /** @var string $permissions */
 
                 // Execute site deletion playbook
-                $result = $this->executePlaybook(
+                $result = $this->executePlaybookSilently(
                     $server,
                     'site-delete',
                     'Removing site from server...',
@@ -136,8 +136,7 @@ class SiteDeleteCommand extends BaseCommand
                         'DEPLOYER_DISTRO' => $distro,
                         'DEPLOYER_PERMS' => $permissions,
                         'DEPLOYER_SITE_DOMAIN' => $site->domain,
-                    ],
-                    true
+                    ]
                 );
 
                 if (is_int($result)) {
