@@ -208,8 +208,8 @@ class ServerDeleteCommand extends BaseCommand
 
         $this->commandReplay('server:delete', [
             'server' => $server->name,
-            'yes' => $confirmed,
             'force' => true,
+            'yes' => $confirmed,
         ]);
 
         return Command::SUCCESS;

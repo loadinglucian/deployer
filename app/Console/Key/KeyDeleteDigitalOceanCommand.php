@@ -139,8 +139,8 @@ class KeyDeleteDigitalOceanCommand extends BaseCommand
 
         $this->commandReplay('key:delete:digitalocean', [
             'key' => (string) $keyId,
-            'yes' => $confirmed,
             'force' => true,
+            'yes' => $confirmed,
         ]);
 
         return Command::SUCCESS;
