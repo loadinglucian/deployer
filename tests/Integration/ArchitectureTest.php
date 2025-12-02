@@ -11,7 +11,7 @@ use Symfony\Component\Console\Command\Command;
 // ----
 
 arch('commands extend BaseCommand', function () {
-    expect('Bigpixelrocket\\DeployerPHP\\Console\\')
+    expect('PHPDeployer\\Console\\')
         ->classes()
         ->toHaveSuffix('Command')
         ->toExtend(BaseCommand::class);
@@ -25,7 +25,7 @@ arch('base command contract', function () {
 });
 
 arch('commands expose Symfony metadata', function () {
-    expect('Bigpixelrocket\\DeployerPHP\\Console\\')
+    expect('PHPDeployer\\Console\\')
         ->classes()
         ->toHaveAttribute(AsCommand::class);
 });

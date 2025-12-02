@@ -17,7 +17,7 @@ class VersionService
      * @param string $packageName The Composer package name to query for version information.
      */
     public function __construct(
-        private readonly string $packageName = 'bigpixelrocket/deployer-php'
+        private readonly string $packageName = 'php-deployer/php-deployer'
     ) {
     }
 
