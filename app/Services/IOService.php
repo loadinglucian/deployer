@@ -74,6 +74,14 @@ class IOService
     }
 
     /**
+     * Display an error message with red X.
+     */
+    public function error(string $message): void
+    {
+        $this->out("<|red>✗ {$message}</>");
+    }
+
+    /**
      * This wrapper for Symfony's ConsoleOutput::write() method.
      *
      * @param string|iterable<string> $messages
