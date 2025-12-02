@@ -271,7 +271,7 @@ abstract class BaseCommand extends Command
      *
      * Formats key-value pairs with proper alignment and gray styling for values.
      *
-     * @param array<string, mixed> $details Key-value pairs to display
+     * @param array<int|string, mixed> $details Key-value pairs to display
      * @param bool $ul Whether to use a bullet point list
      */
     protected function displayDeets(array $details, bool $ul = false): void
@@ -281,7 +281,7 @@ abstract class BaseCommand extends Command
         }
 
         // Find longest key for alignment
-        $maxLength = max(array_map(strlen(...), array_keys($details)));
+        $maxLength = max(array_map(fn (int|string $k): int => strlen((string) $k), array_keys($details)));
 
         foreach ($details as $key => $value) {
             $paddedKey = str_pad($key.':', $maxLength + 1);
