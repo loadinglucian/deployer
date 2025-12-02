@@ -160,6 +160,7 @@ class ServerInstallCommand extends BaseCommand
             'Add the following <|yellow>public key</> to your Git provider (GitHub, GitLab, etc.) to enable deployments:',
         ]);
 
+        // Intentionally not using $this->out() here to make the key stand out from the rest of the command output
         $this->io->write([
             '',
             '<fg=yellow>' . $deployPublicKey . '</>',
@@ -224,7 +225,6 @@ class ServerInstallCommand extends BaseCommand
         } elseif ($customKeyPath !== null) {
             $deployKeyPath = $customKeyPath;
         } else {
-            // Interactive prompt
             $choice = $this->io->promptSelect(
                 label: 'Deploy key:',
                 options: [
@@ -237,7 +237,6 @@ class ServerInstallCommand extends BaseCommand
             if ($choice === 'generate') {
                 $deployKeyPath = null;
             } else {
-                // Prompt for custom key path
                 $deployKeyPath = $this->io->promptText(
                     label: 'Path to private key:',
                     placeholder: '~/.ssh/deploy_key',
@@ -258,7 +257,6 @@ class ServerInstallCommand extends BaseCommand
         ];
 
         if ($deployKeyPath !== null && $deployKeyPath !== '') {
-            // Validate key pair
             $validationError = $this->validateDeployKeyPairInput($deployKeyPath);
 
             if ($validationError !== null) {
@@ -267,7 +265,6 @@ class ServerInstallCommand extends BaseCommand
                 return Command::FAILURE;
             }
 
-            // Read and encode key contents
             $expandedPath = $this->fs->expandPath($deployKeyPath);
             $privateKeyContent = $this->fs->readFile($expandedPath);
             $publicKeyContent = $this->fs->readFile($expandedPath . '.pub');
@@ -338,19 +335,22 @@ class ServerInstallCommand extends BaseCommand
         // Extract available PHP versions
         // ----
 
-        if (!isset($packageList['php']) || !is_array($packageList['php']) || empty($packageList['php'])) {
+        /** @var array<string, mixed> $phpPackages */
+        $phpPackages = $packageList['php'] ?? [];
+
+        if ($phpPackages === []) {
             $this->nay('No PHP versions available in package list');
 
             return Command::FAILURE;
         }
 
-        $phpVersions = array_keys($packageList['php']);
-
-        // Filter for PHP 8.x only
-        $phpVersions = array_filter($phpVersions, fn ($v) => str_starts_with((string) $v, '8.'));
+        $phpVersions = array_filter(
+            array_keys($phpPackages),
+            fn ($v) => str_starts_with((string) $v, '8.')
+        );
         rsort($phpVersions, SORT_NATURAL); // Newest first
 
-        if (empty($phpVersions)) {
+        if ($phpVersions === []) {
             $this->nay('No PHP 8.x versions available in package list');
 
             return Command::FAILURE;
@@ -408,9 +408,10 @@ class ServerInstallCommand extends BaseCommand
         $phpData = $packageList['php'];
         /** @var mixed $versionData */
         $versionData = $phpData[$phpVersion] ?? null;
-        if (is_array($versionData) && isset($versionData['extensions']) && is_array($versionData['extensions'])) {
+
+        if (is_array($versionData)) {
             /** @var array<int|string, string> $extensions */
-            $extensions = $versionData['extensions'];
+            $extensions = $versionData['extensions'] ?? [];
             $availableExtensions = $extensions;
         }
 

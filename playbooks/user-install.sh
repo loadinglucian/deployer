@@ -53,7 +53,6 @@ export DEPLOYER_PERMS
 setup_deployer() {
 	local deployer_home=$1
 
-	# Ensure home directory has correct permissions (default is usually 755)
 	if ! run_cmd chmod 750 "$deployer_home"; then
 		echo "Error: Failed to set permissions on deployer home directory" >&2
 		exit 1
@@ -114,7 +113,6 @@ setup_deployer() {
 	local private_key="${deployer_ssh_dir}/id_ed25519"
 	local public_key="${deployer_ssh_dir}/id_ed25519.pub"
 
-	# Ensure .ssh directory exists
 	if ! run_cmd test -d "$deployer_ssh_dir"; then
 		echo "→ Creating ${deployer_ssh_dir} directory..."
 		if ! run_cmd mkdir -p "$deployer_ssh_dir"; then
@@ -123,36 +121,28 @@ setup_deployer() {
 		fi
 	fi
 
-	# Handle SSH key setup based on whether custom keys are provided
 	if [[ -n ${DEPLOYER_KEY_PRIVATE:-} && -n ${DEPLOYER_KEY_PUBLIC:-} ]]; then
-		# Custom keys provided - always write (overwrite existing)
 		echo "→ Installing custom SSH key pair..."
 
-		# Write private key (decode from base64)
 		if ! echo "$DEPLOYER_KEY_PRIVATE" | base64 -d | run_cmd tee "$private_key" > /dev/null; then
 			echo "Error: Failed to write private key" >&2
 			exit 1
 		fi
 
-		# Write public key (decode from base64)
 		if ! echo "$DEPLOYER_KEY_PUBLIC" | base64 -d | run_cmd tee "$public_key" > /dev/null; then
 			echo "Error: Failed to write public key" >&2
 			exit 1
 		fi
 	else
-		# No custom keys - generate only if not exists (idempotent)
 		if ! run_cmd test -f "$private_key"; then
 			echo "→ Generating SSH key pair..."
 			if ! run_cmd ssh-keygen -t ed25519 -C "deployer@${DEPLOYER_SERVER_NAME}" -f "$private_key" -N ""; then
 				echo "Error: Failed to generate SSH key pair" >&2
 				exit 1
 			fi
-		else
-			echo "SSH key pair already exists, skipping generation"
 		fi
 	fi
 
-	# Set ownership and permissions
 	if ! run_cmd chown -R deployer:deployer "$deployer_ssh_dir"; then
 		echo "Error: Failed to set ownership on .ssh directory" >&2
 		exit 1
@@ -170,19 +160,6 @@ setup_deployer() {
 
 	if ! run_cmd chmod 644 "$public_key"; then
 		echo "Error: Failed to set permissions on public key" >&2
-		exit 1
-	fi
-}
-
-#
-# Ensure proper permissions on deploy directories
-# ----
-
-setup_deploy_directories() {
-	local deployer_home=$1
-
-	if ! run_cmd test -d "$deployer_home"; then
-		echo "Error: Deployer home directory missing" >&2
 		exit 1
 	fi
 }
@@ -211,17 +188,13 @@ main() {
 		exit 1
 	fi
 
-	# Execute deployer setup tasks
 	setup_deployer "$deployer_home"
-	setup_deploy_directories "$deployer_home"
 
-	# Get deploy public key
 	if ! deploy_public_key=$(run_cmd cat "${deployer_home}/.ssh/id_ed25519.pub" 2>&1); then
 		echo "Error: Failed to read deploy public key at ${deployer_home}/.ssh/id_ed25519.pub" >&2
 		exit 1
 	fi
 
-	# Write output YAML
 	if ! cat > "$DEPLOYER_OUTPUT_FILE" <<- EOF; then
 		status: success
 		deploy_public_key: $deploy_public_key
