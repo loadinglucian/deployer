@@ -115,7 +115,7 @@ trait PlaybooksTrait
         );
 
         //
-        // Execution and ouput
+        // Execution and output
 
         try {
             if (null === $capture) {
