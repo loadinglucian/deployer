@@ -260,7 +260,7 @@ trait KeysTrait
             return 'Key path must be a string';
         }
 
-        if (trim($path) === '') {
+        if ('' === trim($path)) {
             return null; // Allow empty - triggers default key resolution
         }
 

@@ -121,7 +121,7 @@ class KeyAddDigitalOceanCommand extends BaseCommand
             fn ($value) => $this->validateKeyPathInput($value)
         );
 
-        if ($publicKeyPathRaw === null) {
+        if (null === $publicKeyPathRaw) {
             return null;
         }
 

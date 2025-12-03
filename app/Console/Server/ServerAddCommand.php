@@ -195,12 +195,12 @@ class ServerAddCommand extends BaseCommand
             fn ($value) => $this->validatePrivateKeyPathInputAllowEmpty($value)
         );
 
-        if ($privateKeyPathRaw === null) {
+        if (null === $privateKeyPathRaw) {
             return null;
         }
 
         /** @var ?string $privateKeyPath */
-        $privateKeyPath = (trim($privateKeyPathRaw) === '')
+        $privateKeyPath = ('' === trim($privateKeyPathRaw))
             ? $this->resolvePrivateKeyPath('')
             : $this->fs->expandPath($privateKeyPathRaw);
 

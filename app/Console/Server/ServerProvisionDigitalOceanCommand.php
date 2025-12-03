@@ -327,14 +327,12 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
             fn ($value) => $this->validatePrivateKeyPathInputAllowEmpty($value)
         );
 
-        if ($privateKeyPathRaw === null) {
+        if (null === $privateKeyPathRaw) {
             return null;
         }
 
-        // Only use fallback resolution if empty path provided
-        // Otherwise expand the path (validation ensured it exists)
         /** @var ?string $privateKeyPath */
-        $privateKeyPath = (trim($privateKeyPathRaw) === '')
+        $privateKeyPath = ('' === trim($privateKeyPathRaw))
             ? $this->resolvePrivateKeyPath('')
             : $this->fs->expandPath($privateKeyPathRaw);
 
