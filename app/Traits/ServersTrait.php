@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
-namespace PHPDeployer\Traits;
+namespace Deployer\Traits;
 
-use PHPDeployer\DTOs\ServerDTO;
-use PHPDeployer\DTOs\SiteDTO;
-use PHPDeployer\Enums\Distribution;
-use PHPDeployer\Repositories\ServerRepository;
-use PHPDeployer\Services\IOService;
-use PHPDeployer\Services\SSHService;
+use Deployer\DTOs\ServerDTO;
+use Deployer\DTOs\SiteDTO;
+use Deployer\Enums\Distribution;
+use Deployer\Repositories\ServerRepository;
+use Deployer\Repositories\SiteRepository;
+use Deployer\Services\IOService;
+use Deployer\Services\SSHService;
 use Symfony\Component\Console\Command\Command;
 
 /**
@@ -96,7 +97,7 @@ trait ServersTrait
         $distribution = Distribution::tryFrom($distro);
 
         if (null === $distribution || ! $distribution->isSupported()) {
-            $this->info('DeployerPHP only supports Debian and Ubuntu.');
+            $this->info('Deployer only supports Debian and Ubuntu.');
 
             return Command::FAILURE;
         }
@@ -107,7 +108,7 @@ trait ServersTrait
         $permissions = $info['permissions'] ?? null;
 
         if (! is_string($permissions) || ! in_array($permissions, ['root', 'sudo'])) {
-            $this->info('DeployerPHP requires root or passwordless sudo permissions:');
+            $this->info('Deployer requires root or passwordless sudo permissions:');
             $this->ol([
                 "SSH into your server as {$server->username}",
                 "Run <|cyan>echo \"{$server->username} ALL=(ALL) NOPASSWD:ALL\" | sudo tee /etc/sudoers.d/{$server->username}</>",
