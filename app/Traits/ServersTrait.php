@@ -8,6 +8,7 @@ use Deployer\DTOs\ServerDTO;
 use Deployer\DTOs\SiteDTO;
 use Deployer\Enums\Distribution;
 use Deployer\Repositories\ServerRepository;
+use Deployer\Repositories\SiteRepository;
 use Deployer\Services\IOService;
 use Deployer\Services\SSHService;
 use Symfony\Component\Console\Command\Command;
