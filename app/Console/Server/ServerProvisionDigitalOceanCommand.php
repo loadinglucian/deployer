@@ -314,19 +314,29 @@ class ServerProvisionDigitalOceanCommand extends BaseCommand
         //
         // Prompt for local private key path
 
-        /** @var string $privateKeyPathRaw */
-        $privateKeyPathRaw = $this->io->getOptionOrPrompt(
+        /** @var string|null $privateKeyPathRaw */
+        $privateKeyPathRaw = $this->io->getValidatedOptionOrPrompt(
             'private-key-path',
-            fn (): string => $this->io->promptText(
+            fn ($validate) => $this->io->promptText(
                 label: 'Path to SSH private key (leave empty for default ~/.ssh/id_ed25519 or ~/.ssh/id_rsa):',
                 default: '',
                 required: false,
-                hint: 'Used to connect to the server'
-            )
+                hint: 'Used to connect to the server',
+                validate: $validate
+            ),
+            fn ($value) => $this->validatePrivateKeyPathInputAllowEmpty($value)
         );
 
+        if ($privateKeyPathRaw === null) {
+            return null;
+        }
+
+        // Only use fallback resolution if empty path provided
+        // Otherwise expand the path (validation ensured it exists)
         /** @var ?string $privateKeyPath */
-        $privateKeyPath = $this->resolvePrivateKeyPath($privateKeyPathRaw);
+        $privateKeyPath = (trim($privateKeyPathRaw) === '')
+            ? $this->resolvePrivateKeyPath('')
+            : $this->fs->expandPath($privateKeyPathRaw);
 
         if ($privateKeyPath === null) {
             $this->nay('SSH private key not found.');

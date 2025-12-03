@@ -247,6 +247,27 @@ trait KeysTrait
     }
 
     /**
+     * Validate SSH private key file, allowing empty paths.
+     *
+     * Same as validatePrivateKeyPathInput, but returns null if path is empty.
+     * Used for optional key inputs where empty means "use default".
+     *
+     * @return string|null Error message if invalid, null if valid
+     */
+    protected function validatePrivateKeyPathInputAllowEmpty(mixed $path): ?string
+    {
+        if (!is_string($path)) {
+            return 'Key path must be a string';
+        }
+
+        if (trim($path) === '') {
+            return null; // Allow empty - triggers default key resolution
+        }
+
+        return $this->validatePrivateKeyPathInput($path);
+    }
+
+    /**
      * Validate deploy key pair (private key + corresponding public key).
      *
      * Validates both the private key and its corresponding public key file
