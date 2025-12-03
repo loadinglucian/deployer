@@ -182,31 +182,8 @@ class ServerAddCommand extends BaseCommand
             )
         );
 
-        /** @var string|null $privateKeyPathRaw */
-        $privateKeyPathRaw = $this->io->getValidatedOptionOrPrompt(
-            'private-key-path',
-            fn ($validate) => $this->io->promptText(
-                label: 'Path to SSH private key (leave empty for default ~/.ssh/id_ed25519 or ~/.ssh/id_rsa):',
-                default: '',
-                required: false,
-                hint: 'Used to connect to the server',
-                validate: $validate
-            ),
-            fn ($value) => $this->validatePrivateKeyPathInputAllowEmpty($value)
-        );
-
-        if (null === $privateKeyPathRaw) {
-            return null;
-        }
-
-        /** @var ?string $privateKeyPath */
-        $privateKeyPath = ('' === trim($privateKeyPathRaw))
-            ? $this->resolvePrivateKeyPath('')
-            : $this->fs->expandPath($privateKeyPathRaw);
-
-        if ($privateKeyPath === null) {
-            $this->nay('SSH private key not found.');
-
+        $privateKeyPath = $this->promptPrivateKeyPath();
+        if (is_int($privateKeyPath)) {
             return null;
         }
 
