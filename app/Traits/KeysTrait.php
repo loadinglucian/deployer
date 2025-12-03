@@ -85,8 +85,6 @@ trait KeysTrait
     /**
      * Prompt for private key path with validation and fallback resolution.
      *
-     * Returns resolved path on success, Command::FAILURE on error.
-     *
      * @return string|int Resolved path or Command::FAILURE
      */
     protected function promptPrivateKeyPath(): string|int
@@ -289,9 +287,6 @@ trait KeysTrait
 
     /**
      * Validate SSH private key file, allowing empty paths.
-     *
-     * Same as validatePrivateKeyPathInput, but returns null if path is empty.
-     * Used for optional key inputs where empty means "use default".
      *
      * @return string|null Error message if invalid, null if valid
      */
