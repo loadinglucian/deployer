@@ -189,7 +189,7 @@ class ServerInfoCommand extends BaseCommand
         }
 
         // Display PHP versions if available
-        if (isset($info['php']) && is_array($info['php'])) {
+        if (isset($info['php']) && is_array($info['php']) && isset($info['php']['versions']) && is_array($info['php']['versions'])) {
             /** @var array{versions: array<array{version: string, extensions: array<string>}>, default?: string} $phpInfo */
             $phpInfo = $info['php'];
             $versions = $phpInfo['versions'];
