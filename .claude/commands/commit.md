@@ -1,12 +1,12 @@
 ---
-description: Create a branch based on working tree changes
+description: Create a branch and commits based on working tree changes
 allowed-tools: Bash(git:*)
-model: sonnet
+model: haiku
 ---
 
 Based on the changes made to this repository:
 
-A. If we're on the main branch, create a new branch with a suitable name 
+A. If we're on the main branch, create a new branch with a suitable name
 
 Create the branch only (no commits yet). Use Conventional Commit types as branch prefixes:
 feat/, fix/, docs/, style/, refactor/, perf/, test/, build/, ci/, chore/, revert/.
