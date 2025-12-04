@@ -172,11 +172,7 @@ class SiteDeleteCommand extends BaseCommand
 
         $this->sites->delete($site->domain);
 
-        if ($deletedFromServer) {
-            $this->yay("Site '{$site->domain}' deleted successfully");
-        } else {
-            $this->yay("Site '{$site->domain}' removed from inventory");
-        }
+        $this->yay("Site '{$site->domain}' removed from inventory");
 
         //
         // Show command replay
