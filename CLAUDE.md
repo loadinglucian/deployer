@@ -67,8 +67,6 @@ Don't run, create, or update tests UNLESS explicitly instructed.
 | Symfony Console commands | @docs/rules/commands.md |
 | Exception handling | @docs/rules/exceptions.md |
 | Pest testing | @docs/rules/testing.md |
-| Bash playbooks | @docs/rules/playbooks.md |
-| Shell script style | @docs/rules/bash-style.md |
 | Writing documentation | @docs/rules/writing-docs.md |
 
 ## References
