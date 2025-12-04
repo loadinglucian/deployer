@@ -189,58 +189,29 @@ class ServerInfoCommand extends BaseCommand
         }
 
         // Display PHP versions if available
-        if (isset($info['php']) && is_array($info['php'])) {
-            $phpItems = [];
+        if (isset($info['php']) && is_array($info['php']) && isset($info['php']['versions']) && is_array($info['php']['versions'])) {
+            /** @var array{versions: array<array{version: string, extensions: array<string>}>, default?: string} $phpInfo */
+            $phpInfo = $info['php'];
+            $versions = $phpInfo['versions'];
 
-            if (isset($info['php']['versions']) && is_array($info['php']['versions']) && count($info['php']['versions']) > 0) {
-                $versions = $info['php']['versions'];
-                $defaultVersion = $info['php']['default'] ?? null;
+            if ([] !== $versions) {
+                $phpItems = [];
+                $defaultVersion = $phpInfo['default'] ?? '';
 
                 foreach ($versions as $versionData) {
-                    // Handle both old format (string) and new format (array with version/extensions)
-                    if (is_array($versionData) && isset($versionData['version'])) {
-                        /** @var string|int|float */
-                        $version = $versionData['version'];
-                        $versionStr = (string) $version;
-                        $extensions = $versionData['extensions'] ?? [];
+                    $version = $versionData['version'];
+                    $extensions = $versionData['extensions'];
 
-                        // Build version label
-                        $isDefault = false;
-                        if ($defaultVersion !== null && (is_string($defaultVersion) || is_numeric($defaultVersion))) {
-                            /** @var string|int|float $defaultVersion */
-                            $isDefault = $versionStr === (string) $defaultVersion;
-                        }
-
-                        $versionLabel = "PHP {$versionStr}";
-                        if ($isDefault) {
-                            $versionLabel .= ' <fg=green>(default)</>';
-                        }
-
-                        // Use version as key, extensions as value
-                        if (is_array($extensions) && count($extensions) > 0) {
-                            $phpItems[$versionLabel] = implode(', ', $extensions);
-                        } else {
-                            $phpItems[$versionLabel] = 'no extensions';
-                        }
-                    } elseif (is_string($versionData) || is_numeric($versionData)) {
-                        // Fallback for old format (simple string/numeric version)
-                        $versionStr = (string) $versionData;
-                        $isDefault = false;
-                        if ($defaultVersion !== null && (is_string($defaultVersion) || is_numeric($defaultVersion))) {
-                            /** @var string|int|float $defaultVersion */
-                            $isDefault = $versionStr === (string) $defaultVersion;
-                        }
-
-                        $versionLabel = "PHP {$versionStr}";
-                        if ($isDefault) {
-                            $versionLabel .= ' <fg=green>(default)</>';
-                        }
-                        $phpItems[$versionLabel] = '';
+                    $versionLabel = "PHP {$version}";
+                    if ($version === $defaultVersion) {
+                        $versionLabel .= ' <fg=green>(default)</>';
                     }
-                }
-            }
 
-            if (count($phpItems) > 0) {
+                    $phpItems[$versionLabel] = [] !== $extensions
+                        ? implode(', ', $extensions)
+                        : 'no extensions';
+                }
+
                 $this->displayDeets(['PHP' => $phpItems]);
             }
         }

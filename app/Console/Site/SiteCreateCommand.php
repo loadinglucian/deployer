@@ -169,12 +169,12 @@ class SiteCreateCommand extends BaseCommand
         return Command::SUCCESS;
     }
 
-    //
+    // ----
     // Validation
     // ----
 
     /**
-     * Validate that server is ready to add site.
+     * Validate that server is ready to create a site.
      *
      * Checks for:
      * - Caddy web server installed
@@ -215,39 +215,28 @@ class SiteCreateCommand extends BaseCommand
      */
     private function selectPhpVersion(array $info): string|int
     {
-        // Extract installed PHP versions
-        $installedPhpVersions = [];
-        if (isset($info['php']) && is_array($info['php']) && isset($info['php']['versions']) && is_array($info['php']['versions'])) {
-            foreach ($info['php']['versions'] as $version) {
-                // Handle both new format (array with version/extensions) and old format (string)
-                if (is_array($version) && isset($version['version'])) {
-                    /** @var string $versionStr */
-                    $versionStr = $version['version'];
-                    $installedPhpVersions[] = $versionStr;
-                } elseif (is_string($version) || is_numeric($version)) {
-                    $installedPhpVersions[] = (string) $version;
-                }
-            }
-        }
+        /** @var array{versions: array<array{version: string, extensions: array<string>}>, default?: string} $phpInfo */
+        $phpInfo = $info['php'];
+        $versions = $phpInfo['versions'];
 
-        if (empty($installedPhpVersions)) {
+        if ([] === $versions) {
             $this->nay('No PHP versions found on server');
 
             return Command::FAILURE;
         }
 
-        // If only one version, use it automatically
+        $installedPhpVersions = array_map(
+            fn (array $v): string => $v['version'],
+            $versions
+        );
+
         if (1 === count($installedPhpVersions)) {
             return $installedPhpVersions[0];
         }
 
-        // Multiple versions available - prompt user to select
-        rsort($installedPhpVersions, SORT_NATURAL); // Newest first
+        rsort($installedPhpVersions, SORT_NATURAL);
 
-        /** @var array{default?: string|int|float}|null $phpInfo */
-        $phpInfo = $info['php'] ?? null;
-        $defaultVersion = is_array($phpInfo) ? ($phpInfo['default'] ?? null) : null;
-        $defaultVersionStr = null !== $defaultVersion ? (string) $defaultVersion : $installedPhpVersions[0];
+        $defaultVersionStr = $phpInfo['default'] ?? $installedPhpVersions[0];
 
         $phpVersion = (string) $this->io->getOptionOrPrompt(
             'php-version',
@@ -258,10 +247,9 @@ class SiteCreateCommand extends BaseCommand
             )
         );
 
-        // Validate CLI-provided version exists in available versions
         if (! in_array($phpVersion, $installedPhpVersions, true)) {
             $this->nay(
-                "PHP version {$phpVersion} is not installed on this server. Available: " . implode(', ', $installedPhpVersions)
+                "PHP version {$phpVersion} is not installed. Available: " . implode(', ', $installedPhpVersions)
             );
 
             return Command::FAILURE;
