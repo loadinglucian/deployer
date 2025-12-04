@@ -32,3 +32,5 @@ Examples:
 - chore(deps): bump composer/installers to ^2.3
 
 Body (optional): explain motivation, context, and breaking changes (use BREAKING CHANGE:).
+
+Do NOT include any AI attribution, "Generated with", or "Co-Authored-By" lines in commit messages.
