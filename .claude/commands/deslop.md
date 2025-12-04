@@ -1,6 +1,11 @@
+---
+description: Remove AI-generated code slop from the current branch
+argument-hint: [base-branch]
+---
+
 # Remove AI Code Slop
 
-Check the diff against main, and remove all AI-generated slop introduced in this branch.
+Check the diff against $1 (or main if not specified), and remove all AI-generated slop introduced in this branch.
 
 This includes:
 
