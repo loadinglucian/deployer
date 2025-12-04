@@ -1,6 +1,13 @@
-# Rules for Writing Docs
+---
+name: docs
+description: Use this skill when writing, creating, or modifying documentation or prompts for AI agents. Activates for tasks involving CLAUDE.md, the .claude folder, or any documentation optimized for token efficiency.
+---
 
-Guidelines for documentation optimized for AI agents with limited token windows.
+# AI-Optimized Documentation
+
+Guidelines for writing documentation optimized for AI agents with limited token windows.
+
+All rules MANDATORY.
 
 ## Token Efficiency
 
@@ -11,7 +18,7 @@ Guidelines for documentation optimized for AI agents with limited token windows.
 - Bullets over paragraphs
 - Single "All rules MANDATORY" per file
 - No repetitive CRITICAL/IMMUTABLE warnings
-- No emoji in headers
+- No emoji
 
 ## Structure
 
@@ -24,6 +31,7 @@ All rules MANDATORY.
 ```
 
 **Organization:**
+
 - Clear, scannable headers
 - Related rules grouped
 - Alphabetical when no logical grouping
@@ -42,6 +50,7 @@ $result = new Service(new Dependency());
 ```
 
 **Rules:**
+
 - Under 10 lines per example
 - Use `// CORRECT` and `// WRONG` markers
 - Inline comments over prose
@@ -51,14 +60,15 @@ $result = new Service(new Dependency());
 ## Cross-File Coordination
 
 **Single source of truth:**
+
 - One primary location per concept
-- Cross-reference by filename: "See commands.md"
+- Cross-reference by filename: "See architecture.md"
 - No line number references
 
 **Valid references:**
 
 ```markdown
-See @docs/rules/commands.md
+See @docs/architecture.md
 Covered in architecture.md
 ```
 
@@ -77,6 +87,7 @@ Commands are responsible for handling all user interaction including input and o
 ```
 
 **Emphasis Hierarchy:**
+
 1. Code examples (most efficient)
 2. Imperative bullets
 3. Short declarative sentences
@@ -90,11 +101,26 @@ Commands are responsible for handling all user interaction including input and o
 - Leave 80% for code, history, responses
 - Target: <3000 tokens total (~600-800 lines)
 
-## Maintenance Checklist
+## Quality Gates
 
-Before committing:
-1. Remove outdated file references
-2. Check for duplication
-3. Verify no contradictions
-4. Test code examples
-5. Compare token count (target: 35-65% of verbose version)
+After writing documentation:
+
+```bash
+# Check file size (target: <800 lines)
+wc -l docs/rules/new-doc.md
+
+# Estimate tokens (~4 chars per token)
+wc -c docs/rules/new-doc.md | awk '{print int($1/4)}'
+```
+
+## Checklist
+
+Before committing documentation:
+
+- [ ] Remove outdated file references
+- [ ] Check for duplication across files
+- [ ] Verify no contradictions with other docs
+- [ ] Make sure code examples compile/run
+- [ ] Validate referenced files or URLs exist
+- [ ] Token count under budget (<3000)
+- [ ] Uses CORRECT/WRONG markers in examples

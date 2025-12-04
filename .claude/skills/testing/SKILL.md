@@ -322,15 +322,6 @@ it('creates server with defaults', ...);
 - Test files: `tests/Unit/ServiceNameTest.php` or `tests/Integration/FeatureTest.php`
 - Mirror source structure where practical
 
-## Quality Gates
-
-After writing tests, run:
-
-```bash
-vendor/bin/pest $TEST_FILE           # Run the specific test
-composer pest                         # Run full suite
-```
-
 ## Checklist
 
 Before completing tests:

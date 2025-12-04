@@ -366,11 +366,3 @@ EOF
     exit 1
 fi
 ```
-
-## Quality Gates
-
-After writing playbook, run:
-```bash
-composer bash playbooks/new-playbook.sh  # Format
-composer bash:check                       # Verify
-```

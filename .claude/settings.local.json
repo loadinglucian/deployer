@@ -6,7 +6,8 @@
       "Bash(wc:*)",
       "Bash(cat:*)",
       "Bash(gh pr view:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Skill(ai-docs)"
     ],
     "deny": [],
     "ask": []

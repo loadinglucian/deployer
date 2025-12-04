@@ -318,16 +318,6 @@ return Command::SUCCESS;
 
 This outputs the equivalent non-interactive command for documentation/automation.
 
-## Quality Gates
-
-After writing command, run:
-
-```bash
-vendor/bin/rector src/Command/NewCommand.php
-vendor/bin/pint src/Command/NewCommand.php
-vendor/bin/phpstan analyse src/Command/NewCommand.php
-```
-
 ## Checklist
 
 Before completing a command:
