@@ -9,9 +9,11 @@ Commands are Symfony Console classes that handle user I/O. They use Laravel Prom
 
 All rules MANDATORY.
 
-## Core Principle
+## Core Principles
 
-Every command MUST be fully runnable non-interactively via CLI options. Every prompt MUST have a corresponding CLI option.
+- Every command MUST be fully runnable non-interactively via CLI options
+- Every prompt MUST have a corresponding CLI option
+- Never invoke other commands (NO proxy commands)
 
 ## Required Structure
 
@@ -50,9 +52,7 @@ final class ActionCommand extends BaseCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->setupIo($input, $output);
-
-        // Get input
+        // Get input (IOService is auto-initialized via BaseCommand::initialize())
         $name = $this->getOptionOrPrompt(
             'name',
             fn () => $this->promptText(label: 'Name:', required: true)
@@ -317,6 +317,28 @@ return Command::SUCCESS;
 ```
 
 This outputs the equivalent non-interactive command for documentation/automation.
+
+## Common Mistakes
+
+```php
+// WRONG - Missing null check after validated prompt
+$value = $this->getValidatedOptionOrPrompt(...);
+$this->doSomething($value);  // $value could be null!
+
+// CORRECT - Check for validation failure
+$value = $this->getValidatedOptionOrPrompt(...);
+if (null === $value) {
+    return Command::FAILURE;
+}
+
+// WRONG - Silent fallback on explicit input
+$path = $this->getOptionOrPrompt('key-path', ...);
+$resolved = $this->resolveKey($path);  // Falls back even if user's path invalid!
+
+// WRONG - CLI option bypasses validation
+$env = $this->getOptionOrPrompt('env', fn() => $this->promptSelect(..., options: $valid));
+// --env=invalid passes through unvalidated! Use getValidatedOptionOrPrompt instead.
+```
 
 ## Checklist
 

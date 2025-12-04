@@ -53,7 +53,7 @@ $container->bind(SSHService::class, $mockSSH);
 $command = $container->build(ServerAddCommand::class);
 ```
 
-**Integration:** Entry point: `bin/deployer`. Command registration: `SymfonyApp.php`. Services: Auto-injected via constructor.
+**Integration:** Entry point: `bin/deployer`. Command registration: `app/SymfonyApp.php`. Services: Auto-injected via constructor.
 
 ## Layer Separation
 

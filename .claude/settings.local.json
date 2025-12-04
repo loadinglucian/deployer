@@ -9,7 +9,15 @@
       "WebFetch(domain:github.com)",
       "Skill(ai-docs)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git log:*)",
+      "Bash(git filter-branch:*)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch:*)",
+      "Bash(git stash:*)",
+      "Bash(git push:*)",
+      "Bash(git update-ref:*)",
+      "Bash(git merge-base:*)",
+      "Bash(git ls-tree:*)"
     ],
     "deny": [],
     "ask": []

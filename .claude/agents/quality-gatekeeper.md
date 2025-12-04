@@ -1,6 +1,6 @@
 ---
 name: quality-gatekeeper
-description: Use this agent when you need to run quality gate checks on PHP files or bash playbooks. This includes running Rector, Pint, and PHPStan on changed PHP files, or formatting/checking playbook shell scripts. Call this agent after making changes to PHP files or playbook scripts to ensure code quality standards are met before committing or completing a task.\n\nExamples:\n\n<example>\nContext: The user has just finished implementing a new feature in PHP files.\nuser: "Add a new method to the ServerService class that validates server connections"\nassistant: "I've added the validateConnection method to ServerService.php. Now let me use the php-quality-gate agent to run quality checks on the changed files."\n<Agent tool call to php-quality-gate>\n</example>\n\n<example>\nContext: The user has modified a playbook bash script.\nuser: "Update the deploy.sh playbook to include a backup step"\nassistant: "I've updated the deploy.sh playbook with the backup step. Let me run the php-quality-gate agent to format and validate the bash script."\n<Agent tool call to php-quality-gate>\n</example>\n\n<example>\nContext: The assistant proactively runs quality gates after completing PHP changes.\nassistant: "I've finished refactoring the Repository classes. Before we proceed, I'll use the php-quality-gate agent to ensure all quality checks pass."\n<Agent tool call to php-quality-gate>\n</example>
+description: Use this agent when you need to run quality gate checks on PHP files or bash playbooks. This includes running Rector, Pint, and PHPStan on changed PHP files, or formatting/checking playbook shell scripts. Call this agent after making changes to PHP files or playbook scripts to ensure code quality standards are met before committing or completing a task.\n\nExamples:\n\n<example>\nContext: The user has just finished implementing a new feature in PHP files.\nuser: "Add a new method to the ServerService class that validates server connections"\nassistant: "I've added the validateConnection method to ServerService.php. Now let me use the quality-gatekeeper agent to run quality checks on the changed files."\n<Agent tool call to quality-gatekeeper>\n</example>\n\n<example>\nContext: The user has modified a playbook bash script.\nuser: "Update the deploy.sh playbook to include a backup step"\nassistant: "I've updated the deploy.sh playbook with the backup step. Let me run the quality-gatekeeper agent to format and validate the bash script."\n<Agent tool call to quality-gatekeeper>\n</example>\n\n<example>\nContext: The assistant proactively runs quality gates after completing PHP changes.\nassistant: "I've finished refactoring the Repository classes. Before we proceed, I'll use the quality-gatekeeper agent to ensure all quality checks pass."\n<Agent tool call to quality-gatekeeper>\n</example>
 model: haiku
 color: cyan
 ---
@@ -20,7 +20,7 @@ Run these commands in sequence on changed PHP files:
 1. **Rector** (automated refactoring):
 
     ```bash
-    vendor/bin/rector $CHANGED_PHP_FILES
+    vendor/bin/rector process $CHANGED_PHP_FILES
     ```
 
 2. **Pint** (code style formatting):
@@ -31,7 +31,7 @@ Run these commands in sequence on changed PHP files:
 
 3. **PHPStan** (static analysis):
     ```bash
-    vendor/bin/phpstan analyse $CHANGED_PHP_FILES
+    vendor/bin/phpstan analyse --memory-limit=2G $CHANGED_PHP_FILES
     ```
 
 ### For Playbook Scripts
