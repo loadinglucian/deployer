@@ -39,25 +39,28 @@ fi
 if [[ $framework == "laravel" ]]; then
 
 	#
-	# Ensure shared storage directories
+	# Ensure shared data
 	# ----
 
-	echo "→ Ensuring shared storage directories..."
+	echo "→ Ensuring shared data..."
+
 	mkdir -p "${DEPLOYER_SHARED_PATH}/storage/"{app,framework,logs}
 	mkdir -p "${DEPLOYER_SHARED_PATH}/storage/framework/"{cache,sessions,views}
 	"${DEPLOYER_PHP}" artisan storage:link
 
-	#
-	# SQLite Database (Optional)
-	# ----
-	# Uncomment if using SQLite
-	#
-	# echo "→ Ensuring shared SQLite database..."
-	# mkdir -p "${DEPLOYER_SHARED_PATH}/database"
-	# if [[ ! -f "${DEPLOYER_SHARED_PATH}/database/database.sqlite" ]]; then
-	# 	touch "${DEPLOYER_SHARED_PATH}/database/database.sqlite"
-	# fi
-	# ln -sf "${DEPLOYER_SHARED_PATH}/database/database.sqlite" "${DEPLOYER_RELEASE_PATH}/database/database.sqlite"
+	echo "→ Ensuring shared sqlite database..."
+	mkdir -p "${DEPLOYER_SHARED_PATH}/database"
+
+	shared_db="${DEPLOYER_SHARED_PATH}/database/database.sqlite"
+	touch "${shared_db}"
+
+	release_db="${DEPLOYER_RELEASE_PATH}/database/database.sqlite"
+	if [ ! -e "${release_db}" ] && [ ! -L "${release_db}" ]; then
+		ln -s "${shared_db}" "${release_db}"
+	fi
+
+	echo "→ Ensuring app key exists..."
+	php artisan key:generate || true
 
 	#
 	# Run migrations
@@ -81,8 +84,8 @@ fi
 # Uncomment as needed
 
 # if [[ $framework == "symfony" ]]; then
-# 	# Ensure shared directories
-# 	echo "→ Ensuring shared storage directories..."
+# 	# Ensure shared data
+# 	echo "→ Ensuring shared data..."
 # 	mkdir -p "${DEPLOYER_SHARED_PATH}/var/"{cache,log,sessions}
 #
 # 	# Run migrations
@@ -100,8 +103,8 @@ fi
 # Uncomment as needed
 
 # if [[ $framework == "codeigniter" ]]; then
-# 	# Ensure shared directories
-# 	echo "→ Ensuring shared storage directories..."
+# 	# Ensure shared data
+# 	echo "→ Ensuring shared data..."
 # 	mkdir -p "${DEPLOYER_SHARED_PATH}/writable/"{cache,logs,session,uploads}
 #
 # 	# Run migrations

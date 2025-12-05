@@ -118,6 +118,7 @@ class SiteSharedPushCommand extends BaseCommand
                 function () use ($server, $localPath, $remotePath, $remoteDir): void {
                     $this->runRemoteCommand($server, sprintf('mkdir -p %s', escapeshellarg($remoteDir)));
                     $this->ssh->uploadFile($server, $localPath, $remotePath);
+                    $this->runRemoteCommand($server, sprintf('chown deployer:deployer %s', escapeshellarg($remotePath)));
                     $this->runRemoteCommand($server, sprintf('chmod 640 %s', escapeshellarg($remotePath)));
                 },
                 'Uploading file...'
