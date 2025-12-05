@@ -226,7 +226,8 @@ clone_or_update_repo() {
 		fi
 	else
 		echo "→ Fetching latest changes..."
-		if ! run_as_deployer git --git-dir="$REPO_PATH" fetch --prune; then
+		run_as_deployer git --git-dir="$REPO_PATH" remote set-url origin "$DEPLOYER_SITE_REPO"
+		if ! run_as_deployer git --git-dir="$REPO_PATH" fetch origin '+refs/heads/*:refs/heads/*' --prune; then
 			fail "Failed to fetch repository updates"
 		fi
 	fi
@@ -343,9 +344,10 @@ run_hooks_sequence() {
 
 	build_release
 
+	run_hook '1-building.sh'
+
 	link_shared_resources
 
-	run_hook '1-building.sh'
 	run_hook '2-releasing.sh'
 
 	activate_release

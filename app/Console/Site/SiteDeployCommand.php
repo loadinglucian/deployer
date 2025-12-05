@@ -74,7 +74,7 @@ class SiteDeployCommand extends BaseCommand
         // Resolve repo and branch (prompt if not stored)
         // ----
 
-        $resolvedGit = $this->resolveRepoAndBranch($input, $site);
+        $resolvedGit = $this->gatherSiteDeets($input, $site);
 
         if (null === $resolvedGit) {
             return Command::FAILURE;
@@ -91,10 +91,26 @@ class SiteDeployCommand extends BaseCommand
         );
 
         //
+        // Save repo/branch to inventory if newly set
+        // ----
+
+        if ($needsUpdate) {
+            try {
+                $this->sites->update($site);
+            } catch (\RuntimeException $e) {
+                $this->warn('Could not update inventory: ' . $e->getMessage());
+            }
+        }
+
+        //
         // Display site details
         // ----
 
         $this->displaySiteDeets($site);
+
+        if ($needsUpdate) {
+            $this->yay('Repository info added to inventory');
+        }
 
         //
         // Check for deployment hooks in remote repository
@@ -114,11 +130,8 @@ class SiteDeployCommand extends BaseCommand
                 $this->out('  • ' . $hook);
             }
 
-            $this->out([
-                '  • Run <fg=cyan>scaffold:hooks</> to create them',
-                '  • Or continue deployment anyway...',
-                '',
-            ]);
+            $this->info("Run <fg=cyan>scaffold:hooks</> in your project to create them");
+            $this->io->write("\n");
 
             $skipConfirm = $this->io->getOptionOrPrompt(
                 'yes',
@@ -208,7 +221,7 @@ class SiteDeployCommand extends BaseCommand
         // Execute deployment playbook
         // ----
 
-        $result = $this->executePlaybookSilently(
+        $result = $this->executePlaybook(
             $server,
             'site-deploy',
             'Deploying site...',
@@ -228,23 +241,11 @@ class SiteDeployCommand extends BaseCommand
         }
 
         //
-        // Save repo/branch to inventory if newly set
-        // ----
-
-        if ($needsUpdate) {
-            try {
-                $this->sites->update($site);
-            } catch (\RuntimeException $e) {
-                $this->warn('Could not update inventory: ' . $e->getMessage());
-            }
-        }
-
-        //
         // Display results
         // ----
 
         $this->yay('Deployment completed');
-        $this->displayDeploymentSummary($result, $branch, (string) $phpVersion);
+        $this->displayDeploymentDeets($result, $branch, (string) $phpVersion);
 
         $this->out([
             'Next steps:',
@@ -277,7 +278,7 @@ class SiteDeployCommand extends BaseCommand
      *
      * @return array{0: string, 1: string, 2: bool}|null [repo, branch, needsUpdate] or null on failure
      */
-    private function resolveRepoAndBranch(InputInterface $input, SiteDTO $site): ?array
+    private function gatherSiteDeets(InputInterface $input, SiteDTO $site): ?array
     {
         $storedRepo = $site->repo;
         $storedBranch = $site->branch;
@@ -289,6 +290,10 @@ class SiteDeployCommand extends BaseCommand
             /** @var string|null $cliRepo */
             $cliRepo = $input->getOption('repo');
             $repo = (null !== $cliRepo && '' !== $cliRepo) ? $cliRepo : $storedRepo;
+
+            if ($repo !== $storedRepo) {
+                $needsUpdate = true;
+            }
         } else {
             // Not stored - prompt for it
             $defaultRepo = $this->git->detectRemoteUrl() ?? '';
@@ -319,6 +324,10 @@ class SiteDeployCommand extends BaseCommand
             /** @var string|null $cliBranch */
             $cliBranch = $input->getOption('branch');
             $branch = (null !== $cliBranch && '' !== $cliBranch) ? $cliBranch : $storedBranch;
+
+            if ($branch !== $storedBranch) {
+                $needsUpdate = true;
+            }
         } else {
             // Not stored - prompt for it
             $defaultBranch = $this->git->detectCurrentBranch() ?? 'main';
@@ -351,7 +360,7 @@ class SiteDeployCommand extends BaseCommand
      *
      * @param array<string, mixed> $result
      */
-    private function displayDeploymentSummary(array $result, string $branch, string $phpVersion): void
+    private function displayDeploymentDeets(array $result, string $branch, string $phpVersion): void
     {
         $lines = [
             'Branch' => $branch,
@@ -363,15 +372,15 @@ class SiteDeployCommand extends BaseCommand
         }
 
         if (isset($result['release_path']) && is_string($result['release_path'])) {
-            $lines['Release Path'] = $result['release_path'];
+            $lines['Path'] = $result['release_path'];
         }
 
         if (isset($result['current_path']) && is_string($result['current_path'])) {
-            $lines['Current Symlink'] = $result['current_path'];
+            $lines['Current'] = $result['current_path'];
         }
 
         $this->displayDeets($lines);
-        $this->out('');
+        $this->out('───');
     }
 
     private function resolveKeepReleases(InputInterface $input): ?int

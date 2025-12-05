@@ -2,17 +2,81 @@
 
 Server and site deployment tool for PHP. Composer package and CLI built on Symfony Console.
 
-## Quality Gates
+## Architecture
+
+```mermaid
+flowchart TD
+    bin/deployer --> Container --> SymfonyApp --> Commands
+    Commands --> Traits --> Services --> Repositories
+    Services --> DTOs
+    Commands -.-> playbooks[playbooks/]
+```
+
+```text
+app/
+├── Console/           # Commands
+│   ├── Server/        # Server management
+│   ├── Site/          # Site management
+│   └── Key/           # SSH key management
+├── Services/          # Business logic
+│   └── DigitalOcean/  # DO API wrapper
+├── Repositories/      # Inventory access
+├── DTOs/              # Readonly data objects
+├── Traits/            # Shared command behavior
+├── Contracts/         # BaseCommand
+├── Container.php      # DI auto-wiring
+└── SymfonyApp.php     # CLI registration
+playbooks/             # Remote bash scripts
+```
+
+| Layer        | Purpose                       | I/O         |
+| ------------ | ----------------------------- | ----------- |
+| Commands     | Orchestrate user interaction  | Yes         |
+| Traits       | Shared command operations     | Via Command |
+| Services     | Business logic, external APIs | No          |
+| Repositories | Inventory CRUD                | No          |
+| playbooks/   | Remote server provisioning    | Via SSH     |
+
+**Key Classes:**
+
+- `Container` - DI auto-wiring via reflection
+- `SymfonyApp` - Command registration, CLI entry
+- `BaseCommand` - Command infrastructure (injected services)
+- `ServerDTO`/`SiteDTO` - Immutable data objects
+- `ServerRepository`/`SiteRepository` - Inventory access
+
+**Command Domains:**
+
+- Server (9): add, delete, list, info, install, logs, run, ssh, provision:digitalocean
+- Site (8): create, delete, list, https, deploy, shared:push, shared:pull, ssh
+- Key (3): add:digitalocean, delete:digitalocean, list:digitalocean
+- Scaffold (1): hooks
+
+**External Integrations:**
+
+```mermaid
+flowchart LR
+    Commands --> SSHService --> phpseclib3
+    Commands --> DigitalOceanService --> DO-API
+    Commands --> GitService --> git-cli
+    Commands --> IOService --> laravel-prompts
+```
+
+## Rules
+
+All rules are MANDATORY.
+
+### Quality Gates
 
 **IMPORTANT:** After making changes to PHP files or playbooks, ALWAYS run the `quality-gatekeeper` agent before responding to the user. This is mandatory, not optional.
 
-## Code Philosophy
+### Code Philosophy
 
 - **Minimalism:** Write minimum code necessary. Eliminate single-use methods. Cache computed values.
 - **Organization:** Group related functions into comment-separated sections. Order alphabetically after grouping.
 - **Consistency:** Same style throughout. Code should appear written by single person.
 
-## PHP Standards
+### PHP Standards
 
 - PSR-12, strict types, PHP 8.x features (unions, match, attributes, readonly)
 - Explicit return types with generics: `Collection<int, User>`
@@ -39,7 +103,7 @@ $apiToken = $this->env->get(['API_TOKEN']);
 
 **Imports:** Always add `use` statements for vendor packages. Root namespace FQDNs acceptable (`\RuntimeException`).
 
-## Dependency Injection
+### Dependency Injection
 
 Use `$container->build(ClassName::class)` for all object creation except DTOs/value objects.
 
@@ -55,7 +119,7 @@ $command = $container->build(ServerAddCommand::class);
 
 **Integration:** Entry point: `bin/deployer`. Command registration: `app/SymfonyApp.php`. Services: Auto-injected via constructor.
 
-## Layer Separation
+### Layer Separation
 
 **Command Layer:**
 
@@ -83,7 +147,7 @@ $command = $container->build(ServerAddCommand::class);
 - All dependencies in constructor signatures
 - NO circular dependencies
 
-## Exception Handling
+### Exception Handling
 
 Services throw complete, user-facing exceptions. Commands display directly without adding prefixes.
 
@@ -141,13 +205,13 @@ protected function validateGitRepo(string $repo): void
 | Validation Traits             | No              | Return `?string` or throw      |
 | Commands/Orchestration Traits | Yes             | Catch & display without prefix |
 
-## Comments
+### Comments
 
 **DocBlock:** Minimalist descriptions, parameters, return types.
 
 **Comment structure:**
 
-```
+```text
 // ----
 // {h1}
 // ----
@@ -164,7 +228,7 @@ protected function validateGitRepo(string $repo): void
 
 Separate sections visually. No obvious comments. Remove comments when removing code.
 
-## File Operations
+### File Operations
 
 Use terminal commands for file management:
 
@@ -174,17 +238,17 @@ cp source.php dest.php  # Copy
 mkdir -p path/to/dir    # Create directories
 ```
 
-## Execution Protocol
+### Execution Protocol
 
 1. ULTRATHINK - analyze problem deeply
 2. STEP BY STEP - break into logical steps
 3. ACT - implement systematically
 
-## Test Policy
+### Test Policy
 
 Don't run, create, or update tests UNLESS explicitly instructed.
 
-## References
+### References
 
 - Check `composer.json` and `package.json` for installed packages
 - Plan with features from installed major versions

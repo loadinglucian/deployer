@@ -82,7 +82,7 @@ class SiteCreateCommand extends BaseCommand
         // Gather site details
         // ----
 
-        $siteInfo = $this->gatherSiteInfo($server->info);
+        $siteInfo = $this->gatherSiteDeets($server->info);
 
         if (null === $siteInfo) {
             return Command::FAILURE;
@@ -268,7 +268,7 @@ class SiteCreateCommand extends BaseCommand
      * @param array<string, mixed> $info Server information from serverInfo()
      * @return array{domain: string, phpVersion: string, wwwMode: string}|null
      */
-    protected function gatherSiteInfo(array $info): ?array
+    protected function gatherSiteDeets(array $info): ?array
     {
         /** @var string|null $domain */
         $domain = $this->io->getValidatedOptionOrPrompt(

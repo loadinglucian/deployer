@@ -126,6 +126,32 @@ config_caddy() {
 	fi
 }
 
+#
+# Caddy logrotate config
+# ----
+
+config_logrotate() {
+	echo "→ Setting up Caddy logrotate..."
+
+	local logrotate_config="/etc/logrotate.d/caddy-deployer"
+
+	if ! run_cmd tee "$logrotate_config" > /dev/null <<- 'EOF'; then
+		/var/log/caddy/access.log {
+		    daily
+		    rotate 5
+		    maxage 30
+		    missingok
+		    notifempty
+		    compress
+		    delaycompress
+		    copytruncate
+		}
+	EOF
+		echo "Error: Failed to create Caddy logrotate config" >&2
+		exit 1
+	fi
+}
+
 # ----
 # Main Execution
 # ----
@@ -134,6 +160,7 @@ main() {
 	# Execute installation tasks
 	install_packages
 	config_caddy
+	config_logrotate
 
 	# Write output YAML
 	if ! cat > "$DEPLOYER_OUTPUT_FILE" <<- EOF; then

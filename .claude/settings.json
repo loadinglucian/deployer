@@ -10,7 +10,8 @@
       "Skill",
       "Task",
       "SlashCommand",
-      "WebFetch"
+      "WebFetch",
+      "WebSearch"
     ],
     "ask": [
       "Bash(rm:*)",

@@ -153,6 +153,35 @@ configure_php_fpm() {
 }
 
 #
+# PHP-FPM logrotate config
+# ----
+
+config_logrotate() {
+	echo "→ Setting up PHP-FPM logrotate..."
+
+	local logrotate_config="/etc/logrotate.d/php-fpm-deployer"
+
+	if ! run_cmd tee "$logrotate_config" > /dev/null <<- 'EOF'; then
+		/var/log/php*-fpm.log {
+		    daily
+		    rotate 5
+		    maxage 30
+		    missingok
+		    notifempty
+		    compress
+		    delaycompress
+		    sharedscripts
+		    postrotate
+		        /bin/kill -SIGUSR1 $(cat /run/php/php*-fpm.pid 2>/dev/null) 2>/dev/null || true
+		    endscript
+		}
+	EOF
+		echo "Error: Failed to create PHP-FPM logrotate config" >&2
+		exit 1
+	fi
+}
+
+#
 # Default Version Configuration
 # ----
 
@@ -258,6 +287,7 @@ main() {
 	# Execute installation tasks
 	install_php_packages
 	configure_php_fpm
+	config_logrotate
 	set_as_default
 	install_composer
 	update_caddy_config

@@ -72,7 +72,7 @@ class ScaffoldHooksCommand extends BaseCommand
             return Command::FAILURE;
         }
 
-        $this->yay('Created deployment hooks in the destination directory');
+        $this->yay('Finished scaffolding deployment hooks');
 
         $this->commandReplay('scaffold:hooks', [
             'destination' => $destinationDir,
@@ -123,6 +123,5 @@ class ScaffoldHooksCommand extends BaseCommand
         }
 
         $this->displayDeets($status);
-        $this->out('');
     }
 }
