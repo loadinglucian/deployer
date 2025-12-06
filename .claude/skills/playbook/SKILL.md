@@ -103,15 +103,15 @@ All variables use `DEPLOYER_` prefix:
 
 These are automatically inlined from `helpers.sh`. Never manually inline helpers into playbook files.
 
-| Function | Purpose |
-|----------|---------|
-| `run_cmd` | Execute with appropriate permissions (root or sudo) |
-| `run_as_deployer` | Execute as deployer user with env preservation |
-| `fail "message"` | Print error and exit |
-| `detect_php_default` | Get default PHP version |
-| `wait_for_dpkg_lock` | Wait for package manager lock |
-| `apt_get_with_retry` | apt-get with automatic retry on lock |
-| `link_shared_resources` | Link shared resources to release |
+| Function                | Purpose                                             |
+| ----------------------- | --------------------------------------------------- |
+| `run_cmd`               | Execute with appropriate permissions (root or sudo) |
+| `run_as_deployer`       | Execute as deployer user with env preservation      |
+| `fail "message"`        | Print error and exit                                |
+| `detect_php_default`    | Get default PHP version                             |
+| `wait_for_dpkg_lock`    | Wait for package manager lock                       |
+| `apt_get_with_retry`    | apt-get with automatic retry on lock                |
+| `link_shared_resources` | Link shared resources to release                    |
 
 See `playbooks/server-info.sh` for a simple example.
 
@@ -327,7 +327,7 @@ for f in $(ls); do ...
 
 ### Formatting
 
-- Tabs for indentation
+- **Tabs for indentation** (`<<-` heredoc strips tabs only, not spaces)
 - Max 80 columns
 - Semicolons only in control statements
 - Max 1 blank line between sections
