@@ -40,16 +40,16 @@ export DEPLOYER_PERMS
 # ----
 
 delete_caddy_vhost() {
-	local domain=$1
-	local vhost_file="/etc/caddy/conf.d/sites/${domain}.caddy"
+  local domain=$1
+  local vhost_file="/etc/caddy/conf.d/sites/${domain}.caddy"
 
-	if run_cmd test -f "$vhost_file"; then
-		echo "→ Deleting Caddy configuration for ${domain}..."
-		if ! run_cmd rm -f "$vhost_file"; then
-			echo "Error: Failed to delete Caddy configuration" >&2
-			exit 1
-		fi
-	fi
+  if run_cmd test -f "$vhost_file"; then
+    echo "→ Deleting Caddy configuration for ${domain}..."
+    if ! run_cmd rm -f "$vhost_file"; then
+      echo "Error: Failed to delete Caddy configuration" >&2
+      exit 1
+    fi
+  fi
 }
 
 #
@@ -57,13 +57,13 @@ delete_caddy_vhost() {
 # ----
 
 reload_caddy() {
-	if systemctl is-active --quiet caddy 2> /dev/null; then
-		echo "→ Reloading services..."
-		if ! run_cmd systemctl reload caddy; then
-			echo "Error: Failed to reload services" >&2
-			exit 1
-		fi
-	fi
+  if systemctl is-active --quiet caddy 2> /dev/null; then
+    echo "→ Reloading services..."
+    if ! run_cmd systemctl reload caddy; then
+      echo "Error: Failed to reload services" >&2
+      exit 1
+    fi
+  fi
 }
 
 #
@@ -71,16 +71,16 @@ reload_caddy() {
 # ----
 
 delete_site_files() {
-	local domain=$1
-	local site_path="/home/deployer/sites/${domain}"
+  local domain=$1
+  local site_path="/home/deployer/sites/${domain}"
 
-	if run_cmd test -d "$site_path"; then
-		echo "→ Deleting site files for ${domain}..."
-		if ! run_cmd rm -rf "$site_path"; then
-			echo "Error: Failed to delete site files" >&2
-			exit 1
-		fi
-	fi
+  if run_cmd test -d "$site_path"; then
+    echo "→ Deleting site files for ${domain}..."
+    if ! run_cmd rm -rf "$site_path"; then
+      echo "Error: Failed to delete site files" >&2
+      exit 1
+    fi
+  fi
 }
 
 # ----
@@ -88,20 +88,20 @@ delete_site_files() {
 # ----
 
 main() {
-	local domain=$DEPLOYER_SITE_DOMAIN
+  local domain=$DEPLOYER_SITE_DOMAIN
 
-	# Execute cleanup tasks
-	delete_caddy_vhost "$domain"
-	reload_caddy
-	delete_site_files "$domain"
+  # Execute cleanup tasks
+  delete_caddy_vhost "$domain"
+  reload_caddy
+  delete_site_files "$domain"
 
-	# Write output YAML
-	if ! cat > "$DEPLOYER_OUTPUT_FILE" << EOF; then
+  # Write output YAML
+  if ! cat > "$DEPLOYER_OUTPUT_FILE" << EOF; then
 status: success
 EOF
-		echo "Error: Failed to write output file" >&2
-		exit 1
-	fi
+    echo "Error: Failed to write output file" >&2
+    exit 1
+  fi
 }
 
 main "$@"

@@ -327,7 +327,7 @@ for f in $(ls); do ...
 
 ### Formatting
 
-- Tabs for indentation
+- Two spaces for indentation
 - Max 80 columns
 - Semicolons only in control statements
 - Max 1 blank line between sections

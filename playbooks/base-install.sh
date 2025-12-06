@@ -38,27 +38,27 @@ export DEPLOYER_PERMS
 # ----
 
 install_packages() {
-	echo "→ Installing packages..."
+  echo "→ Installing packages..."
 
-	local common_packages=(curl zip unzip caddy git rsync)
-	local distro_packages
+  local common_packages=(curl zip unzip caddy git rsync)
+  local distro_packages
 
-	case $DEPLOYER_DISTRO in
-		ubuntu)
-			distro_packages=(software-properties-common)
-			if ! apt_get_with_retry install -y "${common_packages[@]}" "${distro_packages[@]}"; then
-				echo "Error: Failed to install packages" >&2
-				exit 1
-			fi
-			;;
-		debian)
-			distro_packages=(apt-transport-https lsb-release ca-certificates)
-			if ! apt_get_with_retry install -y "${common_packages[@]}" "${distro_packages[@]}"; then
-				echo "Error: Failed to install packages" >&2
-				exit 1
-			fi
-			;;
-	esac
+  case $DEPLOYER_DISTRO in
+    ubuntu)
+      distro_packages=(software-properties-common)
+      if ! apt_get_with_retry install -y "${common_packages[@]}" "${distro_packages[@]}"; then
+        echo "Error: Failed to install packages" >&2
+        exit 1
+      fi
+      ;;
+    debian)
+      distro_packages=(apt-transport-https lsb-release ca-certificates)
+      if ! apt_get_with_retry install -y "${common_packages[@]}" "${distro_packages[@]}"; then
+        echo "Error: Failed to install packages" >&2
+        exit 1
+      fi
+      ;;
+  esac
 }
 
 #
@@ -66,64 +66,64 @@ install_packages() {
 # ----
 
 config_caddy() {
-	echo "→ Setting up Caddy base config..."
+  echo "→ Setting up Caddy base config..."
 
-	#
-	# Create directory structure
+  #
+  # Create directory structure
 
-	if ! run_cmd mkdir -p /etc/caddy/conf.d/sites; then
-		echo "Error: Failed to create Caddy config directories" >&2
-		exit 1
-	fi
+  if ! run_cmd mkdir -p /etc/caddy/conf.d/sites; then
+    echo "Error: Failed to create Caddy config directories" >&2
+    exit 1
+  fi
 
-	#
-	# Create main Caddyfile with global settings and imports
+  #
+  # Create main Caddyfile with global settings and imports
 
-	# Check if our custom config is already in place
-	if ! grep -q "import conf.d/localhost.caddy" /etc/caddy/Caddyfile 2> /dev/null; then
-		echo "→ Creating Caddyfile with custom configuration..."
-		if ! run_cmd tee /etc/caddy/Caddyfile > /dev/null <<- 'EOF'; then
-			{
-				metrics
+  # Check if our custom config is already in place
+  if ! grep -q "import conf.d/localhost.caddy" /etc/caddy/Caddyfile 2> /dev/null; then
+    echo "→ Creating Caddyfile with custom configuration..."
+    if ! run_cmd tee /etc/caddy/Caddyfile > /dev/null <<- 'EOF'; then
+      {
+        metrics
 
-				log {
-					output file /var/log/caddy/access.log
-					format json
-				}
-			}
+        log {
+          output file /var/log/caddy/access.log
+          format json
+        }
+      }
 
-			# Import localhost-only endpoints (monitoring, status pages)
-			import conf.d/localhost.caddy
+      # Import localhost-only endpoints (monitoring, status pages)
+      import conf.d/localhost.caddy
 
-			# Import all site configurations
-			import conf.d/sites/*.caddy
-		EOF
-			echo "Error: Failed to create main Caddyfile" >&2
-			exit 1
-		fi
-	fi
+      # Import all site configurations
+      import conf.d/sites/*.caddy
+    EOF
+      echo "Error: Failed to create main Caddyfile" >&2
+      exit 1
+    fi
+  fi
 
-	# Create localhost.caddy - monitoring endpoints only accessible via localhost
-	# (PHP-FPM status endpoint will be added by PHP installation playbook)
-	if ! run_cmd test -f /etc/caddy/conf.d/localhost.caddy; then
-		if ! run_cmd tee /etc/caddy/conf.d/localhost.caddy > /dev/null <<- 'EOF'; then
-			# PHP-FPM status endpoints - localhost only (not accessible from internet)
-			http://localhost:9001 {
-				#### DEPLOYER-PHP CONFIG, WARRANTY VOID IF REMOVED :) ####
-			}
-		EOF
-			echo "Error: Failed to create localhost.caddy" >&2
-			exit 1
-		fi
-	fi
+  # Create localhost.caddy - monitoring endpoints only accessible via localhost
+  # (PHP-FPM status endpoint will be added by PHP installation playbook)
+  if ! run_cmd test -f /etc/caddy/conf.d/localhost.caddy; then
+    if ! run_cmd tee /etc/caddy/conf.d/localhost.caddy > /dev/null <<- 'EOF'; then
+      # PHP-FPM status endpoints - localhost only (not accessible from internet)
+      http://localhost:9001 {
+        #### DEPLOYER-PHP CONFIG, WARRANTY VOID IF REMOVED :) ####
+      }
+    EOF
+      echo "Error: Failed to create localhost.caddy" >&2
+      exit 1
+    fi
+  fi
 
-	# Reload Caddy to apply configuration changes
-	if systemctl is-active --quiet caddy 2> /dev/null; then
-		echo "→ Reloading Caddy configuration..."
-		if ! run_cmd systemctl reload caddy 2> /dev/null; then
-			echo "Warning: Failed to reload Caddy configuration"
-		fi
-	fi
+  # Reload Caddy to apply configuration changes
+  if systemctl is-active --quiet caddy 2> /dev/null; then
+    echo "→ Reloading Caddy configuration..."
+    if ! run_cmd systemctl reload caddy 2> /dev/null; then
+      echo "Warning: Failed to reload Caddy configuration"
+    fi
+  fi
 }
 
 #
@@ -131,25 +131,25 @@ config_caddy() {
 # ----
 
 config_logrotate() {
-	echo "→ Setting up Caddy logrotate..."
+  echo "→ Setting up Caddy logrotate..."
 
-	local logrotate_config="/etc/logrotate.d/caddy-deployer"
+  local logrotate_config="/etc/logrotate.d/caddy-deployer"
 
-	if ! run_cmd tee "$logrotate_config" > /dev/null <<- 'EOF'; then
-		/var/log/caddy/access.log {
-		    daily
-		    rotate 5
-		    maxage 30
-		    missingok
-		    notifempty
-		    compress
-		    delaycompress
-		    copytruncate
-		}
-	EOF
-		echo "Error: Failed to create Caddy logrotate config" >&2
-		exit 1
-	fi
+  if ! run_cmd tee "$logrotate_config" > /dev/null <<- 'EOF'; then
+    /var/log/caddy/access.log {
+        daily
+        rotate 5
+        maxage 30
+        missingok
+        notifempty
+        compress
+        delaycompress
+        copytruncate
+    }
+  EOF
+    echo "Error: Failed to create Caddy logrotate config" >&2
+    exit 1
+  fi
 }
 
 # ----
@@ -157,18 +157,18 @@ config_logrotate() {
 # ----
 
 main() {
-	# Execute installation tasks
-	install_packages
-	config_caddy
-	config_logrotate
+  # Execute installation tasks
+  install_packages
+  config_caddy
+  config_logrotate
 
-	# Write output YAML
-	if ! cat > "$DEPLOYER_OUTPUT_FILE" <<- EOF; then
-		status: success
-	EOF
-		echo "Error: Failed to write output file" >&2
-		exit 1
-	fi
+  # Write output YAML
+  if ! cat > "$DEPLOYER_OUTPUT_FILE" <<- EOF; then
+    status: success
+  EOF
+    echo "Error: Failed to write output file" >&2
+    exit 1
+  fi
 }
 
 main "$@"

@@ -32,24 +32,24 @@ export DEPLOYER_PERMS
 # ----
 
 main() {
-	if command -v bun > /dev/null 2>&1; then
-		echo "Bun is already installed (run 'bun upgrade' manually to upgrade if needed)"
-	else
-		echo "→ Installing Bun..."
-		# Install Bun system-wide to /usr/local
-		if ! curl -fsSL https://bun.sh/install | run_cmd env BUN_INSTALL=/usr/local bash; then
-			echo "Error: Failed to install Bun" >&2
-			exit 1
-		fi
-	fi
+  if command -v bun > /dev/null 2>&1; then
+    echo "Bun is already installed (run 'bun upgrade' manually to upgrade if needed)"
+  else
+    echo "→ Installing Bun..."
+    # Install Bun system-wide to /usr/local
+    if ! curl -fsSL https://bun.sh/install | run_cmd env BUN_INSTALL=/usr/local bash; then
+      echo "Error: Failed to install Bun" >&2
+      exit 1
+    fi
+  fi
 
-	# Write output YAML
-	if ! cat > "$DEPLOYER_OUTPUT_FILE" <<- EOF; then
-		status: success
-	EOF
-		echo "Error: Failed to write output file" >&2
-		exit 1
-	fi
+  # Write output YAML
+  if ! cat > "$DEPLOYER_OUTPUT_FILE" <<- EOF; then
+    status: success
+  EOF
+    echo "Error: Failed to write output file" >&2
+    exit 1
+  fi
 }
 
 main "$@"
