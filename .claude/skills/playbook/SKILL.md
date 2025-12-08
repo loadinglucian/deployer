@@ -115,6 +115,19 @@ These are automatically inlined from `helpers.sh`. Never manually inline helpers
 
 See `playbooks/server-info.sh` for a simple example.
 
+### Helper Placeholder Comment
+
+Include this comment block after header validation in every playbook:
+
+```bash
+# Shared helpers are automatically inlined when executing playbooks remotely
+# source "$(dirname "$0")/helpers.sh"
+```
+
+- Required in all playbooks using helper functions
+- PHP runtime inlines helpers at this location
+- Never actually source the file or remove this comment
+
 ## Non-Interactive Operation
 
 Playbooks must never prompt for user input:
