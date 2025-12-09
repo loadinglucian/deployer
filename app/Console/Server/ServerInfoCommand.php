@@ -145,7 +145,7 @@ class ServerInfoCommand extends BaseCommand
 
         $this->displayDeets(['Services' => $services]);
 
-        $this->displayFirewallStatus($info);
+        $this->displayFirewallDeets($info);
 
         // Display Caddy information if available
         if (isset($info['caddy']) && is_array($info['caddy']) && ($info['caddy']['available'] ?? false) === true) {
@@ -320,74 +320,6 @@ class ServerInfoCommand extends BaseCommand
                 $this->displayDeets(['Sites' => $sitesItems]);
             }
         }
-    }
-
-    /**
-     * Display firewall status and open ports.
-     *
-     * @param  array<string, mixed>  $info
-     */
-    private function displayFirewallStatus(array $info): void
-    {
-        /** @var bool $ufwInstalled */
-        $ufwInstalled = filter_var($info['ufw_installed'] ?? false, FILTER_VALIDATE_BOOLEAN);
-
-        if (!$ufwInstalled) {
-            $this->displayDeets([
-                'Firewall' => 'Not installed',
-            ]);
-
-            return;
-        }
-
-        /** @var bool $ufwActive */
-        $ufwActive = filter_var($info['ufw_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
-
-        if (!$ufwActive) {
-            $this->displayDeets([
-                'Firewall' => 'Inactive',
-            ]);
-
-            return;
-        }
-
-        $this->displayDeets(['Firewall' => 'Active']);
-
-        /** @var array<int, string> $ufwRules */
-        $ufwRules = $info['ufw_rules'] ?? [];
-        /** @var array<int|string, string> $ports */
-        $ports = $info['ports'] ?? [];
-
-        if ([] === $ufwRules) {
-            $this->displayDeets(['Open Ports' => 'None']);
-        } else {
-            $openPorts = [];
-            foreach ($this->extractPortsFromRules($ufwRules) as $port) {
-                $process = $ports[$port] ?? 'unknown';
-                $openPorts["Port {$port}"] = $process;
-            }
-
-            $this->displayDeets(['Open Ports' => $openPorts]);
-        }
-    }
-
-    /**
-     * Extract port numbers from UFW rule strings.
-     *
-     * @param array<int, string> $rules UFW rules in format "port/proto" (e.g., "22/tcp")
-     * @return array<int, int> List of port numbers
-     */
-    private function extractPortsFromRules(array $rules): array
-    {
-        $ports = [];
-
-        foreach ($rules as $rule) {
-            if (preg_match('/^(\d+)/', $rule, $matches)) {
-                $ports[] = (int) $matches[1];
-            }
-        }
-
-        return $ports;
     }
 
     /**

@@ -99,7 +99,7 @@ class ServerFirewallCommand extends BaseCommand
         // Display current status (F13)
         // ----
 
-        $this->displayCurrentStatus($ufwInstalled, $ufwActive, $ufwRules, $ports);
+        $this->displayFirewallDeets($detection);
 
         //
         // Build port options for selection
@@ -202,52 +202,6 @@ class ServerFirewallCommand extends BaseCommand
     }
 
     // ----
-    // Display Methods
-    // ----
-
-    /**
-     * Display current UFW status (F13).
-     *
-     * @param bool $ufwInstalled Whether UFW is installed
-     * @param bool $ufwActive Whether UFW is active
-     * @param array<int, string> $ufwRules Current UFW rules
-     * @param array<int|string, string> $ports Port => process mapping
-     */
-    private function displayCurrentStatus(bool $ufwInstalled, bool $ufwActive, array $ufwRules, array $ports): void
-    {
-        if (!$ufwInstalled) {
-            $this->displayDeets([
-                'Firewall' => 'Not installed',
-            ]);
-
-            return;
-        }
-
-        if (!$ufwActive) {
-            $this->displayDeets([
-                'Firewall' => 'Inactive',
-            ]);
-
-            return;
-        }
-
-        // UFW is active - show rules
-        $this->displayDeets(['Firewall' => 'Active']);
-
-        if ([] === $ufwRules) {
-            $this->displayDeets(['Open Ports' => 'None']);
-        } else {
-            $openPorts = [];
-            foreach ($this->extractPortsFromRules($ufwRules) as $port) {
-                $process = $ports[$port] ?? 'unknown';
-                $openPorts["Port {$port}"] = $process;
-            }
-
-            $this->displayDeets(['Open Ports' => $openPorts]);
-        }
-    }
-
-    // ----
     // Port Filtering Methods
     // ----
 
@@ -296,26 +250,6 @@ class ServerFirewallCommand extends BaseCommand
         }
 
         return $defaults;
-    }
-
-    /**
-     * Extract port numbers from UFW rule strings.
-     *
-     * @param array<int, string> $rules UFW rules in format "port/proto" (e.g., "22/tcp")
-     * @return array<int, int> List of port numbers
-     */
-    private function extractPortsFromRules(array $rules): array
-    {
-        $ports = [];
-
-        foreach ($rules as $rule) {
-            // Extract port from "port/proto" format
-            if (preg_match('/^(\d+)/', $rule, $matches)) {
-                $ports[] = (int) $matches[1];
-            }
-        }
-
-        return $ports;
     }
 
     // ----
