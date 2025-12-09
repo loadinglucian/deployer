@@ -92,11 +92,14 @@ class ServerFirewallCommand extends BaseCommand
         /** @var array<int|string, string> $ports */
         $ports = $detection['ports'] ?? [];
 
+        // Extract current UFW ports once for reuse
+        $currentUfwPorts = $this->extractPortsFromRules($ufwRules);
+
         //
         // Display current status (F13)
         // ----
 
-        $this->displayCurrentStatus($ufwInstalled, $ufwActive, $ufwRules);
+        $this->displayCurrentStatus($ufwInstalled, $ufwActive, $ufwRules, $ports);
 
         //
         // Build port options for selection
@@ -131,7 +134,6 @@ class ServerFirewallCommand extends BaseCommand
                 $selectedPorts = [];
             } else {
                 // Get default pre-selected ports (F5)
-                $currentUfwPorts = $this->extractPortsFromRules($ufwRules);
                 $defaultPorts = $this->getDefaultPorts(array_keys($selectablePorts), $currentUfwPorts);
 
                 // Prompt user for port selection (F3)
@@ -146,7 +148,6 @@ class ServerFirewallCommand extends BaseCommand
         /** @var bool $force */
         $force = $input->getOption('force');
 
-        $currentUfwPorts = $this->extractPortsFromRules($ufwRules);
         $confirmed = $this->displayConfirmation($selectedPorts, $currentUfwPorts, $sshPort, $force);
 
         if (!$confirmed) {
@@ -218,12 +219,13 @@ class ServerFirewallCommand extends BaseCommand
      * @param bool $ufwInstalled Whether UFW is installed
      * @param bool $ufwActive Whether UFW is active
      * @param array<int, string> $ufwRules Current UFW rules
+     * @param array<int|string, string> $ports Port => process mapping
      */
-    private function displayCurrentStatus(bool $ufwInstalled, bool $ufwActive, array $ufwRules): void
+    private function displayCurrentStatus(bool $ufwInstalled, bool $ufwActive, array $ufwRules, array $ports): void
     {
         if (!$ufwInstalled) {
             $this->displayDeets([
-                'UFW Status' => 'Not installed',
+                'Firewall Status' => 'Not installed',
             ]);
             $this->out('');
 
@@ -232,7 +234,7 @@ class ServerFirewallCommand extends BaseCommand
 
         if (!$ufwActive) {
             $this->displayDeets([
-                'UFW Status' => 'Inactive',
+                'Firewall Status' => 'Inactive',
             ]);
             $this->out('');
 
@@ -240,13 +242,18 @@ class ServerFirewallCommand extends BaseCommand
         }
 
         // UFW is active - show rules
-        $rulesDisplay = [] === $ufwRules ? 'None' : implode(', ', $ufwRules);
+        $this->displayDeets(['Firewall Status' => 'Active']);
 
-        $this->displayDeets([
-            'UFW Status' => 'Active',
-            'Current rules' => $rulesDisplay,
-        ]);
-        $this->out('');
+        if ([] === $ufwRules) {
+            $this->displayDeets(['Open Ports' => 'None']);
+        } else {
+            $openPorts = [];
+            foreach ($this->extractPortsFromRules($ufwRules) as $port) {
+                $process = $ports[$port] ?? 'unknown';
+                $openPorts["Port {$port}"] = $process;
+            }
+            $this->displayDeets(['Open Ports' => $openPorts]);
+        }
     }
 
     // ----
@@ -342,7 +349,7 @@ class ServerFirewallCommand extends BaseCommand
         // Get selected ports from user
         /** @var array<int, int> $selected */
         $selected = $this->io->promptMultiselect(
-            label: 'Select ports to allow (SSH port is always allowed):',
+            label: 'Select ports to open (the SSH port will always remain open):',
             options: $options,
             default: $defaultPorts,
             scroll: 10,
