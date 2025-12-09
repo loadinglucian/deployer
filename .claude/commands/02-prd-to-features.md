@@ -4,7 +4,7 @@ model: opus
 allowedTools: ['Read', 'Write', 'Glob', 'AskUserQuestion']
 ---
 
-Extract features from a PRD into FEATURES.md, organized around user journeys.
+Extract features from a PRD into 02-FEATURES.md, organized around user journeys.
 
 Ask clarifying questions if User Journeys section is missing or unclear.
 
@@ -41,7 +41,7 @@ Ask clarifying questions if User Journeys section is missing or unclear.
 - List which journeys use it
 - Define acceptance criteria from journey context
 
-## FEATURES.md Template
+## 02-FEATURES.md Template
 
 ````markdown
 # Features - {Product Name}
@@ -123,9 +123,9 @@ Longest blocking chain - prioritize for early implementation:
 
 ## Output
 
-1. FEATURES.md following template above
+1. 02-FEATURES.md following template above
 2. Every PRD requirement mapped to at least one feature
 3. Every feature mapped to at least one journey (or marked standalone)
 
-Save to same directory as PRD: `docs/{feature-name}/FEATURES.md`
+Save to same directory as PRD: `docs/{feature-name}/02-FEATURES.md`
 ```

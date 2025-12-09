@@ -4,16 +4,16 @@
 
 The `server:firewall` command provides interactive UFW management through a single playbook with detect/apply modes. Users select ports via multiselect prompt, with SSH port automatically protected.
 
-**Source:** [PRD](./PRD.md) | [FEATURES](./FEATURES.md) | [SPEC](./SPEC.md)
+**Source:** [PRD](./01-PRD.md) | [FEATURES](./02-FEATURES.md) | [SPEC](./03-SPEC.md)
 
 ## File Changes
 
-| Type | File | Purpose |
-| ---- | ---- | ------- |
-| Mod | `playbooks/helpers.sh` | Add `get_listening_services()` function |
-| Mod | `playbooks/server-info.sh` | Remove inline `get_listening_services()`, use shared helper |
-| New | `playbooks/server-firewall.sh` | UFW detection and rule application |
-| New | `app/Console/Server/ServerFirewallCommand.php` | Interactive firewall configuration command |
+| Type | File                                           | Purpose                                                     |
+| ---- | ---------------------------------------------- | ----------------------------------------------------------- |
+| Mod  | `playbooks/helpers.sh`                         | Add `get_listening_services()` function                     |
+| Mod  | `playbooks/server-info.sh`                     | Remove inline `get_listening_services()`, use shared helper |
+| New  | `playbooks/server-firewall.sh`                 | UFW detection and rule application                          |
+| New  | `app/Console/Server/ServerFirewallCommand.php` | Interactive firewall configuration command                  |
 
 ## Prerequisites
 
@@ -29,7 +29,7 @@ The `server:firewall` command provides interactive UFW management through a sing
 
 | Features | F12 (Shared Port Detection Helper) |
 | -------- | ---------------------------------- |
-| Branch   | `server-firewall/milestone-1` |
+| Branch   | `server-firewall/milestone-1`      |
 
 **Deliverables:**
 
@@ -57,7 +57,7 @@ The `server:firewall` command provides interactive UFW management through a sing
 
 | Features | F1 (Port Detection), F2 (UFW Status Detection) |
 | -------- | ---------------------------------------------- |
-| Branch   | `server-firewall/milestone-2` |
+| Branch   | `server-firewall/milestone-2`                  |
 
 **Deliverables:**
 
@@ -67,13 +67,13 @@ The `server:firewall` command provides interactive UFW management through a sing
 
 1. Create playbook skeleton with shebang, header comment, env validation (`DEPLOYER_OUTPUT_FILE`, `DEPLOYER_MODE`)
 2. Implement `get_ufw_status()` function:
-   - Check `command -v ufw` for installation
-   - Parse `ufw status` for enabled state
-   - Parse `ufw status numbered` to extract allowed ports (handle IPv4/IPv6 dedup)
+    - Check `command -v ufw` for installation
+    - Parse `ufw status` for enabled state
+    - Parse `ufw status numbered` to extract allowed ports (handle IPv4/IPv6 dedup)
 3. Implement `detect_mode()`:
-   - Call `get_listening_services()` from helpers
-   - Call `get_ufw_status()`
-   - Output YAML per SPEC.md §F1: `status`, `ufw_installed`, `ufw_enabled`, `ufw_open_ports`, `ports`
+    - Call `get_listening_services()` from helpers
+    - Call `get_ufw_status()`
+    - Output YAML per 03-SPEC.md §F1: `status`, `ufw_installed`, `ufw_enabled`, `ufw_open_ports`, `ports`
 4. Wire main() to switch on `DEPLOYER_MODE=detect`
 
 **Integration:** Sources helpers via comment placeholder (PHP inlines automatically)
@@ -93,7 +93,7 @@ The `server:firewall` command provides interactive UFW management through a sing
 
 | Features | F4 (SSH Port Protection), F7 (UFW Installation), F8 (Apply Rules), F9 (IPv4/IPv6) |
 | -------- | --------------------------------------------------------------------------------- |
-| Branch   | `server-firewall/milestone-3` |
+| Branch   | `server-firewall/milestone-3`                                                     |
 
 **Deliverables:**
 
@@ -103,24 +103,24 @@ The `server:firewall` command provides interactive UFW management through a sing
 
 1. Add env var validation for apply mode: `DEPLOYER_SSH_PORT`, `DEPLOYER_ALLOWED_PORTS`
 2. Implement `validate_ssh_port()`:
-   - Fail if `DEPLOYER_SSH_PORT` not set
-   - Fail if SSH port not in `DEPLOYER_ALLOWED_PORTS` (defense in depth)
+    - Fail if `DEPLOYER_SSH_PORT` not set
+    - Fail if SSH port not in `DEPLOYER_ALLOWED_PORTS` (defense in depth)
 3. Implement `install_ufw()`:
-   - Use `apt_get_with_retry install -y -q ufw`
-   - Display progress message
-4. Implement `apply_ufw_rules()` with SSH-safe reset sequence per SPEC.md §F8:
-   - `ufw allow $SSH_PORT/tcp` (before reset)
-   - `ufw --force reset`
-   - `ufw allow $SSH_PORT/tcp` (after reset)
-   - `ufw default deny incoming`
-   - `ufw default allow outgoing`
-   - Loop: `ufw allow $port/tcp` for each allowed port
-   - `ufw --force enable`
+    - Use `apt_get_with_retry install -y -q ufw`
+    - Display progress message
+4. Implement `apply_ufw_rules()` with SSH-safe reset sequence per 03-SPEC.md §F8:
+    - `ufw allow $SSH_PORT/tcp` (before reset)
+    - `ufw --force reset`
+    - `ufw allow $SSH_PORT/tcp` (after reset)
+    - `ufw default deny incoming`
+    - `ufw default allow outgoing`
+    - Loop: `ufw allow $port/tcp` for each allowed port
+    - `ufw --force enable`
 5. Implement `apply_mode()`:
-   - Call `validate_ssh_port()`
-   - Call `install_ufw()` if needed
-   - Call `apply_ufw_rules()`
-   - Output YAML: `status`, `ufw_installed`, `ufw_enabled`, `rules_applied`
+    - Call `validate_ssh_port()`
+    - Call `install_ufw()` if needed
+    - Call `apply_ufw_rules()`
+    - Output YAML: `status`, `ufw_installed`, `ufw_enabled`, `rules_applied`
 6. Wire main() to switch on `DEPLOYER_MODE=apply`
 
 **Integration:** Uses `apt_get_with_retry` and `run_cmd` from helpers.sh
@@ -142,7 +142,7 @@ The `server:firewall` command provides interactive UFW management through a sing
 
 | Features | F3 (Multi-select Prompt), F5 (Default Ports), F6 (Confirmation Summary) |
 | -------- | ----------------------------------------------------------------------- |
-| Branch   | `server-firewall/milestone-4` |
+| Branch   | `server-firewall/milestone-4`                                           |
 
 **Deliverables:**
 
@@ -153,22 +153,22 @@ The `server:firewall` command provides interactive UFW management through a sing
 1. Create command skeleton with `#[AsCommand]`, traits (`ServersTrait`, `PlaybooksTrait`)
 2. Implement `configure()`: add `--server` option
 3. Implement `execute()` flow:
-   - Call `selectServer()` to get ServerDTO
-   - Execute playbook with `DEPLOYER_MODE=detect`
-   - Parse YAML response for ports, UFW status
+    - Call `selectServer()` to get ServerDTO
+    - Execute playbook with `DEPLOYER_MODE=detect`
+    - Parse YAML response for ports, UFW status
 4. Implement `buildPortOptions(array $ports, int $sshPort)`:
-   - Filter out SSH port
-   - Format as `Port {port} ({process})` per SPEC.md §F3
+    - Filter out SSH port
+    - Format as `Port {port} ({process})` per 03-SPEC.md §F3
 5. Implement `getDefaultPorts(array $ports, array $ufwOpenPorts)`:
-   - Merge UFW open ports + 80/443 if listening
-   - Filter out SSH port
+    - Merge UFW open ports + 80/443 if listening
+    - Filter out SSH port
 6. Display multiselect prompt via `IOService::promptMultiselect()` with hint
 7. Implement `calculateChanges(array $selected, array $ufwOpenPorts)`:
-   - Return `[opening, closing]` arrays
+    - Return `[opening, closing]` arrays
 8. Implement `displayConfirmation()`:
-   - Show opening/closing ports per SPEC.md §F6 format
-   - Show "SSH port will remain open" message
-   - Handle "No changes needed" case
+    - Show opening/closing ports per 03-SPEC.md §F6 format
+    - Show "SSH port will remain open" message
+    - Handle "No changes needed" case
 9. Implement confirmation via `IOService::promptConfirm()`
 10. Build allowed ports: merge selected + SSH port
 11. Execute playbook with `DEPLOYER_MODE=apply`, pass `DEPLOYER_SSH_PORT`, `DEPLOYER_ALLOWED_PORTS`
@@ -197,7 +197,7 @@ The `server:firewall` command provides interactive UFW management through a sing
 
 | Features | F10 (CLI --allow Option), F11 (Filter Invalid Ports), F14 (Common Port Labels) |
 | -------- | ------------------------------------------------------------------------------ |
-| Branch   | `server-firewall/milestone-5` |
+| Branch   | `server-firewall/milestone-5`                                                  |
 
 **Deliverables:**
 
@@ -209,16 +209,16 @@ The `server:firewall` command provides interactive UFW management through a sing
 
 1. Add `--allow` option in `configure()`: `InputOption::VALUE_REQUIRED`
 2. Implement `parseAllowOption(string $value)`:
-   - Split by comma
-   - Filter to integers
-   - Deduplicate
+    - Split by comma
+    - Filter to integers
+    - Deduplicate
 3. Implement `filterToListening(array $requested, array $detected)`:
-   - Use `array_intersect()` to keep only listening ports
-   - Display warning for each filtered port via `$this->warn()`
+    - Use `array_intersect()` to keep only listening ports
+    - Display warning for each filtered port via `$this->warn()`
 4. Modify `execute()`:
-   - If `--allow` provided, parse and filter
-   - Skip multiselect prompt
-   - Proceed to confirmation
+    - If `--allow` provided, parse and filter
+    - Skip multiselect prompt
+    - Proceed to confirmation
 5. Add `PORT_LABELS` constant for common ports (22, 80, 443, 3306, 5432, 6379, 27017)
 6. Update `buildPortOptions()` to include label if different from process name
 
@@ -235,26 +235,26 @@ The `server:firewall` command provides interactive UFW management through a sing
 
 ## Implementation Notes
 
-**Error Handling (from SPEC.md §Error Handling Summary):**
+**Error Handling (from 03-SPEC.md §Error Handling Summary):**
 
-| Location | Condition | Exit |
-| -------- | --------- | ---- |
-| PHP | Server not found | 1 |
-| PHP | User declines confirmation | 0 (silent) |
-| Playbook | SSH port env missing | 1 |
-| Playbook | SSH port not in allowed | 1 |
-| Playbook | UFW command fails | 1 |
+| Location | Condition                  | Exit       |
+| -------- | -------------------------- | ---------- |
+| PHP      | Server not found           | 1          |
+| PHP      | User declines confirmation | 0 (silent) |
+| Playbook | SSH port env missing       | 1          |
+| Playbook | SSH port not in allowed    | 1          |
+| Playbook | UFW command fails          | 1          |
 
 **Defense in Depth:** SSH port validated in both PHP command and bash playbook. The playbook validation catches bugs in the PHP code.
 
 **Playbook Env Vars:**
 
-| Variable | Mode | Description |
-| -------- | ---- | ----------- |
-| `DEPLOYER_OUTPUT_FILE` | Both | YAML output path |
-| `DEPLOYER_MODE` | Both | `detect` or `apply` |
-| `DEPLOYER_PERMS` | Both | `root` or `sudo` |
-| `DEPLOYER_SSH_PORT` | Apply | SSH port to protect |
+| Variable                 | Mode  | Description           |
+| ------------------------ | ----- | --------------------- |
+| `DEPLOYER_OUTPUT_FILE`   | Both  | YAML output path      |
+| `DEPLOYER_MODE`          | Both  | `detect` or `apply`   |
+| `DEPLOYER_PERMS`         | Both  | `root` or `sudo`      |
+| `DEPLOYER_SSH_PORT`      | Apply | SSH port to protect   |
 | `DEPLOYER_ALLOWED_PORTS` | Apply | Comma-separated ports |
 
 ## Completion Criteria

@@ -4,15 +4,17 @@ model: opus
 allowedTools: ['Read', 'Write', 'Glob', 'AskUserQuestion']
 ---
 
+**Load skills:** @.claude/skills/command @.claude/skills/playbook @.claude/skills/testing
+
 # Technical Specification
 
-Create SPEC.md from PRD and FEATURES documents.
+Create 03-SPEC.md from PRD and FEATURES documents.
 
 ## Process
 
-1. Read PRD.md and FEATURES.md from `docs/{feature}/`
+1. Read 01-PRD.md and 02-FEATURES.md from `docs/{feature}/`
 2. Ask clarifying questions (1-2 rounds max)
-3. Generate SPEC.md in same directory
+3. Generate 03-SPEC.md in same directory
 
 ## Questions
 
@@ -27,7 +29,7 @@ Create SPEC.md from PRD and FEATURES documents.
 - Complex error handling
 - State management concerns
 
-## SPEC.md Template
+## 03-SPEC.md Template
 
 ````markdown
 # Technical Specification - {Product Name}
@@ -57,12 +59,12 @@ Create SPEC.md from PRD and FEATURES documents.
 
 ### F{n}: {Feature Name}
 
-| Attribute      | Value             |
-| -------------- | ----------------- |
-| Source         | FEATURES.md §F{n} |
-| Components     | {list}            |
-| New Files      | {list or None}    |
-| Modified Files | {list or None}    |
+| Attribute      | Value                |
+| -------------- | -------------------- |
+| Source         | 02-FEATURES.md §F{n} |
+| Components     | {list}               |
+| New Files      | {list or None}       |
+| Modified Files | {list or None}       |
 
 **Interface Contract:**
 
@@ -76,9 +78,9 @@ Create SPEC.md from PRD and FEATURES documents.
 
 **Playbook Contract:** _(if applicable)_
 
-| Variable | Type | Required | Description |
-| -------- | ---- | -------- | ----------- |
-| DEPLOYER_{NAME} | string | Yes | {purpose} |
+| Variable         | Type   | Required | Description |
+| ---------------- | ------ | -------- | ----------- |
+| DEPLOYER\_{NAME} | string | Yes      | {purpose}   |
 
 Output:
 
@@ -113,7 +115,7 @@ status: success|error
 
 ## Rules
 
-- Spec every feature from FEATURES.md
+- Spec every feature from 02-FEATURES.md
 - Interface contracts: WHAT not HOW
 - Error messages: exact user-facing text
 - Integration points: reference existing classes
@@ -122,4 +124,4 @@ status: success|error
 
 ## Output
 
-Save to `docs/{feature-name}/SPEC.md`
+Save to `docs/{feature-name}/03-SPEC.md`

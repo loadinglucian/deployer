@@ -57,7 +57,7 @@ The `server:firewall` command provides interactive UFW management through a sing
 
 | Attribute      | Value                                          |
 | -------------- | ---------------------------------------------- |
-| Source         | FEATURES.md §F12                               |
+| Source         | 02-FEATURES.md §F12                            |
 | Components     | helpers.sh                                     |
 | New Files      | None (modify existing)                         |
 | Modified Files | playbooks/helpers.sh, playbooks/server-info.sh |
@@ -93,7 +93,7 @@ The `server:firewall` command provides interactive UFW management through a sing
 
 | Attribute      | Value                          |
 | -------------- | ------------------------------ |
-| Source         | FEATURES.md §F1                |
+| Source         | 02-FEATURES.md §F1             |
 | Components     | server-firewall.sh, helpers.sh |
 | New Files      | playbooks/server-firewall.sh   |
 | Modified Files | None                           |
@@ -158,7 +158,7 @@ ports:
 
 | Attribute      | Value                      |
 | -------------- | -------------------------- |
-| Source         | FEATURES.md §F2            |
+| Source         | 02-FEATURES.md §F2         |
 | Components     | server-firewall.sh         |
 | New Files      | None (part of F1 playbook) |
 | Modified Files | None                       |
@@ -204,7 +204,7 @@ ports:
 
 | Attribute      | Value                     |
 | -------------- | ------------------------- |
-| Source         | FEATURES.md §F7           |
+| Source         | 02-FEATURES.md §F7        |
 | Components     | server-firewall.sh        |
 | New Files      | None (part of apply mode) |
 | Modified Files | None                      |
@@ -238,7 +238,7 @@ ports:
 
 | Attribute      | Value                                         |
 | -------------- | --------------------------------------------- |
-| Source         | FEATURES.md §F4                               |
+| Source         | 02-FEATURES.md §F4                            |
 | Components     | ServerFirewallCommand.php, server-firewall.sh |
 | New Files      | None                                          |
 | Modified Files | None                                          |
@@ -304,7 +304,7 @@ Playbook:
 
 | Attribute      | Value                     |
 | -------------- | ------------------------- |
-| Source         | FEATURES.md §F8           |
+| Source         | 02-FEATURES.md §F8        |
 | Components     | server-firewall.sh        |
 | New Files      | None (part of apply mode) |
 | Modified Files | None                      |
@@ -395,7 +395,7 @@ ufw --force enable
 
 | Attribute      | Value              |
 | -------------- | ------------------ |
-| Source         | FEATURES.md §F9    |
+| Source         | 02-FEATURES.md §F9 |
 | Components     | server-firewall.sh |
 | New Files      | None               |
 | Modified Files | None               |
@@ -417,7 +417,7 @@ ufw --force enable
 
 | Attribute      | Value                                        |
 | -------------- | -------------------------------------------- |
-| Source         | FEATURES.md §F3                              |
+| Source         | 02-FEATURES.md §F3                           |
 | Components     | ServerFirewallCommand.php                    |
 | New Files      | app/Console/Server/ServerFirewallCommand.php |
 | Modified Files | None                                         |
@@ -485,7 +485,7 @@ $default = array_filter($default, fn($p) => $p !== $sshPort);
 
 | Attribute      | Value                     |
 | -------------- | ------------------------- |
-| Source         | FEATURES.md §F5           |
+| Source         | 02-FEATURES.md §F5        |
 | Components     | ServerFirewallCommand.php |
 | New Files      | None (part of F3)         |
 | Modified Files | None                      |
@@ -511,7 +511,7 @@ Pre-selection merge logic (covered in F3):
 
 | Attribute      | Value                     |
 | -------------- | ------------------------- |
-| Source         | FEATURES.md §F6           |
+| Source         | 02-FEATURES.md §F6        |
 | Components     | ServerFirewallCommand.php |
 | New Files      | None                      |
 | Modified Files | None                      |
@@ -582,7 +582,7 @@ Display format (using displayDeets or custom):
 
 | Attribute      | Value                     |
 | -------------- | ------------------------- |
-| Source         | FEATURES.md §F10          |
+| Source         | 02-FEATURES.md §F10       |
 | Components     | ServerFirewallCommand.php |
 | New Files      | None                      |
 | Modified Files | None                      |
@@ -646,7 +646,7 @@ Behavior when `--allow` provided:
 
 | Attribute      | Value                     |
 | -------------- | ------------------------- |
-| Source         | FEATURES.md §F11          |
+| Source         | 02-FEATURES.md §F11       |
 | Components     | ServerFirewallCommand.php |
 | New Files      | None                      |
 | Modified Files | None                      |
@@ -701,7 +701,7 @@ foreach ($filtered as $port) {
 
 | Attribute      | Value                     |
 | -------------- | ------------------------- |
-| Source         | FEATURES.md §F14          |
+| Source         | 02-FEATURES.md §F14       |
 | Components     | ServerFirewallCommand.php |
 | New Files      | None                      |
 | Modified Files | None                      |
