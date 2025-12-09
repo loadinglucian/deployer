@@ -225,24 +225,22 @@ class ServerFirewallCommand extends BaseCommand
     {
         if (!$ufwInstalled) {
             $this->displayDeets([
-                'Firewall Status' => 'Not installed',
+                'Firewall' => 'Not installed',
             ]);
-            $this->out('');
 
             return;
         }
 
         if (!$ufwActive) {
             $this->displayDeets([
-                'Firewall Status' => 'Inactive',
+                'Firewall' => 'Inactive',
             ]);
-            $this->out('');
 
             return;
         }
 
         // UFW is active - show rules
-        $this->displayDeets(['Firewall Status' => 'Active']);
+        $this->displayDeets(['Firewall' => 'Active']);
 
         if ([] === $ufwRules) {
             $this->displayDeets(['Open Ports' => 'None']);
@@ -252,6 +250,7 @@ class ServerFirewallCommand extends BaseCommand
                 $process = $ports[$port] ?? 'unknown';
                 $openPorts["Port {$port}"] = $process;
             }
+
             $this->displayDeets(['Open Ports' => $openPorts]);
         }
     }
@@ -349,7 +348,7 @@ class ServerFirewallCommand extends BaseCommand
         // Get selected ports from user
         /** @var array<int, int> $selected */
         $selected = $this->io->promptMultiselect(
-            label: 'Select ports to open (the SSH port will always remain open):',
+            label: 'Select only the ports you want to be open (the SSH port will always remain open):',
             options: $options,
             default: $defaultPorts,
             scroll: 10,
@@ -387,46 +386,24 @@ class ServerFirewallCommand extends BaseCommand
         // Display summary
         // ----
 
-        $this->out('');
-        $this->h2('Confirmation');
-
         if (!$hasChanges && [] !== $currentUfwPorts) {
-            $this->displayDeets([
-                'Status' => 'No changes needed',
-                'SSH port' => "{$sshPort} (always allowed)",
-            ]);
+            $this->info('No changes needed');
 
             // No changes needed, skip confirmation
             return true;
         }
-
-        $summaryDeets = [];
-
-        if ([] !== $portsToOpen) {
-            sort($portsToOpen);
-            $summaryDeets['Opening'] = implode(', ', $portsToOpen);
-        }
-
-        if ([] !== $portsToClose) {
-            $portsToCloseList = array_values($portsToClose);
-            sort($portsToCloseList);
-            $summaryDeets['Closing'] = implode(', ', $portsToCloseList);
-        }
-
-        $summaryDeets['SSH port'] = "{$sshPort} (always allowed)";
-
-        $this->displayDeets($summaryDeets);
-        $this->out('');
 
         // Skip confirmation if --force
         if ($force) {
             return true;
         }
 
+        $this->io->write("\n");
+
         // Prompt for confirmation
         return $this->io->promptConfirm(
-            label: 'Apply these firewall rules?',
-            default: true
+            label: 'Are you absolutely sure?',
+            default: false,
         );
     }
 
