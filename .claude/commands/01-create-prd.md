@@ -13,7 +13,7 @@ Role: Product Manager creating a PRD from an informal product idea.
 1. Ask clarifying questions in batches of 3-5
 2. Complete in 2-3 rounds maximum
 3. Check `docs/` for related PRDs
-4. Save to `docs/{feature-name}/PRD.md` (lowercase kebab-case)
+4. Save to `docs/{feature-name}/01-01-PRD.md` (lowercase kebab-case)
 
 ## Question Flow
 

@@ -4,17 +4,19 @@ model: opus
 allowedTools: ['Read', 'Write', 'Glob', 'AskUserQuestion']
 ---
 
+**Load skills:** @.claude/skills/command @.claude/skills/playbook @.claude/skills/testing
+
 # Implementation Plan
 
-Create PLAN.md from PRD, FEATURES, and SPEC documents.
+Create 04-PLAN.md from PRD, FEATURES, and SPEC documents.
 
 ## Process
 
 1. Read all three documents from `docs/{feature}/`
-1. Extract critical path from FEATURES.md dependency graph
+1. Extract critical path from 02-FEATURES.md dependency graph
 1. Group features into milestones following dependency order
-1. Synthesize implementation details from SPEC.md
-1. Save to `docs/{feature}/PLAN.md`
+1. Synthesize implementation details from 03-SPEC.md
+1. Save to `docs/{feature}/04-PLAN.md`
 
 ## Milestone Grouping
 
@@ -24,24 +26,25 @@ Create PLAN.md from PRD, FEATURES, and SPEC documents.
 - Playbooks before PHP commands
 - Core functionality before CLI options
 - 2-4 features per milestone maximum
+- **Parallel milestones:** When features have no dependencies between them, use suffix notation (2a, 2b) and annotate with `(parallel with N)`
 
-## PLAN.md Template
+## 04-PLAN.md Template
 
-````markdown
+```markdown
 # Implementation Plan - {Product Name}
 
 ## Overview
 
 {1-2 sentence summary}
 
-**Source:** [PRD](./PRD.md) | [FEATURES](./FEATURES.md) | [SPEC](./SPEC.md)
+**Source:** [PRD](./01-PRD.md) | [FEATURES](./02-FEATURES.md) | [SPEC](./03-SPEC.md)
 
 ## File Changes
 
-| Type | File | Purpose |
-| ---- | ---- | ------- |
-| New | `{path}` | {description} |
-| Mod | `{path}` | {changes} |
+| Type | File     | Purpose       |
+| ---- | -------- | ------------- |
+| New  | `{path}` | {description} |
+| Mod  | `{path}` | {changes}     |
 
 ## Prerequisites
 
@@ -55,7 +58,6 @@ Create PLAN.md from PRD, FEATURES, and SPEC documents.
 
 | Features | F{n}, F{n} |
 | -------- | ---------- |
-| Branch   | `{feature}/milestone-1` |
 
 **Deliverables:**
 
@@ -76,6 +78,30 @@ Create PLAN.md from PRD, FEATURES, and SPEC documents.
 
 ---
 
+### Milestone 2a: {Name} (parallel with 2b)
+
+| Features | F{n} |
+| -------- | ---- |
+| Parallel | 2b   |
+
+**Deliverables:**
+
+- {Concrete file or function}
+
+**Steps:**
+
+1. {Verb} {specific task}
+
+**Integration:** {How this connects to existing code}
+
+**Verification:**
+
+- [ ] {Testable criterion}
+
+**Enables:** Milestone 3
+
+---
+
 ## Implementation Notes
 
 {Cross-milestone guidance, error handling summary from SPEC}
@@ -85,16 +111,15 @@ Create PLAN.md from PRD, FEATURES, and SPEC documents.
 - [ ] All milestones verified
 - [ ] Quality gates pass
 - [ ] Manual test against PRD user journeys
-````
+```
 
 ## Example
 
-````markdown
+```markdown
 ### Milestone 2: Detection Playbook
 
 | Features | F1 (Port Detection), F2 (UFW Status) |
 | -------- | ------------------------------------ |
-| Branch   | `server-firewall/milestone-2` |
 
 **Deliverables:**
 
@@ -103,7 +128,7 @@ Create PLAN.md from PRD, FEATURES, and SPEC documents.
 **Steps:**
 
 1. Create playbook skeleton with mode switch
-1. Implement `detect_mode()` - call `get_listening_services`, output YAML per SPEC.md
+1. Implement `detect_mode()` - call `get_listening_services`, output YAML per 03-SPEC.md
 1. Implement `get_ufw_status()` - check installation, parse rules, handle disabled state
 
 **Integration:** Sources `helpers.sh`, called via `PlaybooksTrait::executePlaybook()`
@@ -114,13 +139,15 @@ Create PLAN.md from PRD, FEATURES, and SPEC documents.
 - [ ] Works with UFW disabled or uninstalled
 
 **Enables:** Milestone 3
-````
+```
 
 ## Rules
 
-- Reference SPEC.md sections, don't duplicate contracts
+- Reference 03-SPEC.md sections, don't duplicate contracts
 - Steps start with verb (Create, Add, Extract, Update, Wire)
 - Steps name exact functions, files, variables
 - Code snippets show signatures/patterns, not full implementations
 - Verification manually testable without test suite
 - Note integration points explicitly
+- Identify parallel opportunities from 02-FEATURES.md dependency graph
+- Milestones with no shared dependencies can be marked parallel
