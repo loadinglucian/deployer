@@ -1,5 +1,5 @@
 ---
-description: Create a PRD
+description: Create a PRD from a product idea
 model: opus
 allowedTools: ['Read', 'Write', 'Glob', 'AskUserQuestion']
 ---
@@ -74,16 +74,6 @@ Role: Product Manager creating a PRD from an informal product idea.
 {User persona description}
 
 ## Functional Requirements
-
-### Priority 1 (Must have)
-
-- {Requirement}
-
-### Priority 2 (Should have)
-
-- {Requirement}
-
-### Priority 3 (Nice to have)
 
 - {Requirement}
 

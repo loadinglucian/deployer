@@ -1,6 +1,6 @@
 ---
-name: docs
-description: Use this skill when writing, creating, or modifying documentation or prompts for AI agents. Activates for tasks involving CLAUDE.md, the .claude folder, or any documentation optimized for token efficiency.
+name: ai-docs
+description: Use this skill when writing, creating, or modifying files in the .claude/ folder (agents, commands, skills, SKILL.md files), updating CLAUDE.md, or creating any AI agent prompts or documentation. Activates for ANY task touching .claude/** paths.
 ---
 
 # AI-Optimized Documentation
@@ -61,9 +61,9 @@ $result = new Service(new Dependency());
 
 **Single source of truth:**
 
-- One primary location per concept
-- Cross-reference by filename: "See architecture.md"
 - No line number references
+- One primary location per concept
+- Do not duplicate or contradict CLAUDE.md
 
 **Valid references:**
 

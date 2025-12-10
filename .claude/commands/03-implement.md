@@ -16,6 +16,7 @@ Orchestrate milestone implementation by delegating to implementer agents.
 4. Collect results and update tracking document
 5. Run quality-gatekeeper agent once after all milestones complete
 6. Finalize tracking document with summary
+7. Review implementation and generate `06-REVIEW.md`
 
 ## Step 1: Read Plan and Spec
 
@@ -101,6 +102,11 @@ Build this complete context for each agent:
 **Verification:**
 
 {Copy from milestone}
+
+## Instructions
+
+- Do NOT run quality-gatekeeper (conductor runs it after all milestones)
+- Implement milestone deliverables only
 ````
 
 ### Agent Invocation
@@ -116,6 +122,8 @@ Use Task tool with:
 Wait for completion before proceeding to next milestone.
 
 **Parallel milestones (e.g., 3a, 3b):**
+
+Only parallelize if milestones have no shared files. Otherwise run sequentially.
 
 When milestones have the `| Parallel | {other} |` row, invoke multiple Task tools in a SINGLE message:
 
@@ -260,10 +268,172 @@ If parallel milestones both modify the same file (shouldn't happen with good pla
 1. Report conflict to user
 2. Ask which result to keep or abort
 
+## Step 7: Review Implementation
+
+After finalizing `05-IMPLEMENTATION.md`, audit the implementation against the spec.
+
+### Audit Checklist
+
+**Feature Completeness** (from 02-FEATURES.md):
+
+- [ ] Feature implemented (code exists)
+- [ ] Acceptance criteria met (from feature details)
+- [ ] Appears in correct user journey flow
+
+**Contract Compliance** (from 03-SPEC.md):
+
+- [ ] Interface contract matches (method signatures, I/O)
+- [ ] Data structures match (types, fields)
+- [ ] Playbook contract matches (env vars, YAML output)
+- [ ] Integration points correct (uses specified classes)
+
+**Error Handling** (from 03-SPEC.md Error Taxonomy):
+
+- [ ] All error conditions handled
+- [ ] Error messages match spec exactly
+- [ ] Behavior matches (exit, display, throw)
+
+**Edge Cases** (from 03-SPEC.md):
+
+- [ ] Each edge case scenario handled
+- [ ] Behavior matches specification
+
+**Security Constraints** (from 03-SPEC.md):
+
+- [ ] All constraints implemented
+
+**Verification Criteria** (from 04-PLAN.md):
+
+- [ ] Each milestone's verification criteria met
+- [ ] Completion criteria satisfied
+
+### Issue Categories
+
+| Category           | Description                               |
+| ------------------ | ----------------------------------------- |
+| Missing Feature    | Feature from FEATURES not implemented     |
+| Contract Violation | Implementation differs from SPEC contract |
+| Bug                | Code error or incorrect behavior          |
+| Edge Case          | Unhandled scenario from SPEC              |
+| Security           | Security constraint not met               |
+| Improvement        | Code quality or performance suggestion    |
+
+### Severity Levels
+
+| Level      | Description                            | Action          |
+| ---------- | -------------------------------------- | --------------- |
+| Critical   | Blocks functionality or security issue | Must fix        |
+| Major      | Significant deviation from spec        | Should fix      |
+| Minor      | Small issue, doesn't affect core flow  | Consider fixing |
+| Suggestion | Optional improvement                   | Optional        |
+
+### Generate 06-REVIEW.md
+
+```markdown
+# Implementation Review - {Product Name}
+
+**Source:** [PRD](./01-PRD.md) | [FEATURES](./02-FEATURES.md) | [SPEC](./03-SPEC.md) | [PLAN](./04-PLAN.md) | [IMPLEMENTATION](./05-IMPLEMENTATION.md)
+
+**Review Date:** {YYYY-MM-DD}
+
+**Status:** Passed | Issues Found
+
+## Summary
+
+| Category           | Critical | Major | Minor | Suggestion |
+| ------------------ | -------- | ----- | ----- | ---------- |
+| Missing Feature    | 0        | 0     | -     | -          |
+| Contract Violation | 0        | 0     | 0     | -          |
+| Bug                | 0        | 0     | 0     | -          |
+| Edge Case          | 0        | 0     | 0     | -          |
+| Security           | 0        | 0     | -     | -          |
+| Improvement        | -        | -     | -     | 0          |
+| **Total**          | 0        | 0     | 0     | 0          |
+
+## Feature Checklist
+
+| Feature    | Status    | Notes           |
+| ---------- | --------- | --------------- |
+| F1: {Name} | Pass/Fail | {notes if fail} |
+| F2: {Name} | Pass/Fail |                 |
+
+## Issues
+
+### Critical
+
+{If none: "No critical issues found."}
+
+#### C1: {Issue Title}
+
+| Attribute | Value           |
+| --------- | --------------- |
+| Category  | {category}      |
+| Feature   | F{n}            |
+| File      | `{path}:{line}` |
+
+**Description:** {What's wrong}
+
+**Expected:** {From spec/features}
+
+**Actual:** {What code does}
+
+**Recommendation:** {How to fix}
+
+---
+
+### Major
+
+{If none: "No major issues found."}
+
+---
+
+### Minor
+
+{If none: "No minor issues found."}
+
+---
+
+### Suggestions
+
+{If none: "No suggestions."}
+
+---
+
+## Verification Results
+
+| Milestone | Criterion   | Result    | Notes |
+| --------- | ----------- | --------- | ----- |
+| M1        | {criterion} | Pass/Fail |       |
+| M2        | {criterion} | Pass/Fail |       |
+
+## Conclusion
+
+{Summary paragraph covering:}
+
+- Overall implementation quality
+- Key strengths
+- Areas requiring attention (if any)
+- Recommendation: Ready for use / Requires fixes
+```
+
+### Review Rules
+
+- Read ALL implementation files before making judgments
+- Compare code against SPEC contracts, not assumptions
+- Every feature must be explicitly checked (not inferred)
+- Issue file paths must include line numbers when possible
+- Error messages: quote exact text from both spec and code
+- Security issues are always Critical or Major
+- Missing features are always Critical or Major
+- Improvements are always Suggestions
+- If no issues found, explicitly state "Passed" with brief rationale
+
+---
+
 ## Important Notes
 
-- Skills are NOT loaded in this conductor - they load in each implementer agent
-- Quality gates run ONCE at the end, not per milestone
-- Full spec is passed to each agent - ensures complete context
-- Proceed autonomously - only ask user on failures
-- Tracking document is the source of truth for implementation progress
+- Skills load in implementer agents, not conductor
+- Quality gates run ONCE at end (agents told not to run them)
+- Full spec passed to each agent
+- Proceed autonomously, ask user only on failures
+- Never parallelize milestones sharing files
