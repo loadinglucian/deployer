@@ -5,6 +5,7 @@ updates:
     schedule:
       interval: "daily"
     target-branch: "main"
+    open-pull-requests-limit: 10
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
@@ -15,6 +16,7 @@ updates:
       interval: "daily"
     target-branch: "main"
     versioning-strategy: "increase"
+    open-pull-requests-limit: 10
     labels:
       - "dependencies"
       - "php"
@@ -27,6 +29,7 @@ updates:
     schedule:
       interval: "daily"
     target-branch: "main"
+    open-pull-requests-limit: 10
     labels:
       - "dependencies"
       - "javascript"
