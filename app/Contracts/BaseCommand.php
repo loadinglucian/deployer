@@ -337,7 +337,7 @@ abstract class BaseCommand extends Command
         //
         // Display command hint
 
-        $hasParts = count($parts) > 1;
+        $hasParts = count($parts) >= 1;
 
         $this->io->write([
             '<fg=gray>',
