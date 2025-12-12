@@ -44,7 +44,7 @@ trait SitesTrait
     protected function ensureSitesAvailable(): array|int
     {
         if ([] === $this->sites->all()) {
-            $this->warn('No servers found in inventory:');
+            $this->warn('No sites found in inventory:');
             $this->info('Run <fg=cyan>site:create</> to create one');
 
             return Command::SUCCESS;
