@@ -73,7 +73,7 @@ final readonly class GitService
             $process = $this->proc->run(
                 ['git', 'clone', '--depth', '1', '--branch', $branch, '--single-branch', $repo, $tempDir],
                 sys_get_temp_dir(),
-                30.0
+                60.0
             );
 
             if (! $process->isSuccessful()) {
@@ -118,7 +118,7 @@ final readonly class GitService
             $process = $this->proc->run(
                 ['git', 'clone', '--depth', '1', '--branch', $branch, '--single-branch', $repo, $tempDir],
                 sys_get_temp_dir(),
-                30.0
+                60.0
             );
 
             if (! $process->isSuccessful()) {
