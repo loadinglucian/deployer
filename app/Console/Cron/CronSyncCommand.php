@@ -90,19 +90,6 @@ class CronSyncCommand extends BaseCommand
         /** @var string $permissions */
 
         //
-        // Get PHP version for site
-        // ----
-
-        $siteConfig = $this->getSiteConfig($server->info, $site->domain);
-        $phpVersion = $siteConfig['php_version'] ?? null;
-
-        if (null === $phpVersion || 'unknown' === $phpVersion) {
-            $this->nay("Could not determine PHP version for site '{$site->domain}'");
-
-            return Command::FAILURE;
-        }
-
-        //
         // Sync crons to server
         // ----
 
@@ -114,7 +101,6 @@ class CronSyncCommand extends BaseCommand
                 'DEPLOYER_DISTRO' => $distro,
                 'DEPLOYER_PERMS' => $permissions,
                 'DEPLOYER_SITE_DOMAIN' => $site->domain,
-                'DEPLOYER_PHP_VERSION' => $phpVersion,
                 'DEPLOYER_CRONS' => array_map(
                     fn (CronDTO $cron) => ['script' => $cron->script, 'schedule' => $cron->schedule],
                     $site->crons
