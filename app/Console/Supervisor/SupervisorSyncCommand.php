@@ -108,6 +108,7 @@ class SupervisorSyncCommand extends BaseCommand
                         'autostart' => $supervisor->autostart,
                         'autorestart' => $supervisor->autorestart,
                         'stopwaitsecs' => $supervisor->stopwaitsecs,
+                        'numprocs' => $supervisor->numprocs,
                     ],
                     $site->supervisors
                 ),
