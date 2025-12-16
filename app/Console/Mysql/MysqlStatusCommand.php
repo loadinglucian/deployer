@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Deployer\Console\Mysql;
 
 use Deployer\Contracts\BaseCommand;
+use Deployer\Traits\LogHighlightingTrait;
 use Deployer\Traits\ServersTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -18,6 +19,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class MysqlStatusCommand extends BaseCommand
 {
+    use LogHighlightingTrait;
     use ServersTrait;
 
     // ----
@@ -62,7 +64,9 @@ class MysqlStatusCommand extends BaseCommand
             fn () => $this->io->promptText(
                 label: 'Number of lines:',
                 default: '50',
-                validate: fn ($value) => is_numeric($value) && (int) $value > 0 ? null : 'Must be a positive number'
+                validate: fn ($value) => !is_numeric($value) || (int) $value <= 0
+                    ? 'Must be a positive number'
+                    : ((int) $value > 1000 ? 'Cannot exceed 1000 lines' : null)
             )
         );
 
@@ -112,53 +116,5 @@ class MysqlStatusCommand extends BaseCommand
         ]);
 
         return Command::SUCCESS;
-    }
-
-    // ----
-    // Helpers
-    // ----
-
-    /**
-     * Highlight error keywords in log content.
-     */
-    protected function highlightErrors(string $content): string
-    {
-        $textKeywords = [
-            'error',
-            'exception',
-            'fail',
-            'failed',
-            'fatal',
-            'panic',
-        ];
-
-        $statusPattern = '/\b(500|502|503|504)\b/';
-
-        $lines = explode("\n", $content);
-        $processedLines = [];
-
-        foreach ($lines as $line) {
-            $lowerLine = strtolower($line);
-            $hasError = false;
-
-            foreach ($textKeywords as $keyword) {
-                if (str_contains($lowerLine, $keyword)) {
-                    $hasError = true;
-                    break;
-                }
-            }
-
-            if (!$hasError && preg_match($statusPattern, $line)) {
-                $hasError = true;
-            }
-
-            if ($hasError) {
-                $processedLines[] = "<fg=red>{$line}</>";
-            } else {
-                $processedLines[] = $line;
-            }
-        }
-
-        return implode("\n", $processedLines);
     }
 }
