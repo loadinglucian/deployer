@@ -108,6 +108,21 @@ class ServerLogsCommand extends BaseCommand
             );
         }
 
+        // Validate services against allowed options (prevents command injection)
+        if (is_array($services)) {
+            $allowedServices = array_keys($options);
+            $invalidServices = array_diff($services, $allowedServices);
+            if ($invalidServices !== []) {
+                $this->nay(sprintf(
+                    "Invalid service(s): %s",
+                    implode(', ', array_map(static fn (string|int $s): string => "'{$s}'", $invalidServices))
+                ));
+                $this->info('Allowed: ' . implode(', ', $allowedServices));
+
+                return Command::FAILURE;
+            }
+        }
+
         if (!is_array($services) || $services === []) {
             $this->nay('No services selected');
 
@@ -380,6 +395,14 @@ class ServerLogsCommand extends BaseCommand
     {
         try {
             $searchPatterns = $this->getLogSearchPatterns($service);
+
+            // Defense-in-depth: skip if sanitization removed everything
+            if ([] === $searchPatterns) {
+                $this->warn("No {$service} logs found");
+
+                return;
+            }
+
             $namePatterns = implode(' -o ', array_map(
                 static fn (string $p): string => "-iname '*{$p}*'",
                 $searchPatterns
@@ -417,7 +440,15 @@ class ServerLogsCommand extends BaseCommand
      */
     protected function getLogSearchPatterns(string $service): array
     {
-        $serviceLower = strtolower($service);
+        // Defense-in-depth: strip non-safe characters
+        // Primary protection is allowlist validation in execute()
+        $sanitized = preg_replace('/[^a-zA-Z0-9._:-]/', '', $service);
+
+        if ('' === $sanitized) {
+            return [];
+        }
+
+        $serviceLower = strtolower((string) $sanitized);
 
         return match ($serviceLower) {
             'mysqld' => ['mysql'],
