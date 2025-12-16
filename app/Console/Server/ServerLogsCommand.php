@@ -100,6 +100,14 @@ class ServerLogsCommand extends BaseCommand
             )
         );
 
+        // Validate CLI-provided value
+        $lineError = $this->validateLineCount($lines);
+        if (null !== $lineError) {
+            $this->nay($lineError);
+
+            return Command::FAILURE;
+        }
+
         // Handle CLI option (comma-separated string)
         if (is_string($services)) {
             $services = array_filter(
@@ -112,7 +120,7 @@ class ServerLogsCommand extends BaseCommand
         if (is_array($services)) {
             $allowedServices = array_keys($options);
             $invalidServices = array_diff($services, $allowedServices);
-            if ($invalidServices !== []) {
+            if ([] !== $invalidServices) {
                 $this->nay(sprintf(
                     "Invalid service(s): %s",
                     implode(', ', array_map(static fn (string|int $s): string => "'{$s}'", $invalidServices))
@@ -123,7 +131,7 @@ class ServerLogsCommand extends BaseCommand
             }
         }
 
-        if (!is_array($services) || $services === []) {
+        if (!is_array($services) || [] === $services) {
             $this->nay('No services selected');
 
             return Command::FAILURE;
@@ -332,7 +340,7 @@ class ServerLogsCommand extends BaseCommand
         $this->h2($service);
 
         try {
-            if ($unit === '') {
+            if ('' === $unit) {
                 $command = sprintf('journalctl -n %d --no-pager 2>&1', $lines);
             } else {
                 $unitArgs = array_map(
@@ -349,7 +357,7 @@ class ServerLogsCommand extends BaseCommand
                               str_contains($output, 'Failed to add filter');
             $noData = $output === '' || $output === '-- No entries --';
 
-            if ($result['exit_code'] !== 0 && !$serviceNotFound) {
+            if (0 !== $result['exit_code'] && !$serviceNotFound) {
                 $this->nay("Failed to retrieve {$service} logs");
                 $this->io->write($this->highlightErrors($output), true);
                 $this->out('───');
@@ -396,7 +404,7 @@ class ServerLogsCommand extends BaseCommand
         try {
             $searchPatterns = $this->getLogSearchPatterns($service);
 
-            // Defense-in-depth: skip if sanitization removed everything
+            // defense in depth: skip if sanitization removed everything
             if ([] === $searchPatterns) {
                 $this->warn("No {$service} logs found");
 
@@ -440,15 +448,15 @@ class ServerLogsCommand extends BaseCommand
      */
     protected function getLogSearchPatterns(string $service): array
     {
-        // Defense-in-depth: strip non-safe characters
+        // defense in depth: strip non-safe characters
         // Primary protection is allowlist validation in execute()
         $sanitized = preg_replace('/[^a-zA-Z0-9._:-]/', '', $service);
 
-        if ('' === $sanitized) {
+        if (null === $sanitized || '' === $sanitized) {
             return [];
         }
 
-        $serviceLower = strtolower((string) $sanitized);
+        $serviceLower = strtolower($sanitized);
 
         return match ($serviceLower) {
             'mysqld' => ['mysql'],
@@ -465,7 +473,7 @@ class ServerLogsCommand extends BaseCommand
             $safeLogFile = escapeshellarg($logFile);
             $result = $this->ssh->executeCommand($server, "tail -n {$lines} {$safeLogFile} 2>/dev/null");
 
-            if ($result['exit_code'] === 0 && trim($result['output']) !== '') {
+            if (0 === $result['exit_code'] && '' !== trim($result['output'])) {
                 return trim($result['output']);
             }
 
