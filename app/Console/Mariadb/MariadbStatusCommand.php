@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Deployer\Console\Supervisor;
+namespace Deployer\Console\Mariadb;
 
 use Deployer\Contracts\BaseCommand;
 use Deployer\Traits\LogsTrait;
@@ -14,10 +14,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'supervisor:status',
-    description: 'View supervisord service status'
+    name: 'mariadb:status',
+    description: 'View MariaDB service status'
 )]
-class SupervisorStatusCommand extends BaseCommand
+class MariadbStatusCommand extends BaseCommand
 {
     use LogsTrait;
     use ServersTrait;
@@ -42,7 +42,7 @@ class SupervisorStatusCommand extends BaseCommand
     {
         parent::execute($input, $output);
 
-        $this->h1('Supervisord Service Status');
+        $this->h1('MariaDB Service Status');
 
         //
         // Select server
@@ -76,11 +76,11 @@ class SupervisorStatusCommand extends BaseCommand
         $lineCount = (int) $lines;
 
         //
-        // Retrieve supervisord logs via journalctl
+        // Retrieve MariaDB logs via journalctl
         // ----
 
         try {
-            $command = sprintf('journalctl -u supervisor -n %d --no-pager 2>&1', $lineCount);
+            $command = sprintf('journalctl -u mariadb -n %d --no-pager 2>&1', $lineCount);
             $result = $this->ssh->executeCommand($server, $command);
             $logOutput = trim($result['output']);
 
@@ -89,7 +89,7 @@ class SupervisorStatusCommand extends BaseCommand
                       str_contains($logOutput, 'No data available');
 
             if (0 !== $result['exit_code'] && !$noData) {
-                $this->nay('Failed to retrieve supervisord logs');
+                $this->nay('Failed to retrieve MariaDB logs');
                 $this->io->write($this->highlightErrors($logOutput), true);
                 $this->out('---');
 
@@ -97,7 +97,7 @@ class SupervisorStatusCommand extends BaseCommand
             }
 
             if ($noData) {
-                $this->warn('No supervisord logs found. Supervisor may not be installed or has no recent activity.');
+                $this->warn('No MariaDB logs found. MariaDB may not be installed or has no recent activity.');
             } else {
                 $this->io->write($this->highlightErrors($logOutput), true);
             }
@@ -113,7 +113,7 @@ class SupervisorStatusCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('supervisor:status', [
+        $this->commandReplay('mariadb:status', [
             'server' => $server->name,
             'lines' => $lines,
         ]);

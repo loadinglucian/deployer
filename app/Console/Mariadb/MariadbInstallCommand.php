@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Deployer\Console\Mysql;
+namespace Deployer\Console\Mariadb;
 
 use Deployer\Contracts\BaseCommand;
 use Deployer\Traits\PlaybooksTrait;
@@ -14,10 +14,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'mysql:install',
-    description: 'Install MySQL server on a server'
+    name: 'mariadb:install',
+    description: 'Install MariaDB server on a server'
 )]
-class MysqlInstallCommand extends BaseCommand
+class MariadbInstallCommand extends BaseCommand
 {
     use PlaybooksTrait;
     use ServersTrait;
@@ -43,7 +43,7 @@ class MysqlInstallCommand extends BaseCommand
     {
         parent::execute($input, $output);
 
-        $this->h1('Install MySQL');
+        $this->h1('Install MariaDB');
 
         //
         // Select server
@@ -91,20 +91,20 @@ class MysqlInstallCommand extends BaseCommand
             } else {
                 $saveCredentialsPath = $this->io->promptText(
                     label: 'Save credentials to:',
-                    placeholder: './mysql-credentials.env',
+                    placeholder: './mariadb-credentials.env',
                     required: true
                 );
             }
         }
 
         //
-        // Install MySQL
+        // Install MariaDB
         // ----
 
         $result = $this->executePlaybook(
             $server,
-            'mysql-install',
-            'Installing MySQL...',
+            'mariadb-install',
+            'Installing MariaDB...',
             [
                 'DEPLOYER_DISTRO' => $distro,
                 'DEPLOYER_PERMS' => $permissions,
@@ -124,7 +124,7 @@ class MysqlInstallCommand extends BaseCommand
             $deployerPass = $result['deployer_pass'] ?? null;
 
             if (null === $rootPass || '' === $rootPass || null === $deployerPass || '' === $deployerPass) {
-                $this->nay('MySQL installation completed but credentials were not returned');
+                $this->nay('MariaDB installation completed but credentials were not returned');
 
                 return Command::FAILURE;
             }
@@ -136,7 +136,7 @@ class MysqlInstallCommand extends BaseCommand
             /** @var string $deployerDatabase */
             $deployerDatabase = $result['deployer_database'] ?? 'deployer';
 
-            $this->yay('MySQL installation completed successfully');
+            $this->yay('MariaDB installation completed successfully');
 
             if ($displayCredentials) {
                 $this->displayCredentialsOnScreen($rootPass, $deployerUser, $deployerPass, $deployerDatabase);
@@ -166,7 +166,7 @@ class MysqlInstallCommand extends BaseCommand
             }
         }
 
-        $this->commandReplay('mysql:install', $replayOptions);
+        $this->commandReplay('mariadb:install', $replayOptions);
 
         return Command::SUCCESS;
     }
@@ -214,17 +214,17 @@ class MysqlInstallCommand extends BaseCommand
         string $deployerDatabase
     ): void {
         $content = <<<CREDS
-            # MySQL Credentials for {$serverName}
+            # MariaDB Credentials for {$serverName}
             # Generated: {$this->now()}
             # WARNING: Keep this file secure!
 
             ## Root Credentials (admin access)
-            MYSQL_ROOT_PASSWORD={$rootPass}
+            MARIADB_ROOT_PASSWORD={$rootPass}
 
             ## Application Credentials
-            MYSQL_DATABASE={$deployerDatabase}
-            MYSQL_USER={$deployerUser}
-            MYSQL_PASSWORD={$deployerPass}
+            MARIADB_DATABASE={$deployerDatabase}
+            MARIADB_USER={$deployerUser}
+            MARIADB_PASSWORD={$deployerPass}
 
             ## Connection String
             DATABASE_URL=mysql://{$deployerUser}:{$deployerPass}@localhost/{$deployerDatabase}
