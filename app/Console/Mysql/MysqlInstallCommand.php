@@ -84,8 +84,6 @@ class MysqlInstallCommand extends BaseCommand
         // ----
 
         if (true === ($result['already_installed'] ?? false)) {
-            $this->warn('MySQL is already installed on this server');
-
             return Command::SUCCESS;
         }
 
@@ -123,7 +121,10 @@ class MysqlInstallCommand extends BaseCommand
             '',
             'Connection string:',
             "  mysql://{$deployerUser}:{$deployerPass}@localhost/{$deployerDatabase}",
+            '',
         ]);
+
+        $this->warn('Save these credentials somewhere safe. They will not be displayed again.');
 
         //
         // Show command replay

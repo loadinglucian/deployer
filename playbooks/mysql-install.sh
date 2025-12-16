@@ -61,13 +61,7 @@ DEPLOYER_DATABASE="deployer"
 # Install MySQL packages
 
 install_packages() {
-	# Defense-in-depth: main() already checks, but verify service isn't running
-	if systemctl is-active --quiet mysql 2> /dev/null || systemctl is-active --quiet mysqld 2> /dev/null; then
-		echo "→ MySQL server already running, skipping package installation..."
-		return 0
-	fi
-
-	echo "→ Installing MySQL packages..."
+	echo "→ Installing MySQL..."
 
 	local packages=(mysql-server mysql-client)
 
@@ -231,7 +225,6 @@ main() {
 	# Check if MySQL is already installed - exit gracefully if so
 	if systemctl is-active --quiet mysql 2> /dev/null || systemctl is-active --quiet mysqld 2> /dev/null; then
 		echo "→ MySQL server is already installed and running"
-		echo "→ No changes made"
 
 		# Return success with marker indicating already installed
 		if ! cat > "$DEPLOYER_OUTPUT_FILE" <<- EOF; then
