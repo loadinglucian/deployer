@@ -55,13 +55,47 @@ class MariadbInstallCommand extends BaseCommand
             return Command::FAILURE;
         }
 
-        [
-            'distro' => $distro,
-            'permissions' => $permissions,
-        ] = $server->info;
+        ['distro' => $distro, 'permissions' => $permissions] = $server->info;
 
         /** @var string $distro */
         /** @var string $permissions */
+
+        //
+        // Credential output preference (collected upfront)
+        // ----
+
+        /** @var bool $displayCredentials */
+        $displayCredentials = $input->getOption('display-credentials');
+        /** @var string|null $saveCredentialsPath */
+        $saveCredentialsPath = $input->getOption('save-credentials');
+
+        if ($displayCredentials && null !== $saveCredentialsPath) {
+            $this->nay('Cannot use both --display-credentials and --save-credentials');
+
+            return Command::FAILURE;
+        }
+
+        if (!$displayCredentials && null === $saveCredentialsPath) {
+            /** @var string $choice */
+            $choice = $this->io->promptSelect(
+                label: 'How would you like to receive the credentials?',
+                options: [
+                    'display' => 'Display on screen',
+                    'save' => 'Save to file',
+                ],
+                default: 'display'
+            );
+
+            if ('display' === $choice) {
+                $displayCredentials = true;
+            } else {
+                $saveCredentialsPath = $this->io->promptText(
+                    label: 'Save credentials to:',
+                    placeholder: './mariadb-credentials.env',
+                    required: true
+                );
+            }
+        }
 
         //
         // Install MariaDB
@@ -82,10 +116,8 @@ class MariadbInstallCommand extends BaseCommand
         }
 
         //
-        // Validate and display credentials
+        // Output credentials (fresh install only)
         // ----
-
-        $saveCredentialsPath = null;
 
         if (!($result['already_installed'] ?? false)) {
             $rootPass = $result['root_pass'] ?? null;
@@ -106,25 +138,9 @@ class MariadbInstallCommand extends BaseCommand
 
             $this->yay('MariaDB installation completed successfully');
 
-            //
-            // Credential output choice
-
-            /** @var bool $displayCredentials */
-            $displayCredentials = $input->getOption('display-credentials');
-            /** @var string|null $saveCredentialsPath */
-            $saveCredentialsPath = $input->getOption('save-credentials');
-
-            // Check for conflicting CLI options
-            if ($displayCredentials && null !== $saveCredentialsPath) {
-                $this->nay('Cannot use both --display-credentials and --save-credentials');
-
-                return Command::FAILURE;
-            }
-
-            // Determine output method
             if ($displayCredentials) {
                 $this->displayCredentialsOnScreen($rootPass, $deployerUser, $deployerPass, $deployerDatabase);
-            } elseif (null !== $saveCredentialsPath) {
+            } else {
                 $this->saveCredentialsToFile(
                     $saveCredentialsPath,
                     $server->name,
@@ -133,34 +149,6 @@ class MariadbInstallCommand extends BaseCommand
                     $deployerPass,
                     $deployerDatabase
                 );
-            } else {
-                /** @var string $choice */
-                $choice = $this->io->promptSelect(
-                    label: 'How would you like to receive the credentials?',
-                    options: [
-                        'display' => 'Display on screen',
-                        'save' => 'Save to file',
-                    ],
-                    default: 'display'
-                );
-
-                if ('display' === $choice) {
-                    $this->displayCredentialsOnScreen($rootPass, $deployerUser, $deployerPass, $deployerDatabase);
-                } else {
-                    $saveCredentialsPath = $this->io->promptText(
-                        label: 'Save credentials to:',
-                        placeholder: './mariadb-credentials.env',
-                        required: true
-                    );
-                    $this->saveCredentialsToFile(
-                        $saveCredentialsPath,
-                        $server->name,
-                        $rootPass,
-                        $deployerUser,
-                        $deployerPass,
-                        $deployerDatabase
-                    );
-                }
             }
         }
 
@@ -170,10 +158,12 @@ class MariadbInstallCommand extends BaseCommand
 
         $replayOptions = ['server' => $server->name];
 
-        if (null !== $saveCredentialsPath) {
-            $replayOptions['save-credentials'] = $saveCredentialsPath;
-        } else {
-            $replayOptions['display-credentials'] = true;
+        if (!($result['already_installed'] ?? false)) {
+            if (null !== $saveCredentialsPath) {
+                $replayOptions['save-credentials'] = $saveCredentialsPath;
+            } else {
+                $replayOptions['display-credentials'] = true;
+            }
         }
 
         $this->commandReplay('mariadb:install', $replayOptions);
