@@ -12,7 +12,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Filesystem\Filesystem;
 
 #[AsCommand(
     name: 'mysql:install',
@@ -32,6 +31,7 @@ class MysqlInstallCommand extends BaseCommand
         parent::configure();
 
         $this->addOption('server', null, InputOption::VALUE_REQUIRED, 'Server name');
+        $this->addOption('display-credentials', null, InputOption::VALUE_NONE, 'Display credentials on screen');
         $this->addOption('save-credentials', null, InputOption::VALUE_REQUIRED, 'Save credentials to file (0600 permissions)');
     }
 
@@ -85,6 +85,8 @@ class MysqlInstallCommand extends BaseCommand
         // Validate and display credentials
         // ----
 
+        $saveCredentialsPath = null;
+
         if (!($result['already_installed'] ?? false)) {
             $rootPass = $result['root_pass'] ?? null;
             $deployerPass = $result['deployer_pass'] ?? null;
@@ -104,12 +106,27 @@ class MysqlInstallCommand extends BaseCommand
 
             $this->yay('MySQL installation completed successfully');
 
-            /** @var string|null $saveCredentials */
-            $saveCredentials = $input->getOption('save-credentials');
+            //
+            // Credential output choice
 
-            if (null !== $saveCredentials) {
+            /** @var bool $displayCredentials */
+            $displayCredentials = $input->getOption('display-credentials');
+            /** @var string|null $saveCredentialsPath */
+            $saveCredentialsPath = $input->getOption('save-credentials');
+
+            // Check for conflicting CLI options
+            if ($displayCredentials && null !== $saveCredentialsPath) {
+                $this->nay('Cannot use both --display-credentials and --save-credentials');
+
+                return Command::FAILURE;
+            }
+
+            // Determine output method
+            if ($displayCredentials) {
+                $this->displayCredentialsOnScreen($rootPass, $deployerUser, $deployerPass, $deployerDatabase);
+            } elseif (null !== $saveCredentialsPath) {
                 $this->saveCredentialsToFile(
-                    $saveCredentials,
+                    $saveCredentialsPath,
                     $server->name,
                     $rootPass,
                     $deployerUser,
@@ -117,22 +134,33 @@ class MysqlInstallCommand extends BaseCommand
                     $deployerDatabase
                 );
             } else {
-                $this->out([
-                    '',
-                    'Root Credentials (admin access):',
-                    "  Password: {$rootPass}",
-                    '',
-                    'Application Credentials:',
-                    "  Database: {$deployerDatabase}",
-                    "  Username: {$deployerUser}",
-                    "  Password: {$deployerPass}",
-                    '',
-                    'Connection string:',
-                    "  mysql://{$deployerUser}:{$deployerPass}@localhost/{$deployerDatabase}",
-                    '',
-                ]);
+                /** @var string $choice */
+                $choice = $this->io->promptSelect(
+                    label: 'How would you like to receive the credentials?',
+                    options: [
+                        'display' => 'Display on screen',
+                        'save' => 'Save to file',
+                    ],
+                    default: 'display'
+                );
 
-                $this->warn('Save these credentials somewhere safe. They will not be displayed again.');
+                if ('display' === $choice) {
+                    $this->displayCredentialsOnScreen($rootPass, $deployerUser, $deployerPass, $deployerDatabase);
+                } else {
+                    $saveCredentialsPath = $this->io->promptText(
+                        label: 'Save credentials to:',
+                        placeholder: './mysql-credentials.env',
+                        required: true
+                    );
+                    $this->saveCredentialsToFile(
+                        $saveCredentialsPath,
+                        $server->name,
+                        $rootPass,
+                        $deployerUser,
+                        $deployerPass,
+                        $deployerDatabase
+                    );
+                }
             }
         }
 
@@ -140,9 +168,15 @@ class MysqlInstallCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('mysql:install', [
-            'server' => $server->name,
-        ]);
+        $replayOptions = ['server' => $server->name];
+
+        if (null !== $saveCredentialsPath) {
+            $replayOptions['save-credentials'] = $saveCredentialsPath;
+        } else {
+            $replayOptions['display-credentials'] = true;
+        }
+
+        $this->commandReplay('mysql:install', $replayOptions);
 
         return Command::SUCCESS;
     }
@@ -150,6 +184,33 @@ class MysqlInstallCommand extends BaseCommand
     // ----
     // Helpers
     // ----
+
+    /**
+     * Display credentials on the console screen.
+     */
+    protected function displayCredentialsOnScreen(
+        string $rootPass,
+        string $deployerUser,
+        string $deployerPass,
+        string $deployerDatabase
+    ): void {
+        $this->out([
+            '',
+            'Root Credentials (admin access):',
+            "  Password: {$rootPass}",
+            '',
+            'Application Credentials:',
+            "  Database: {$deployerDatabase}",
+            "  Username: {$deployerUser}",
+            "  Password: {$deployerPass}",
+            '',
+            'Connection string:',
+            "  mysql://{$deployerUser}:{$deployerPass}@localhost/{$deployerDatabase}",
+            '',
+        ]);
+
+        $this->warn('Save these credentials somewhere safe. They will not be displayed again.');
+    }
 
     /**
      * Save credentials to a secure file with 0600 permissions.
@@ -162,8 +223,6 @@ class MysqlInstallCommand extends BaseCommand
         string $deployerPass,
         string $deployerDatabase
     ): void {
-        $fs = new Filesystem();
-
         $content = <<<CREDS
             # MySQL Credentials for {$serverName}
             # Generated: {$this->now()}
@@ -181,8 +240,8 @@ class MysqlInstallCommand extends BaseCommand
             DATABASE_URL=mysql://{$deployerUser}:{$deployerPass}@localhost/{$deployerDatabase}
             CREDS;
 
-        $fs->dumpFile($filePath, $content);
-        $fs->chmod($filePath, 0600);
+        $this->fs->appendFile($filePath, $content);
+        $this->fs->chmod($filePath, 0600);
 
         $this->yay("Credentials saved to: {$filePath}");
         $this->info('File permissions set to 0600 (owner read/write only)');
