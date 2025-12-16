@@ -80,51 +80,45 @@ class MysqlInstallCommand extends BaseCommand
         }
 
         //
-        // Handle already installed
-        // ----
-
-        if (true === ($result['already_installed'] ?? false)) {
-            return Command::SUCCESS;
-        }
-
-        //
         // Validate and display credentials
         // ----
 
-        $rootPass = $result['root_pass'] ?? null;
-        $deployerPass = $result['deployer_pass'] ?? null;
+        if (!($result['already_installed'] ?? false)) {
+            $rootPass = $result['root_pass'] ?? null;
+            $deployerPass = $result['deployer_pass'] ?? null;
 
-        if (null === $rootPass || '' === $rootPass || null === $deployerPass || '' === $deployerPass) {
-            $this->nay('MySQL installation completed but credentials were not returned');
+            if (null === $rootPass || '' === $rootPass || null === $deployerPass || '' === $deployerPass) {
+                $this->nay('MySQL installation completed but credentials were not returned');
 
-            return Command::FAILURE;
+                return Command::FAILURE;
+            }
+
+            /** @var string $rootPass */
+            /** @var string $deployerPass */
+            /** @var string $deployerUser */
+            $deployerUser = $result['deployer_user'] ?? 'deployer';
+            /** @var string $deployerDatabase */
+            $deployerDatabase = $result['deployer_database'] ?? 'deployer';
+
+            $this->yay('MySQL installation completed successfully');
+
+            $this->out([
+                '',
+                'Root Credentials (admin access):',
+                "  Password: {$rootPass}",
+                '',
+                'Application Credentials:',
+                "  Database: {$deployerDatabase}",
+                "  Username: {$deployerUser}",
+                "  Password: {$deployerPass}",
+                '',
+                'Connection string:',
+                "  mysql://{$deployerUser}:{$deployerPass}@localhost/{$deployerDatabase}",
+                '',
+            ]);
+
+            $this->warn('Save these credentials somewhere safe. They will not be displayed again.');
         }
-
-        /** @var string $rootPass */
-        /** @var string $deployerPass */
-        /** @var string $deployerUser */
-        $deployerUser = $result['deployer_user'] ?? 'deployer';
-        /** @var string $deployerDatabase */
-        $deployerDatabase = $result['deployer_database'] ?? 'deployer';
-
-        $this->yay('MySQL installation completed successfully');
-
-        $this->out([
-            '',
-            'Root Credentials (admin access):',
-            "  Password: {$rootPass}",
-            '',
-            'Application Credentials:',
-            "  Database: {$deployerDatabase}",
-            "  Username: {$deployerUser}",
-            "  Password: {$deployerPass}",
-            '',
-            'Connection string:',
-            "  mysql://{$deployerUser}:{$deployerPass}@localhost/{$deployerDatabase}",
-            '',
-        ]);
-
-        $this->warn('Save these credentials somewhere safe. They will not be displayed again.');
 
         //
         // Show command replay
