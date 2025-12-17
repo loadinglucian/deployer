@@ -1,22 +1,12 @@
 #!/usr/bin/env bash
 
 #
-# Site Delete Playbook - Ubuntu/Debian Only
+# Site Delete
 #
-# Delete site files and Caddy configuration from server
-# ----
+# Removes site directory and Caddy configuration, then reloads Caddy.
 #
-# This playbook only supports Ubuntu and Debian distributions (debian family).
-# Deletes site directory and Caddy vhost configuration, then reloads Caddy.
-#
-# Required Environment Variables:
-#   DEPLOYER_OUTPUT_FILE  - Output file path
-#   DEPLOYER_DISTRO       - Exact distribution: ubuntu|debian
-#   DEPLOYER_PERMS        - Permissions: root|sudo
-#   DEPLOYER_SITE_DOMAIN  - Site domain name
-#
-# Returns YAML with:
-#   - status: success
+# Output:
+#   status: success
 #
 
 set -o pipefail

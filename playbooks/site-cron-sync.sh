@@ -1,34 +1,13 @@
 #!/usr/bin/env bash
 
 #
-# Site Cron Sync Playbook - Ubuntu/Debian Only
+# Site Cron Sync
 #
-# Synchronize cron jobs from local inventory to server crontab
-# ----
+# Synchronizes cron jobs from inventory to the deployer user's crontab.
 #
-# This playbook manages cron entries for a site in the deployer user's crontab.
-# It uses section markers to isolate each site's crons, allowing multiple sites
-# to coexist without interference.
-#
-# Cron scripts must exist in the site's repository at .deployer/crons/
-# The playbook only manages the crontab configuration - scripts are not validated.
-#
-# Required Environment Variables:
-#   DEPLOYER_OUTPUT_FILE   - Output file path (YAML)
-#   DEPLOYER_DISTRO        - Server distribution (ubuntu|debian)
-#   DEPLOYER_PERMS         - Permissions (root|sudo|none)
-#   DEPLOYER_SITE_DOMAIN   - Site domain for cron working directory
-#   DEPLOYER_CRONS         - JSON array of cron objects
-#
-# Cron JSON Format:
-#   [
-#     { "script": "scheduler.sh", "schedule": "*/5 * * * *" },
-#     { "script": "cleanup.sh", "schedule": "0 0 * * *" }
-#   ]
-#
-# Returns YAML with:
-#   - status: success
-#   - crons_synced: {count}
+# Output:
+#   status: success
+#   crons_synced: 2
 #
 
 set -o pipefail
