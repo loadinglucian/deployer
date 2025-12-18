@@ -363,6 +363,11 @@ trait ServersTrait
             return 'Server name can only contain letters, numbers, hyphens, and underscores';
         }
 
+        // Validate length
+        if (strlen($name) > 64) {
+            return 'Server name cannot exceed 64 characters';
+        }
+
         // Check uniqueness
         $existing = $this->servers->findByName($name);
         if ($existing !== null) {
