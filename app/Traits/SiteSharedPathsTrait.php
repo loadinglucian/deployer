@@ -49,4 +49,26 @@ trait SiteSharedPathsTrait
 
         return $cleaned;
     }
+
+    // ----
+    // Validation
+    // ----
+
+    /**
+     * Validate path input.
+     *
+     * @return string|null Error message if invalid, null if valid
+     */
+    protected function validatePathInput(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return 'Path must be a string';
+        }
+
+        if ('' === trim($value)) {
+            return 'Path cannot be empty';
+        }
+
+        return null;
+    }
 }

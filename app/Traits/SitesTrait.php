@@ -142,6 +142,7 @@ trait SitesTrait
         $details = [
             'Domain' => $site->domain,
             'Server' => $site->server,
+            'PHP' => $site->phpVersion,
         ];
 
         if (null !== $site->repo) {
@@ -165,7 +166,7 @@ trait SitesTrait
     {
         if (null === $site->repo || null === $site->branch) {
             $this->warn('Site has not been deployed yet');
-            $this->info('Run <fg=cyan>site:deploy</> to deploy the site first');
+            $this->info('Run <|cyan>site:deploy</> to deploy the site first');
 
             return Command::FAILURE;
         }
@@ -287,7 +288,7 @@ trait SitesTrait
      *
      * @return int|null Returns Command::FAILURE if validation fails, null if successful
      */
-    protected function validateSiteAdded(ServerDTO $server, SiteDTO $site): ?int
+    protected function ensureSiteExists(ServerDTO $server, SiteDTO $site): ?int
     {
         try {
             $result = $this->ssh->executeCommand(
@@ -300,7 +301,7 @@ trait SitesTrait
             );
 
             if (0 !== $result['exit_code']) {
-                $this->nay("Site '{$site->domain}' has not been created on the server");
+                $this->warn("Site '{$site->domain}' has not been created on the server");
                 $this->info('Run <|cyan>site:create</> to create the site first');
 
                 return Command::FAILURE;

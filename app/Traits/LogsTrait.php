@@ -4,11 +4,97 @@ declare(strict_types=1);
 
 namespace Deployer\Traits;
 
+use Deployer\DTOs\ServerDTO;
+use Deployer\Services\SSHService;
+
 /**
- * Provides shared utilities for log-viewing commands.
+ * Shared utilities for log-viewing commands.
+ *
+ * @property SSHService $ssh
  */
 trait LogsTrait
 {
+    // ----
+    // Retrieval
+    // ----
+
+    /**
+     * Retrieve logs via journalctl.
+     *
+     * @param string|null $unit Systemd unit name (null for all system logs)
+     */
+    protected function retrieveJournalLogs(
+        ServerDTO $server,
+        string $title,
+        ?string $unit,
+        int $lines
+    ): void {
+        $this->h2($title);
+
+        try {
+            $command = null === $unit
+                ? sprintf('journalctl -n %d --no-pager 2>&1', $lines)
+                : sprintf('journalctl -u %s -n %d --no-pager 2>&1', escapeshellarg($unit), $lines);
+
+            $result = $this->ssh->executeCommand($server, $command);
+            $output = trim((string) $result['output']);
+
+            $noData = '' === $output
+                || '-- No entries --' === $output
+                || str_contains($output, 'No data available');
+
+            if (0 !== $result['exit_code'] && !$noData) {
+                $this->nay("Failed to retrieve {$title} logs");
+                $this->io->write($this->highlightErrors($output), true);
+                $this->out('───');
+
+                return;
+            }
+
+            if ($noData) {
+                $this->warn("No {$title} logs found");
+            } else {
+                $this->io->write($this->highlightErrors($output), true);
+            }
+
+            $this->out('───');
+        } catch (\RuntimeException $e) {
+            $this->nay($e->getMessage());
+        }
+    }
+
+    /**
+     * Retrieve logs from a file via tail.
+     */
+    protected function retrieveFileLogs(
+        ServerDTO $server,
+        string $title,
+        string $filepath,
+        int $lines
+    ): void {
+        $this->h2($title);
+        $this->out("<|gray>File: {$filepath}</>");
+
+        try {
+            $command = sprintf('tail -n %d %s 2>&1', $lines, escapeshellarg($filepath));
+            $result = $this->ssh->executeCommand($server, $command);
+            $output = trim((string) $result['output']);
+
+            $notFound = str_contains($output, 'No such file')
+                || str_contains($output, 'cannot open');
+
+            if ($notFound || '' === $output) {
+                $this->warn('No logs found or file does not exist');
+            } else {
+                $this->io->write($this->highlightErrors($output), true);
+            }
+
+            $this->out('───');
+        } catch (\RuntimeException $e) {
+            $this->nay($e->getMessage());
+        }
+    }
+
     // ----
     // Helpers
     // ----
@@ -18,26 +104,18 @@ trait LogsTrait
      */
     protected function highlightErrors(string $content): string
     {
-        $textKeywords = [
-            'error',
-            'exception',
-            'fail',
-            'failed',
-            'fatal',
-            'panic',
-        ];
-
+        $keywords = ['error', 'exception', 'fail', 'failed', 'fatal', 'panic'];
         $statusPattern = '/\b(500|502|503|504)\b/';
 
         $lines = explode("\n", $content);
-        $processedLines = [];
+        $processed = [];
 
         foreach ($lines as $line) {
-            $lowerLine = strtolower($line);
+            $lower = strtolower($line);
             $hasError = false;
 
-            foreach ($textKeywords as $keyword) {
-                if (str_contains($lowerLine, $keyword)) {
+            foreach ($keywords as $keyword) {
+                if (str_contains($lower, $keyword)) {
                     $hasError = true;
                     break;
                 }
@@ -47,14 +125,10 @@ trait LogsTrait
                 $hasError = true;
             }
 
-            if ($hasError) {
-                $processedLines[] = "<fg=red>{$line}</>";
-            } else {
-                $processedLines[] = $line;
-            }
+            $processed[] = $hasError ? "<fg=red>{$line}</>" : $line;
         }
 
-        return implode("\n", $processedLines);
+        return implode("\n", $processed);
     }
 
     // ----
