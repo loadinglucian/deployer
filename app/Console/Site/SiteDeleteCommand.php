@@ -60,8 +60,6 @@ class SiteDeleteCommand extends BaseCommand
             return $site;
         }
 
-        $this->displaySiteDeets($site);
-
         //
         // Display deletion info
         // ----

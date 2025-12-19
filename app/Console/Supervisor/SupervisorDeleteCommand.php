@@ -59,8 +59,6 @@ class SupervisorDeleteCommand extends BaseCommand
             return $site;
         }
 
-        $this->displaySiteDeets($site);
-
         $this->io->write("\n");
 
         $supervisor = $this->selectSupervisor($site);

@@ -55,8 +55,6 @@ class SiteSshCommand extends BaseCommand
             return $site;
         }
 
-        $this->displaySiteDeets($site);
-
         //
         // Get server for site
         // ----

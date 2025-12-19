@@ -226,8 +226,12 @@ trait SitesTrait
             return Command::FAILURE;
         }
 
-        /** @var SiteDTO */
-        return $this->sites->findByDomain($domain);
+        /** @var SiteDTO $site */
+        $site = $this->sites->findByDomain($domain);
+
+        $this->displaySiteDeets($site);
+
+        return $site;
     }
 
     /**
@@ -243,8 +247,6 @@ trait SitesTrait
         if (is_int($site)) {
             return $site;
         }
-
-        $this->displaySiteDeets($site);
 
         $server = $this->getServerForSite($site);
 

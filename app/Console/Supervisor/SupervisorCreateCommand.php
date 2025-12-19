@@ -64,8 +64,6 @@ class SupervisorCreateCommand extends BaseCommand
             return $site;
         }
 
-        $this->displaySiteDeets($site);
-
         $deployedResult = $this->ensureSiteDeployed($site);
 
         if (is_int($deployedResult)) {

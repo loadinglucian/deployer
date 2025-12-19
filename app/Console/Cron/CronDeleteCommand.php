@@ -59,8 +59,6 @@ class CronDeleteCommand extends BaseCommand
             return $site;
         }
 
-        $this->displaySiteDeets($site);
-
         $this->io->write("\n");
 
         $cron = $this->selectCron($site);
