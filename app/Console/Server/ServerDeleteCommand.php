@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Deployer\Console\Server;
 
 use Deployer\Contracts\BaseCommand;
+use Deployer\Traits\AwsTrait;
 use Deployer\Traits\DigitalOceanTrait;
 use Deployer\Traits\ServersTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -19,6 +20,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class ServerDeleteCommand extends BaseCommand
 {
+    use AwsTrait;
     use DigitalOceanTrait;
     use ServersTrait;
 
@@ -80,6 +82,10 @@ class ServerDeleteCommand extends BaseCommand
 
         if ($server->isDigitalOcean() && !$inventoryOnly) {
             $deletionInfo[] = "Destroy the droplet on DigitalOcean (ID: {$server->dropletId})";
+        }
+
+        if ($server->isAws() && !$inventoryOnly) {
+            $deletionInfo[] = "Terminate the EC2 instance on AWS (ID: {$server->instanceId})";
         }
 
         if (1 === count($deletionInfo)) {
@@ -144,6 +150,38 @@ class ServerDeleteCommand extends BaseCommand
                 );
 
                 $this->yay('Droplet destroyed (ID: ' . $dropletId . ')');
+
+                $destroyed = true;
+            } catch (\RuntimeException $e) {
+                $this->nay($e->getMessage());
+
+                $continueAnyway = $this->io->getBooleanOptionOrPrompt(
+                    'inventory-only',
+                    fn (): bool => $this->io->promptConfirm(
+                        label: 'Remove from inventory anyway?',
+                        default: true
+                    )
+                );
+
+                if (!$continueAnyway) {
+                    return Command::FAILURE;
+                }
+            }
+        } elseif ($server->isAws() && !$inventoryOnly) {
+            try {
+                if (Command::FAILURE === $this->initializeAwsAPI()) {
+                    throw new \RuntimeException('Terminating instance failed');
+                }
+
+                /** @var string $instanceId */
+                $instanceId = $server->instanceId;
+
+                $this->io->promptSpin(
+                    fn () => $this->aws->instance->terminateInstance($instanceId),
+                    "Terminating instance (ID: {$instanceId})"
+                );
+
+                $this->yay('Instance terminated (ID: ' . $instanceId . ')');
 
                 $destroyed = true;
             } catch (\RuntimeException $e) {
