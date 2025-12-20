@@ -64,13 +64,13 @@ class PostgresqlInstallCommand extends BaseCommand
         /** @var string|null $saveCredentialsPath */
         $saveCredentialsPath = $input->getOption('save-credentials');
 
-        if ($displayCredentials && null !== $saveCredentialsPath) {
+        if ($displayCredentials && '' !== $saveCredentialsPath && null !== $saveCredentialsPath) {
             $this->nay('Cannot use both --display-credentials and --save-credentials');
 
             return Command::FAILURE;
         }
 
-        if (!$displayCredentials && null === $saveCredentialsPath) {
+        if (!$displayCredentials && (null === $saveCredentialsPath || '' === $saveCredentialsPath)) {
             /** @var string $choice */
             $choice = $this->io->promptSelect(
                 label: 'How would you like to receive the credentials?',
@@ -87,7 +87,8 @@ class PostgresqlInstallCommand extends BaseCommand
                 $saveCredentialsPath = $this->io->promptText(
                     label: 'Save credentials to:',
                     placeholder: './.env.postgresql',
-                    required: true
+                    required: true,
+                    validate: fn ($value) => $this->validateSaveCredentialsPath($value)
                 );
             }
         }
@@ -132,6 +133,7 @@ class PostgresqlInstallCommand extends BaseCommand
             if ($displayCredentials) {
                 $this->displayCredentialsOnScreen($postgresPass, $deployerUser, $deployerPass, $deployerDatabase);
             } else {
+                /** @var string $saveCredentialsPath */
                 try {
                     $this->saveCredentialsToFile(
                         $saveCredentialsPath,
@@ -247,5 +249,21 @@ class PostgresqlInstallCommand extends BaseCommand
     protected function now(): string
     {
         return date('Y-m-d H:i:s T');
+    }
+
+    /**
+     * Validate credentials file path.
+     */
+    protected function validateSaveCredentialsPath(mixed $value): ?string
+    {
+        if (!is_string($value)) {
+            return 'Path must be a string';
+        }
+
+        if ('' === trim($value)) {
+            return 'Path cannot be empty';
+        }
+
+        return null;
     }
 }
