@@ -80,7 +80,7 @@ class AwsService
 
         $this->sdk = new Sdk([
             'region' => $region,
-            'version' => 'latest',
+            'version' => '2016-11-15',
             'credentials' => [
                 'key' => $accessKeyId,
                 'secret' => $secretAccessKey,

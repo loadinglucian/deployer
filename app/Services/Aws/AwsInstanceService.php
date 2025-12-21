@@ -46,8 +46,6 @@ class AwsInstanceService extends BaseAwsService
                 'KeyName' => $keyName,
                 'MinCount' => 1,
                 'MaxCount' => 1,
-                'SubnetId' => $subnetId,
-                'SecurityGroupIds' => [$securityGroupId],
                 'Monitoring' => [
                     'Enabled' => $monitoring,
                 ],
