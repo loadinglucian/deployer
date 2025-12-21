@@ -18,9 +18,6 @@ use Symfony\Component\Console\Command\Command;
  * Reusable server things.
  *
  * Requires classes using this trait to have IOService, ServerRepository, SSHService, and SiteRepository properties.
- * Also requires PlaybooksTrait for serverInfo() method.
- *
- * @mixin PlaybooksTrait
  *
  * @property IOService $io
  * @property ServerRepository $servers
@@ -29,6 +26,8 @@ use Symfony\Component\Console\Command\Command;
  */
 trait ServersTrait
 {
+    use PlaybooksTrait;
+
     // ----
     // Helpers
     // ----
