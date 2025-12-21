@@ -21,8 +21,6 @@ use Symfony\Component\Console\Command\Command;
  *
  * Requires classes using this trait to have IOService, ProcessService, ServerRepository, SiteRepository, and SSHService properties.
  *
- * @mixin ServersTrait
- *
  * @property IOService $io
  * @property ProcessService $proc
  * @property ServerRepository $servers
@@ -32,6 +30,8 @@ use Symfony\Component\Console\Command\Command;
  */
 trait SitesTrait
 {
+    use ServersTrait;
+
     // ----
     // Helpers
     // ----
@@ -54,6 +54,20 @@ trait SitesTrait
     protected function getSiteSharedPath(SiteDTO $site): string
     {
         return $this->getSiteRootPath($site) . '/shared';
+    }
+
+    /**
+     * Build full shared path for a site.
+     */
+    protected function buildSharedPath(SiteDTO $site, string $relative = ''): string
+    {
+        $sharedRoot = $this->getSiteSharedPath($site);
+
+        if ('' === $relative) {
+            return $sharedRoot;
+        }
+
+        return $this->fs->joinPaths($sharedRoot, $relative);
     }
 
     //
