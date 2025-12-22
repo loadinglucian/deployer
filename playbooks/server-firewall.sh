@@ -33,10 +33,21 @@ export DEPLOYER_PERMS
 # ----
 
 #
-# Allow SSH port (idempotent, silent on existing rule)
+# Allow SSH ports (idempotent, silent on existing rule)
+# Detects actual sshd listening port and also allows configured port if different.
+# Handles port-forwarding scenarios (VMs, containers) where daemon port differs from connection port.
 
 allow_ssh_port() {
-	run_cmd ufw allow "$DEPLOYER_SSH_PORT/tcp" > /dev/null 2>&1 || true
+	local detected_port
+	detected_port=$(detect_sshd_port)
+
+	# Allow detected sshd port
+	run_cmd ufw allow "${detected_port}/tcp" > /dev/null 2>&1 || true
+
+	# Also allow configured port if different (handles port forwarding)
+	if [[ $DEPLOYER_SSH_PORT -ne $detected_port ]]; then
+		run_cmd ufw allow "$DEPLOYER_SSH_PORT/tcp" > /dev/null 2>&1 || true
+	fi
 }
 
 #
