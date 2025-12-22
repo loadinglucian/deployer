@@ -1,79 +1,115 @@
 #!/usr/bin/env bash
 
 # ----
-# Lima VM Lifecycle Management
+# Lima VM Lifecycle Management (BATS Context)
 # ----
+# BATS-friendly wrappers around core Lima functions.
+# Uses $BATS_DISTRO as the default distro when not specified.
 
-# Lima VM instance name prefix
-LIMA_PREFIX="deployer-test"
+# Source shared core functions
+# shellcheck source=lima-core.bash
+source "$(dirname "${BASH_SOURCE[0]}")/lima-core.bash"
 
-# Get Lima instance name for a distro
-# Usage: lima_instance_name "ubuntu24"
-lima_instance_name() {
+#
+# Get Lima instance name for current distro
+#
+# Arguments:
+#   $1 - distro name (optional, defaults to $BATS_DISTRO)
+
+bats_lima_instance_name() {
     local distro="${1:-$BATS_DISTRO}"
-    echo "${LIMA_PREFIX}-${distro}"
+    lima_instance_name "$distro"
 }
 
-# Check if Lima instance is running
-# Usage: lima_is_running
-lima_is_running() {
+#
+# Check if Lima instance is running for current distro
+#
+# Arguments:
+#   $1 - distro name (optional, defaults to $BATS_DISTRO)
+
+bats_lima_is_running() {
+    local distro="${1:-$BATS_DISTRO}"
     local instance
-    instance="$(lima_instance_name)"
-    limactl list --json 2>/dev/null | jq -e ".[] | select(.name == \"${instance}\" and .status == \"Running\")" >/dev/null 2>&1
+    instance="$(lima_instance_name "$distro")"
+    lima_is_running "$instance"
 }
 
-# Check if Lima instance exists
-# Usage: lima_exists
-lima_exists() {
+#
+# Check if Lima instance exists for current distro
+#
+# Arguments:
+#   $1 - distro name (optional, defaults to $BATS_DISTRO)
+
+bats_lima_exists() {
+    local distro="${1:-$BATS_DISTRO}"
     local instance
-    instance="$(lima_instance_name)"
-    limactl list --json 2>/dev/null | jq -e ".[] | select(.name == \"${instance}\")" >/dev/null 2>&1
+    instance="$(lima_instance_name "$distro")"
+    lima_exists "$instance"
 }
 
-# Start Lima instance
-# Usage: lima_start
+#
+# Start Lima instance for current distro
+#
+# Arguments:
+#   $1 - distro name (optional, defaults to $BATS_DISTRO)
+
 lima_start() {
+    local distro="${1:-$BATS_DISTRO}"
     local instance
-    instance="$(lima_instance_name)"
-    local config="${BATS_TEST_ROOT}/lima/${BATS_DISTRO}.yaml"
+    instance="$(lima_instance_name "$distro")"
+    local config="${BATS_TEST_ROOT}/lima/${distro}.yaml"
 
-    if lima_is_running; then
+    if lima_is_running "$instance"; then
         return 0
     fi
 
-    if lima_exists; then
+    if lima_exists "$instance"; then
         limactl start "$instance"
     else
         limactl start --name="$instance" "$config"
     fi
 }
 
-# Stop Lima instance
-# Usage: lima_stop
+#
+# Stop Lima instance for current distro
+#
+# Arguments:
+#   $1 - distro name (optional, defaults to $BATS_DISTRO)
+
 lima_stop() {
+    local distro="${1:-$BATS_DISTRO}"
     local instance
-    instance="$(lima_instance_name)"
-    if lima_exists; then
+    instance="$(lima_instance_name "$distro")"
+    if lima_exists "$instance"; then
         limactl stop "$instance" 2>/dev/null || true
     fi
 }
 
+#
 # Reset Lima instance to clean state (delete and recreate)
-# Usage: lima_reset
-lima_reset() {
-    local instance
-    instance="$(lima_instance_name)"
+#
+# Arguments:
+#   $1 - distro name (optional, defaults to $BATS_DISTRO)
 
-    if lima_exists; then
+lima_reset() {
+    local distro="${1:-$BATS_DISTRO}"
+    local instance
+    instance="$(lima_instance_name "$distro")"
+
+    if lima_exists "$instance"; then
         limactl stop "$instance" 2>/dev/null || true
         limactl delete "$instance" --force 2>/dev/null || true
     fi
 
-    lima_start
+    lima_start "$distro"
 }
 
+#
 # Wait for SSH to be ready
-# Usage: lima_wait_ssh [max_attempts]
+#
+# Arguments:
+#   $1 - max attempts (optional, defaults to 60)
+
 lima_wait_ssh() {
     local max_attempts="${1:-60}"
     local attempt=0
@@ -96,9 +132,10 @@ lima_wait_ssh() {
     return 1
 }
 
+#
 # Clean VM state (faster than full reset)
 # Cleans up deployer-created artifacts without restarting VM
-# Usage: lima_clean
+
 lima_clean() {
     # Remove deployer-created files and directories
     ssh_exec "rm -rf /home/deployer/sites/* 2>/dev/null || true"
@@ -115,16 +152,25 @@ lima_clean() {
     ssh_exec "crontab -r 2>/dev/null || true"
 }
 
+#
 # Execute a command inside the VM via limactl shell
-# Usage: lima_exec "apt-get update"
+#
+# Arguments:
+#   $1 - command to execute
+
 lima_exec() {
+    local distro="${BATS_DISTRO}"
     local instance
-    instance="$(lima_instance_name)"
-    limactl shell "$instance" sudo bash -c "$1"
+    instance="$(lima_instance_name "$distro")"
+    limactl shell "$instance" -- sudo bash -c "$1"
 }
 
+#
 # Get VM logs (journalctl)
-# Usage: lima_logs [lines]
+#
+# Arguments:
+#   $1 - number of lines (optional, defaults to 50)
+
 lima_logs() {
     local lines="${1:-50}"
     ssh_exec "journalctl -n ${lines} --no-pager"

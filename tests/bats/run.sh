@@ -29,8 +29,9 @@ declare -A DISTRO_PORTS=(
 # Get ordered list of distro names
 DISTROS=("ubuntu24" "ubuntu25" "debian12" "debian13")
 
-# Lima VM instance name prefix
-LIMA_PREFIX="deployer-test"
+# Source shared Lima core functions (LIMA_PREFIX, lima_instance_name, lima_is_running, lima_exists)
+# shellcheck source=lib/lima-core.bash
+source "${BATS_DIR}/lib/lima-core.bash"
 
 # Track which distros this runner is responsible for (set during run)
 RUNNER_DISTROS=()
@@ -67,11 +68,15 @@ check_dependencies() {
         missing+=("lima")
     fi
 
+    if ! command -v jq >/dev/null 2>&1; then
+        missing+=("jq")
+    fi
+
     if [[ ${#missing[@]} -gt 0 ]]; then
         echo -e "${RED}Missing dependencies: ${missing[*]}${NC}"
         echo ""
         echo "Install with:"
-        echo "  brew install bats-core lima"
+        echo "  brew install bats-core lima jq"
         exit 1
     fi
 }
@@ -105,25 +110,11 @@ EOF
 #
 # Lima Lifecycle
 # ----
-
-lima_instance_name() {
-    local distro="$1"
-    echo "${LIMA_PREFIX}-${distro}"
-}
+# Core functions (lima_instance_name, lima_is_running, lima_exists) are sourced from lib/lima-core.bash
 
 lima_config_path() {
     local distro="$1"
     echo "${BATS_DIR}/lima/${distro}.yaml"
-}
-
-lima_is_running() {
-    local instance="$1"
-    limactl list --json 2>/dev/null | jq -e ".[] | select(.name == \"${instance}\" and .status == \"Running\")" >/dev/null 2>&1
-}
-
-lima_exists() {
-    local instance="$1"
-    limactl list --json 2>/dev/null | jq -e ".[] | select(.name == \"${instance}\")" >/dev/null 2>&1
 }
 
 start_lima_instance() {
