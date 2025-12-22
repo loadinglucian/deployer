@@ -15,3 +15,7 @@ vendor/
 deployer.yml
 settings.local.json
 Thumbs.db
+
+# BATS test artifacts
+tests/bats/fixtures/keys/
+tests/bats/fixtures/inventory/
