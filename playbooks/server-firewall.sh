@@ -33,10 +33,15 @@ export DEPLOYER_PERMS
 # ----
 
 #
-# Allow SSH port (idempotent, silent on existing rule)
+# Allow SSH ports (idempotent, silent on existing rule)
+# Always allows port 22 for port-forwarded environments (VMs, containers)
+# plus the configured SSH port if different
 
 allow_ssh_port() {
-	run_cmd ufw allow "$DEPLOYER_SSH_PORT/tcp" > /dev/null 2>&1 || true
+	run_cmd ufw allow 22/tcp > /dev/null 2>&1 || true
+	if [[ $DEPLOYER_SSH_PORT -ne 22 ]]; then
+		run_cmd ufw allow "$DEPLOYER_SSH_PORT/tcp" > /dev/null 2>&1 || true
+	fi
 }
 
 #
