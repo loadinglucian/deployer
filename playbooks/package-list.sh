@@ -196,6 +196,17 @@ main() {
 		ubuntu)
 
 			#
+			# Ensure add-apt-repository is available (Ubuntu only)
+
+			if ! command -v add-apt-repository > /dev/null 2>&1; then
+				echo "→ Installing software-properties-common..."
+				if ! apt_get_with_retry install -y software-properties-common; then
+					echo "Error: Failed to install software-properties-common" >&2
+					exit 1
+				fi
+			fi
+
+			#
 			# PHP PPA (Ubuntu only)
 
 			if ! grep -qr "ondrej/php" /etc/apt/sources.list /etc/apt/sources.list.d/ 2> /dev/null; then
