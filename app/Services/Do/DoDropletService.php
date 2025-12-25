@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Deployer\Services\Do;
 
 use DigitalOceanV2\Entity\Droplet as DropletEntity;
+use DigitalOceanV2\Exception\ResourceNotFoundException;
 
 /**
  * DigitalOcean droplet management service.
@@ -172,14 +173,10 @@ class DoDropletService extends BaseDoService
         try {
             $dropletApi = $client->droplet();
             $dropletApi->remove($dropletId);
+        } catch (ResourceNotFoundException) {
+            // Already deleted - silently succeed
+            return;
         } catch (\Throwable $e) {
-            // Check if 404 (already deleted) - silently succeed
-            $message = strtolower($e->getMessage());
-            if (str_contains($message, '404') || str_contains($message, 'not found')) {
-                return;
-            }
-
-            // Other errors - throw
             throw new \RuntimeException("Failed to destroy droplet: {$e->getMessage()}", 0, $e);
         }
     }
