@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Deployer\Services\DigitalOcean;
+namespace Deployer\Services\Do;
 
 use Deployer\Services\FilesystemService;
 
@@ -11,7 +11,7 @@ use Deployer\Services\FilesystemService;
  *
  * Handles uploading and deleting SSH keys from DigitalOcean account.
  */
-class DigitalOceanKeyService extends BaseDigitalOceanService
+class DoKeyService extends BaseDoService
 {
     public function __construct(
         private readonly FilesystemService $fs,

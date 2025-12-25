@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Deployer\Services\DigitalOcean;
+namespace Deployer\Services\Do;
 
 use DigitalOceanV2\Entity\Droplet as DropletEntity;
 
@@ -11,7 +11,7 @@ use DigitalOceanV2\Entity\Droplet as DropletEntity;
  *
  * Handles creating, destroying, and monitoring droplets.
  */
-class DigitalOceanDropletService extends BaseDigitalOceanService
+class DoDropletService extends BaseDoService
 {
     /**
      * Create a new droplet with the specified configuration.
@@ -114,7 +114,7 @@ class DigitalOceanDropletService extends BaseDigitalOceanService
         while (true) {
             $status = $this->getDropletStatus($dropletId);
 
-            if ($status === 'active') {
+            if ('active' === $status) {
                 return;
             }
 
@@ -145,7 +145,7 @@ class DigitalOceanDropletService extends BaseDigitalOceanService
 
             // Find public IPv4 network
             foreach ($droplet->networks as $network) {
-                if ($network->type === 'public' && $network->version === 4) {
+                if ('public' === $network->type && 4 === $network->version) {
                     return $network->ipAddress;
                 }
             }
