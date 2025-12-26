@@ -6,15 +6,15 @@ namespace Deployer\Traits;
 
 use Deployer\Exceptions\ValidationException;
 use Deployer\Services\FilesystemService;
-use Deployer\Services\IOService;
+use Deployer\Services\IoService;
 
 /**
  * Reusable SSH key things.
  *
- * Requires classes using this trait to have FilesystemService and IOService properties.
+ * Requires classes using this trait to have FilesystemService and IoService properties.
  *
  * @property FilesystemService $fs
- * @property IOService $io
+ * @property IoService $io
  */
 trait KeysTrait
 {

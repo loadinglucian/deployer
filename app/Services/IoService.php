@@ -28,7 +28,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * Handles all console input/output operations including prompts, output formatting,
  * and status messages. Must be initialized with a command context before use.
  */
-class IOService
+class IoService
 {
     private Command $command;
     private InputInterface $input;

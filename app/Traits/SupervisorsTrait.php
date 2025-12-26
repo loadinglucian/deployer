@@ -7,15 +7,15 @@ namespace Deployer\Traits;
 use Deployer\DTOs\SiteDTO;
 use Deployer\DTOs\SupervisorDTO;
 use Deployer\Exceptions\ValidationException;
-use Deployer\Services\IOService;
+use Deployer\Services\IoService;
 use Symfony\Component\Console\Command\Command;
 
 /**
  * Reusable supervisor program helpers.
  *
- * Requires classes using this trait to have IOService property and output methods.
+ * Requires classes using this trait to have IoService property and output methods.
  *
- * @property IOService $io
+ * @property IoService $io
  *
  * @method void info(string $message)
  * @method void ul(string|iterable<int|string, string> $lines)

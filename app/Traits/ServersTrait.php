@@ -10,18 +10,18 @@ use Deployer\Enums\Distribution;
 use Deployer\Exceptions\ValidationException;
 use Deployer\Repositories\ServerRepository;
 use Deployer\Repositories\SiteRepository;
-use Deployer\Services\IOService;
-use Deployer\Services\SSHService;
+use Deployer\Services\IoService;
+use Deployer\Services\SshService;
 use Symfony\Component\Console\Command\Command;
 
 /**
  * Reusable server things.
  *
- * Requires classes using this trait to have IOService, ServerRepository, SSHService, and SiteRepository properties.
+ * Requires classes using this trait to have IoService, ServerRepository, SshService, and SiteRepository properties.
  *
- * @property IOService $io
+ * @property IoService $io
  * @property ServerRepository $servers
- * @property SSHService $ssh
+ * @property SshService $ssh
  * @property SiteRepository $sites
  */
 trait ServersTrait

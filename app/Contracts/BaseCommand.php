@@ -14,9 +14,9 @@ use Deployer\Services\FilesystemService;
 use Deployer\Services\GitService;
 use Deployer\Services\HttpService;
 use Deployer\Services\InventoryService;
-use Deployer\Services\IOService;
+use Deployer\Services\IoService;
 use Deployer\Services\ProcessService;
-use Deployer\Services\SSHService;
+use Deployer\Services\SshService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -25,7 +25,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Base command with shared functionality for all commands.
  *
- * Uses IOService for all console input/output operations.
+ * Uses IoService for all console input/output operations.
  * All console commands should extend this class.
  */
 abstract class BaseCommand extends Command
@@ -47,13 +47,13 @@ abstract class BaseCommand extends Command
         protected readonly GitService $git,
         protected readonly HttpService $http,
         protected readonly InventoryService $inventory,
-        protected readonly IOService $io,
+        protected readonly IoService $io,
         protected readonly ProcessService $proc,
 
         // Servers & sites
         protected readonly ServerRepository $servers,
         protected readonly SiteRepository $sites,
-        protected readonly SSHService $ssh,
+        protected readonly SshService $ssh,
 
         // Hosting providers
         protected readonly AwsService $aws,

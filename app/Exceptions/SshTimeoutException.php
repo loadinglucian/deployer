@@ -7,7 +7,7 @@ namespace Deployer\Exceptions;
 /**
  * Exception thrown when SSH command execution times out.
  */
-class SSHTimeoutException extends \RuntimeException
+class SshTimeoutException extends \RuntimeException
 {
     public function __construct(
         string $message = 'SSH command timed out',
