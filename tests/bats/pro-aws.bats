@@ -113,7 +113,6 @@ setup() {
 		--vpc="$AWS_TEST_VPC" \
 		--subnet="$AWS_TEST_SUBNET" \
 		--disk-size="$AWS_TEST_DISK_SIZE" \
-		--disk-type="$AWS_TEST_DISK_TYPE" \
 		--no-monitoring
 
 	debug_output
