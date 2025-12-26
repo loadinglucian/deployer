@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Deployer\Services\Aws;
 
+use Deployer\Enums\Distribution;
+
 /**
  * AWS account data service.
  *
@@ -12,37 +14,88 @@ namespace Deployer\Services\Aws;
 class AwsAccountService extends BaseAwsService
 {
     /**
-     * Common instance type families for general-purpose workloads.
+     * Instance type families organized by category.
      *
-     * @var array<int, string>
+     * @var array<string, array{label: string, families: array<string, string>}>
      */
-    private const COMMON_INSTANCE_TYPES = [
-        't2.micro',
-        't2.small',
-        't2.medium',
-        't2.large',
-        't3.micro',
-        't3.small',
-        't3.medium',
-        't3.large',
-        't3.xlarge',
-        't3a.micro',
-        't3a.small',
-        't3a.medium',
-        't3a.large',
-        'm5.large',
-        'm5.xlarge',
-        'm6i.large',
-        'm6i.xlarge',
-        'c5.large',
-        'c5.xlarge',
-        'r5.large',
-        'r5.xlarge',
+    private const INSTANCE_TYPE_FAMILIES = [
+        'burstable' => [
+            'label' => 'Burstable (variable workloads, cost-effective)',
+            'families' => [
+                't3' => 'Intel, baseline + burst',
+                't3a' => 'AMD, ~10% cheaper than t3',
+                't4g' => 'ARM/Graviton, best price/performance',
+            ],
+        ],
+        'general' => [
+            'label' => 'General Purpose (balanced CPU/memory)',
+            'families' => [
+                'm6i' => 'Intel, current gen',
+                'm6a' => 'AMD, cost-optimized',
+                'm7g' => 'ARM/Graviton, latest gen',
+            ],
+        ],
+        'compute' => [
+            'label' => 'Compute Optimized (CPU-intensive)',
+            'families' => [
+                'c6i' => 'Intel, current gen',
+                'c6a' => 'AMD, cost-optimized',
+                'c7g' => 'ARM/Graviton, best compute value',
+            ],
+        ],
+        'memory' => [
+            'label' => 'Memory Optimized (large databases)',
+            'families' => [
+                'r6i' => 'Intel, current gen',
+                'r6a' => 'AMD, cost-optimized',
+                'r7g' => 'ARM/Graviton, latest gen',
+            ],
+        ],
     ];
+
 
     //
     // Account data retrieval
     // ----
+
+    /**
+     * Get instance type families for selection.
+     *
+     * Returns families grouped by category with descriptions.
+     *
+     * @return array<string, string> Array of family => description
+     */
+    public function getInstanceFamilies(): array
+    {
+        $options = [];
+
+        foreach (self::INSTANCE_TYPE_FAMILIES as $category) {
+            $label = $category['label'];
+            $families = $category['families'];
+
+            foreach ($families as $family => $description) {
+                $options[$family] = "{$family} - {$description} [{$label}]";
+            }
+        }
+
+        return $options;
+    }
+
+    /**
+     * Get valid instance family names.
+     *
+     * @return array<int, string>
+     */
+    public function getValidFamilyNames(): array
+    {
+        $families = [];
+
+        foreach (self::INSTANCE_TYPE_FAMILIES as $category) {
+            $families = array_merge($families, array_keys($category['families']));
+        }
+
+        return $families;
+    }
 
     /**
      * Get available AWS regions.
@@ -77,45 +130,66 @@ class AwsAccountService extends BaseAwsService
     }
 
     /**
-     * Get available EC2 instance types.
+     * Get available EC2 instance types for a specific family.
      *
-     * Returns a curated list of common instance types with their specifications.
+     * Paginates through all instance types and filters by family prefix.
+     * AWS doesn't support wildcards in describeInstanceTypes, so we filter client-side.
      *
      * @return array<string, string> Array of instance type => description
      */
-    public function getAvailableInstanceTypes(): array
+    public function getAvailableInstanceTypes(string $family): array
     {
         $ec2 = $this->createEc2Client();
+        $familyPrefix = $family . '.';
 
         try {
-            $result = $ec2->describeInstanceTypes([
-                'InstanceTypes' => self::COMMON_INSTANCE_TYPES,
-            ]);
-
             $instanceData = [];
-            /** @var list<array<string, mixed>> $types */
-            $types = $result['InstanceTypes'] ?? [];
-            /** @var array<string, mixed> $type */
-            foreach ($types as $type) {
-                /** @var string $instanceType */
-                $instanceType = $type['InstanceType'];
-                /** @var array<string, mixed> $vcpuInfo */
-                $vcpuInfo = $type['VCpuInfo'];
-                /** @var int $vcpus */
-                $vcpus = $vcpuInfo['DefaultVCpus'];
-                /** @var array<string, mixed> $memoryInfo */
-                $memoryInfo = $type['MemoryInfo'];
-                /** @var int $memorySizeInMib */
-                $memorySizeInMib = $memoryInfo['SizeInMiB'];
-                $memory = (int) ($memorySizeInMib / 1024); // Convert MiB to GiB
+            $nextToken = null;
 
-                $instanceData[] = [
-                    'type' => $instanceType,
-                    'vcpus' => $vcpus,
-                    'memory' => $memory,
-                    'label' => "{$instanceType} - {$vcpus} vCPU, {$memory}GB RAM",
-                ];
-            }
+            // Paginate through all instance types
+            do {
+                $params = ['MaxResults' => 100];
+
+                if (null !== $nextToken) {
+                    $params['NextToken'] = $nextToken;
+                }
+
+                $result = $ec2->describeInstanceTypes($params);
+
+                /** @var list<array<string, mixed>> $types */
+                $types = $result['InstanceTypes'] ?? [];
+
+                foreach ($types as $type) {
+                    /** @var string $instanceType */
+                    $instanceType = $type['InstanceType'];
+
+                    // Filter by family prefix
+                    if (!str_starts_with($instanceType, $familyPrefix)) {
+                        continue;
+                    }
+
+                    /** @var array<string, mixed> $vcpuInfo */
+                    $vcpuInfo = $type['VCpuInfo'];
+                    /** @var int $vcpus */
+                    $vcpus = $vcpuInfo['DefaultVCpus'];
+                    /** @var array<string, mixed> $memoryInfo */
+                    $memoryInfo = $type['MemoryInfo'];
+                    /** @var int|string $rawMemory */
+                    $rawMemory = $memoryInfo['SizeInMiB'];
+                    $memorySizeInMib = (int) $rawMemory;
+                    $memoryLabel = $this->formatMemorySize($memorySizeInMib);
+
+                    $instanceData[] = [
+                        'type' => $instanceType,
+                        'vcpus' => $vcpus,
+                        'memory' => $memorySizeInMib,
+                        'label' => "{$instanceType} - {$vcpus} vCPU, {$memoryLabel} RAM",
+                    ];
+                }
+
+                /** @var string|null $nextToken */
+                $nextToken = $result['NextToken'] ?? null;
+            } while (null !== $nextToken);
 
             // Sort by vCPUs, then by memory
             usort($instanceData, function (array $a, array $b) {
@@ -133,8 +207,35 @@ class AwsAccountService extends BaseAwsService
 
             return $options;
         } catch (\Throwable $e) {
-            throw new \RuntimeException('Failed to fetch instance types: ' . $e->getMessage(), 0, $e);
+            throw new \RuntimeException("Failed to fetch instance types for family '{$family}': " . $e->getMessage(), 0, $e);
         }
+    }
+
+    /**
+     * Validate a full instance type exists.
+     *
+     * Used for backwards-compatible --instance-type option validation.
+     */
+    public function validateInstanceType(string $instanceType): bool
+    {
+        // Extract family from instance type (e.g., "t3.large" -> "t3")
+        $parts = explode('.', $instanceType);
+
+        if (2 !== count($parts)) {
+            return false;
+        }
+
+        $family = $parts[0];
+        $validFamilies = $this->getValidFamilyNames();
+
+        if (!in_array($family, $validFamilies, true)) {
+            return false;
+        }
+
+        // Verify the specific type exists by querying AWS
+        $availableTypes = $this->getAvailableInstanceTypes($family);
+
+        return isset($availableTypes[$instanceType]);
     }
 
     /**
@@ -361,7 +462,23 @@ class AwsAccountService extends BaseAwsService
     }
 
     /**
-     * Filter images to keep only the latest version of each distribution.
+     * Format memory size for display.
+     *
+     * Shows MB for sub-GB amounts, GB otherwise.
+     */
+    private function formatMemorySize(int $sizeInMib): string
+    {
+        if (1024 > $sizeInMib) {
+            return "{$sizeInMib}MB";
+        }
+
+        $sizeInGib = (int) ($sizeInMib / 1024);
+
+        return "{$sizeInGib}GB";
+    }
+
+    /**
+     * Filter images to keep only the latest 2 versions per distribution.
      *
      * @param array<int, array<string, mixed>> $images
      *
@@ -369,41 +486,69 @@ class AwsAccountService extends BaseAwsService
      */
     private function filterLatestImages(array $images): array
     {
-        // Group by distribution key (ubuntu-22.04, debian-12, etc.)
+        // Group by version key and keep latest image per version
         $grouped = [];
         foreach ($images as $image) {
             /** @var string $name */
             $name = $image['Name'] ?? '';
-            $key = $this->getDistributionKey($name);
+            $parsed = $this->parseImageVersion($name);
 
-            if (null === $key) {
+            if (null === $parsed) {
                 continue;
             }
+
+            [$distro, $version] = $parsed;
+            $key = $distro . '-' . $version;
 
             /** @var string $creationDate */
             $creationDate = $image['CreationDate'] ?? '';
 
             if (!isset($grouped[$key]) || $creationDate > $grouped[$key]['CreationDate']) {
-                $grouped[$key] = $image;
+                $grouped[$key] = $image + ['_distro' => $distro, '_version' => $version];
             }
         }
 
-        return array_values($grouped);
+        // Separate by distro
+        $ubuntu = [];
+        $debian = [];
+
+        foreach ($grouped as $image) {
+            /** @var string $version */
+            $version = $image['_version'];
+
+            if ('ubuntu' === $image['_distro']) {
+                $ubuntu[$version] = $image;
+            } else {
+                $debian[$version] = $image;
+            }
+        }
+
+        // Sort versions descending and limit to latest 2 each
+        // Cast to string because PHP converts numeric keys like "12" to int
+        uksort($ubuntu, fn ($a, $b) => version_compare((string) $b, (string) $a));
+        uksort($debian, fn ($a, $b) => version_compare((string) $b, (string) $a));
+
+        $ubuntu = array_slice($ubuntu, 0, 2, true);
+        $debian = array_slice($debian, 0, 2, true);
+
+        return array_values(array_merge($ubuntu, $debian));
     }
 
     /**
-     * Extract distribution key from image name (e.g., "ubuntu-22.04", "debian-12").
+     * Parse image name to extract distribution and version.
+     *
+     * @return array{0: string, 1: string}|null Returns [distro, version] or null
      */
-    private function getDistributionKey(string $name): ?string
+    private function parseImageVersion(string $name): ?array
     {
-        // Ubuntu: ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20231117
-        if (preg_match('/ubuntu[^0-9]*(\d+\.\d+)/', $name, $matches)) {
-            return 'ubuntu-' . $matches[1];
+        // Ubuntu LTS only (xx.04 versions)
+        if (preg_match('/ubuntu[^0-9]*(\d+\.04)/', $name, $matches)) {
+            return ['ubuntu', $matches[1]];
         }
 
-        // Debian: debian-12-amd64-20231013-1532
+        // Debian major versions
         if (preg_match('/debian-(\d+)/', $name, $matches)) {
-            return 'debian-' . $matches[1];
+            return ['debian', $matches[1]];
         }
 
         return null;
@@ -414,51 +559,16 @@ class AwsAccountService extends BaseAwsService
      */
     private function formatImageDescription(string $name): string
     {
-        // Ubuntu
-        if (preg_match('/ubuntu[^0-9]*(\d+\.\d+)/', $name, $matches)) {
-            $version = $matches[1];
-            $codename = $this->getUbuntuCodename($version);
+        $parsed = $this->parseImageVersion($name);
 
-            return "Ubuntu {$version} LTS ({$codename})";
+        if (null === $parsed) {
+            return '';
         }
 
-        // Debian
-        if (preg_match('/debian-(\d+)/', $name, $matches)) {
-            $version = $matches[1];
-            $codename = $this->getDebianCodename($version);
+        [$distro, $version] = $parsed;
+        $distribution = Distribution::from($distro);
 
-            return "Debian {$version} ({$codename})";
-        }
-
-        return '';
-    }
-
-    /**
-     * Get Ubuntu codename for a version number.
-     */
-    private function getUbuntuCodename(string $version): string
-    {
-        $codenames = [
-            '20.04' => 'Focal Fossa',
-            '22.04' => 'Jammy Jellyfish',
-            '24.04' => 'Noble Numbat',
-        ];
-
-        return $codenames[$version] ?? 'LTS';
-    }
-
-    /**
-     * Get Debian codename for a version number.
-     */
-    private function getDebianCodename(string $version): string
-    {
-        $codenames = [
-            '11' => 'Bullseye',
-            '12' => 'Bookworm',
-            '13' => 'Trixie',
-        ];
-
-        return $codenames[$version] ?? 'Stable';
+        return $distribution->formatVersion($version);
     }
 
     /**
