@@ -88,6 +88,7 @@ class ServerDeleteCommand extends BaseCommand
 
         if ($server->isAws() && !$inventoryOnly) {
             $deletionInfo[] = "Terminate the EC2 instance on AWS (ID: {$server->instanceId})";
+            $deletionInfo[] = 'Release associated Elastic IP (if any)';
         }
 
         if (1 === count($deletionInfo)) {
@@ -178,12 +179,35 @@ class ServerDeleteCommand extends BaseCommand
                 /** @var string $instanceId */
                 $instanceId = $server->instanceId;
 
+                //
+                // Look up Elastic IP before termination (association is lost after termination)
+
+                $elasticIpAllocationId = $this->io->promptSpin(
+                    fn () => $this->aws->instance->findElasticIpByInstanceId($instanceId),
+                    'Looking up Elastic IP...'
+                );
+
+                //
+                // Terminate instance
+
                 $this->io->promptSpin(
                     fn () => $this->aws->instance->terminateInstance($instanceId),
                     "Terminating instance (ID: {$instanceId})"
                 );
 
                 $this->yay('Instance terminated (ID: ' . $instanceId . ')');
+
+                //
+                // Release Elastic IP (if found)
+
+                if (null !== $elasticIpAllocationId) {
+                    $this->io->promptSpin(
+                        fn () => $this->aws->instance->releaseElasticIp($elasticIpAllocationId),
+                        'Releasing Elastic IP...'
+                    );
+
+                    $this->yay('Elastic IP released (ID: ' . $elasticIpAllocationId . ')');
+                }
 
                 $destroyed = true;
             } catch (\RuntimeException $e) {

@@ -54,6 +54,8 @@ class KeyAddCommand extends BaseCommand
             return Command::FAILURE;
         }
 
+        $this->info("Region: {$this->aws->getRegion()}");
+
         //
         // Gather key details
         // ----
@@ -74,17 +76,12 @@ class KeyAddCommand extends BaseCommand
         // ----
 
         try {
-            $fingerprint = $this->io->promptSpin(
+            $this->io->promptSpin(
                 fn () => $this->aws->key->importKeyPair($publicKeyPath, $keyName),
                 'Importing key pair...'
             );
 
-            $this->yay("Key pair imported successfully");
-            $this->displayDeets([
-                'Name' => $keyName,
-                'Region' => $this->aws->getRegion(),
-                'Fingerprint' => $fingerprint,
-            ]);
+            $this->yay("Key pair imported successfully (Name: {$keyName})");
         } catch (\RuntimeException $e) {
             $this->nay($e->getMessage());
 

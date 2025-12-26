@@ -48,6 +48,8 @@ class KeyDeleteCommand extends BaseCommand
             return Command::FAILURE;
         }
 
+        $this->info("Region: {$this->aws->getRegion()}");
+
         $selectedKey = $this->selectAwsKey();
 
         if (is_int($selectedKey)) {
@@ -59,7 +61,6 @@ class KeyDeleteCommand extends BaseCommand
         $this->displayDeets([
             'Name' => $keyName,
             'Description' => $keyDescription,
-            'Region' => $this->aws->getRegion(),
         ]);
 
         $this->out('───');
