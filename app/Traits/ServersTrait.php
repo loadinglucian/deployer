@@ -240,7 +240,7 @@ trait ServersTrait
         $distro = $info['distro'] ?? 'unknown';
         $distribution = Distribution::tryFrom($distro);
 
-        if (null === $distribution || ! $distribution->isSupported()) {
+        if (null === $distribution) {
             $this->info('Deployer only supports Debian and Ubuntu.');
 
             return Command::FAILURE;
