@@ -46,8 +46,7 @@ class ProvisionCommand extends BaseCommand
             ->addOption('private-key-path', null, InputOption::VALUE_REQUIRED, 'SSH private key path')
             ->addOption('vpc', null, InputOption::VALUE_REQUIRED, 'VPC ID')
             ->addOption('subnet', null, InputOption::VALUE_REQUIRED, 'Subnet ID')
-            ->addOption('disk-size', null, InputOption::VALUE_REQUIRED, 'Root disk size in GB')
-            ->addOption('disk-type', null, InputOption::VALUE_REQUIRED, 'Root disk type (gp2, gp3, io1, io2, st1, sc1)')
+            ->addOption('disk-size', null, InputOption::VALUE_REQUIRED, 'Root disk size in GB (default: 8)')
             ->addOption('monitoring', null, InputOption::VALUE_NEGATABLE, 'Enable detailed monitoring');
     }
 
@@ -112,7 +111,6 @@ class ProvisionCommand extends BaseCommand
             'vpc' => $deets['vpcId'],
             'subnet' => $deets['subnetId'],
             'disk-size' => $deets['diskSize'],
-            'disk-type' => $deets['diskType'],
             'monitoring' => $deets['monitoring'],
         ]);
 
@@ -172,7 +170,7 @@ class ProvisionCommand extends BaseCommand
     /**
      * Provision the EC2 instance.
      *
-     * @param array{name: string, instanceType: string, ami: string, amiName: string, keyPair: string, privateKeyPath: string, vpcId: string, subnetId: string, diskSize: int, diskType: string, monitoring: bool} $deets
+     * @param array{name: string, instanceType: string, ami: string, amiName: string, keyPair: string, privateKeyPath: string, vpcId: string, subnetId: string, diskSize: int, monitoring: bool} $deets
      */
     protected function provisionInstance(array $deets, string $securityGroupId): string|int
     {
@@ -186,8 +184,7 @@ class ProvisionCommand extends BaseCommand
                     subnetId: $deets['subnetId'],
                     securityGroupId: $securityGroupId,
                     monitoring: $deets['monitoring'],
-                    diskSize: $deets['diskSize'],
-                    diskType: $deets['diskType']
+                    diskSize: $deets['diskSize']
                 ),
                 'Provisioning instance...'
             );
@@ -205,7 +202,7 @@ class ProvisionCommand extends BaseCommand
     /**
      * Configure instance and add to inventory with automatic rollback on failure.
      *
-     * @param array{name: string, instanceType: string, ami: string, amiName: string, keyPair: string, privateKeyPath: string, vpcId: string, subnetId: string, diskSize: int, diskType: string, monitoring: bool} $deets
+     * @param array{name: string, instanceType: string, ami: string, amiName: string, keyPair: string, privateKeyPath: string, vpcId: string, subnetId: string, diskSize: int, monitoring: bool} $deets
      */
     protected function configureInstance(string $instanceId, array $deets): int
     {
@@ -315,7 +312,7 @@ class ProvisionCommand extends BaseCommand
      *
      * @param array{instanceFamilies: array<string, string>, validFamilyNames: array<int, string>, keys: array<string, string>, images: array<string, string>, vpcs: array<string, string>} $accountData
      *
-     * @return array{name: string, instanceType: string, ami: string, amiName: string, keyPair: string, privateKeyPath: string, vpcId: string, subnetId: string, diskSize: int, diskType: string, monitoring: bool}|int
+     * @return array{name: string, instanceType: string, ami: string, amiName: string, keyPair: string, privateKeyPath: string, vpcId: string, subnetId: string, diskSize: int, monitoring: bool}|int
      */
     protected function gatherProvisioningDeets(array $accountData): array|int
     {
@@ -627,9 +624,9 @@ class ProvisionCommand extends BaseCommand
     }
 
     /**
-     * Gather optional parameters (disk config, monitoring).
+     * Gather optional parameters (disk size, monitoring).
      *
-     * @return array{diskSize: int, diskType: string, monitoring: bool}
+     * @return array{diskSize: int, monitoring: bool}
      */
     protected function gatherOptionalDeets(): array
     {
@@ -651,24 +648,6 @@ class ProvisionCommand extends BaseCommand
         $diskSize = (int) $diskSizeInput;
 
         //
-        // Disk type
-
-        $diskTypeOptions = $this->getAwsDiskTypeOptions();
-
-        /** @var string $diskType */
-        $diskType = $this->io->getValidatedOptionOrPrompt(
-            'disk-type',
-            fn ($validate) => $this->io->promptSelect(
-                label: 'Select root disk type:',
-                options: $diskTypeOptions,
-                hint: 'gp3 recommended for most workloads',
-                default: 'gp3',
-                validate: $validate
-            ),
-            fn ($value) => $this->validateAwsDiskType($value)
-        );
-
-        //
         // Monitoring
 
         $monitoring = $this->io->getBooleanOptionOrPrompt(
@@ -682,7 +661,6 @@ class ProvisionCommand extends BaseCommand
 
         return [
             'diskSize' => $diskSize,
-            'diskType' => $diskType,
             'monitoring' => $monitoring,
         ];
     }

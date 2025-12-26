@@ -397,46 +397,4 @@ trait AwsTrait
         return null;
     }
 
-    /**
-     * Validate disk type input.
-     *
-     * @return string|null Error message if invalid, null if valid
-     */
-    protected function validateAwsDiskType(mixed $type): ?string
-    {
-        $validTypes = ['gp2', 'gp3', 'io1', 'io2', 'st1', 'sc1'];
-
-        if (!is_string($type)) {
-            return 'Disk type must be a string';
-        }
-
-        if ('' === trim($type)) {
-            return 'Disk type cannot be empty';
-        }
-
-        if (!in_array($type, $validTypes, true)) {
-            $validTypesStr = implode(', ', $validTypes);
-
-            return "Invalid disk type: '{$type}'. Valid types: {$validTypesStr}";
-        }
-
-        return null;
-    }
-
-    /**
-     * Get available disk types with descriptions.
-     *
-     * @return array<string, string>
-     */
-    protected function getAwsDiskTypeOptions(): array
-    {
-        return [
-            'gp3' => 'gp3 - General Purpose SSD (recommended)',
-            'gp2' => 'gp2 - General Purpose SSD (legacy)',
-            'io1' => 'io1 - Provisioned IOPS SSD (high performance)',
-            'io2' => 'io2 - Provisioned IOPS SSD (high durability)',
-            'st1' => 'st1 - Throughput Optimized HDD (big data)',
-            'sc1' => 'sc1 - Cold HDD (infrequent access)',
-        ];
-    }
 }

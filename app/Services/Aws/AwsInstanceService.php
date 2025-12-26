@@ -21,8 +21,7 @@ class AwsInstanceService extends BaseAwsService
      * @param string $subnetId Subnet ID
      * @param string $securityGroupId Security group ID
      * @param bool $monitoring Enable detailed monitoring
-     * @param int|null $diskSize Root disk size in GB (null = AMI default)
-     * @param string|null $diskType Root disk type (null = gp3)
+     * @param int|null $diskSize Root disk size in GB (null = AMI default, uses gp3 SSD)
      *
      * @return array{id: string, name: string} Instance data
      *
@@ -36,8 +35,7 @@ class AwsInstanceService extends BaseAwsService
         string $subnetId,
         string $securityGroupId,
         bool $monitoring = false,
-        ?int $diskSize = null,
-        ?string $diskType = null
+        ?int $diskSize = null
     ): array {
         $ec2 = $this->createEc2Client();
 
@@ -70,23 +68,15 @@ class AwsInstanceService extends BaseAwsService
                 ],
             ];
 
-            if (null !== $diskSize || null !== $diskType) {
-                $ebsConfig = [
-                    'DeleteOnTermination' => true,
-                ];
-
-                if (null !== $diskSize) {
-                    $ebsConfig['VolumeSize'] = $diskSize;
-                }
-
-                if (null !== $diskType) {
-                    $ebsConfig['VolumeType'] = $diskType;
-                }
-
+            if (null !== $diskSize) {
                 $params['BlockDeviceMappings'] = [
                     [
                         'DeviceName' => '/dev/xvda',
-                        'Ebs' => $ebsConfig,
+                        'Ebs' => [
+                            'VolumeSize' => $diskSize,
+                            'VolumeType' => 'gp3',
+                            'DeleteOnTermination' => true,
+                        ],
                     ],
                 ];
             }
