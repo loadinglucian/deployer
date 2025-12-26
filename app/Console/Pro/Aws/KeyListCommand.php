@@ -37,6 +37,8 @@ class KeyListCommand extends BaseCommand
             return Command::FAILURE;
         }
 
+        $this->info("Region: {$this->aws->getRegion()}");
+
         //
         // Fetch keys
         // ----
@@ -47,7 +49,6 @@ class KeyListCommand extends BaseCommand
             return Command::FAILURE;
         }
 
-        $this->info("Region: {$this->aws->getRegion()}");
         $this->displayDeets($keys);
 
         //

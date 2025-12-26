@@ -38,13 +38,16 @@ class ProvisionCommand extends BaseCommand
 
         $this
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Server name for inventory')
-            ->addOption('instance-type', null, InputOption::VALUE_REQUIRED, 'Instance type (e.g., t3.micro)')
+            ->addOption('instance-type', null, InputOption::VALUE_REQUIRED, 'Full instance type (e.g., t3.large) - skips family/size prompts')
+            ->addOption('instance-family', null, InputOption::VALUE_REQUIRED, 'Instance family (e.g., t3, m6i, c7g)')
+            ->addOption('instance-size', null, InputOption::VALUE_REQUIRED, 'Instance size (e.g., micro, large, xlarge)')
             ->addOption('ami', null, InputOption::VALUE_REQUIRED, 'AMI ID')
             ->addOption('key-pair', null, InputOption::VALUE_REQUIRED, 'AWS key pair name')
             ->addOption('private-key-path', null, InputOption::VALUE_REQUIRED, 'SSH private key path')
             ->addOption('vpc', null, InputOption::VALUE_REQUIRED, 'VPC ID')
             ->addOption('subnet', null, InputOption::VALUE_REQUIRED, 'Subnet ID')
-            ->addOption('public-ip', null, InputOption::VALUE_NEGATABLE, 'Assign public IP')
+            ->addOption('disk-size', null, InputOption::VALUE_REQUIRED, 'Root disk size in GB')
+            ->addOption('disk-type', null, InputOption::VALUE_REQUIRED, 'Root disk type (gp2, gp3, io1, io2, st1, sc1)')
             ->addOption('monitoring', null, InputOption::VALUE_NEGATABLE, 'Enable detailed monitoring');
     }
 
@@ -61,6 +64,8 @@ class ProvisionCommand extends BaseCommand
         if (Command::FAILURE === $this->initializeAwsAPI()) {
             return Command::FAILURE;
         }
+
+        $this->info("Region: {$this->aws->getRegion()}");
 
         $accountData = $this->fetchAccountData();
 
@@ -106,7 +111,8 @@ class ProvisionCommand extends BaseCommand
             'private-key-path' => $deets['privateKeyPath'],
             'vpc' => $deets['vpcId'],
             'subnet' => $deets['subnetId'],
-            'public-ip' => $deets['publicIp'],
+            'disk-size' => $deets['diskSize'],
+            'disk-type' => $deets['diskType'],
             'monitoring' => $deets['monitoring'],
         ]);
 
@@ -120,14 +126,15 @@ class ProvisionCommand extends BaseCommand
     /**
      * Fetch AWS account data.
      *
-     * @return array{instanceTypes: array<string, string>, keys: array<string, string>, images: array<string, string>, vpcs: array<string, string>}|int
+     * @return array{instanceFamilies: array<string, string>, validFamilyNames: array<int, string>, keys: array<string, string>, images: array<string, string>, vpcs: array<string, string>}|int
      */
     protected function fetchAccountData(): array|int
     {
         try {
             return $this->io->promptSpin(
                 fn () => [
-                    'instanceTypes' => $this->aws->account->getAvailableInstanceTypes(),
+                    'instanceFamilies' => $this->aws->account->getInstanceFamilies(),
+                    'validFamilyNames' => $this->aws->account->getValidFamilyNames(),
                     'keys' => $this->aws->account->getPublicKeys(),
                     'images' => $this->aws->account->getAvailableImages(),
                     'vpcs' => $this->aws->account->getUserVpcs(),
@@ -165,7 +172,7 @@ class ProvisionCommand extends BaseCommand
     /**
      * Provision the EC2 instance.
      *
-     * @param array{name: string, instanceType: string, ami: string, amiName: string, keyPair: string, privateKeyPath: string, vpcId: string, subnetId: string, publicIp: bool, monitoring: bool} $deets
+     * @param array{name: string, instanceType: string, ami: string, amiName: string, keyPair: string, privateKeyPath: string, vpcId: string, subnetId: string, diskSize: int, diskType: string, monitoring: bool} $deets
      */
     protected function provisionInstance(array $deets, string $securityGroupId): string|int
     {
@@ -178,8 +185,9 @@ class ProvisionCommand extends BaseCommand
                     keyName: $deets['keyPair'],
                     subnetId: $deets['subnetId'],
                     securityGroupId: $securityGroupId,
-                    publicIp: $deets['publicIp'],
-                    monitoring: $deets['monitoring']
+                    monitoring: $deets['monitoring'],
+                    diskSize: $deets['diskSize'],
+                    diskType: $deets['diskType']
                 ),
                 'Provisioning instance...'
             );
@@ -197,11 +205,12 @@ class ProvisionCommand extends BaseCommand
     /**
      * Configure instance and add to inventory with automatic rollback on failure.
      *
-     * @param array{name: string, instanceType: string, ami: string, amiName: string, keyPair: string, privateKeyPath: string, vpcId: string, subnetId: string, publicIp: bool, monitoring: bool} $deets
+     * @param array{name: string, instanceType: string, ami: string, amiName: string, keyPair: string, privateKeyPath: string, vpcId: string, subnetId: string, diskSize: int, diskType: string, monitoring: bool} $deets
      */
     protected function configureInstance(string $instanceId, array $deets): int
     {
         $provisionSuccess = false;
+        $elasticIpAllocationId = null;
 
         try {
             $this->io->promptSpin(
@@ -211,7 +220,27 @@ class ProvisionCommand extends BaseCommand
 
             $this->yay('Instance is running');
 
-            $ipAddress = $this->aws->instance->getInstanceIp($instanceId);
+            //
+            // Allocate and associate Elastic IP
+
+            $elasticIp = $this->io->promptSpin(
+                fn () => $this->aws->instance->allocateElasticIp(),
+                'Allocating Elastic IP...'
+            );
+
+            $elasticIpAllocationId = $elasticIp['allocationId'];
+
+            $this->io->promptSpin(
+                fn () => $this->aws->instance->associateElasticIp($elasticIpAllocationId, $instanceId),
+                'Associating Elastic IP with instance...'
+            );
+
+            $this->yay('Elastic IP allocated (ID: ' . $elasticIpAllocationId . ')');
+
+            //
+            // Add to inventory
+
+            $ipAddress = $elasticIp['publicIp'];
             $username = $this->aws->instance->getDefaultUsername($deets['amiName']);
 
             $server = $this->getServerInfo(new ServerDTO(
@@ -241,7 +270,7 @@ class ProvisionCommand extends BaseCommand
         }
 
         if (!$provisionSuccess) {
-            $this->rollbackInstance($instanceId);
+            $this->rollbackInstance($instanceId, $elasticIpAllocationId);
 
             return Command::FAILURE;
         }
@@ -250,10 +279,25 @@ class ProvisionCommand extends BaseCommand
     }
 
     /**
-     * Rollback instance on failure.
+     * Rollback instance and associated resources on failure.
      */
-    protected function rollbackInstance(string $instanceId): void
+    protected function rollbackInstance(string $instanceId, ?string $elasticIpAllocationId = null): void
     {
+        // Release Elastic IP first (if allocated)
+        if (null !== $elasticIpAllocationId) {
+            try {
+                $this->io->promptSpin(
+                    fn () => $this->aws->instance->releaseElasticIp($elasticIpAllocationId),
+                    'Releasing Elastic IP...'
+                );
+
+                $this->warn('Released Elastic IP');
+            } catch (\Throwable $cleanupError) {
+                $this->nay($cleanupError->getMessage());
+            }
+        }
+
+        // Terminate instance
         try {
             $this->io->promptSpin(
                 fn () => $this->aws->instance->terminateInstance($instanceId),
@@ -269,9 +313,9 @@ class ProvisionCommand extends BaseCommand
     /**
      * Gather provisioning details from user input or CLI options.
      *
-     * @param array{instanceTypes: array<string, string>, keys: array<string, string>, images: array<string, string>, vpcs: array<string, string>} $accountData
+     * @param array{instanceFamilies: array<string, string>, validFamilyNames: array<int, string>, keys: array<string, string>, images: array<string, string>, vpcs: array<string, string>} $accountData
      *
-     * @return array{name: string, instanceType: string, ami: string, amiName: string, keyPair: string, privateKeyPath: string, vpcId: string, subnetId: string, publicIp: bool, monitoring: bool}|int
+     * @return array{name: string, instanceType: string, ami: string, amiName: string, keyPair: string, privateKeyPath: string, vpcId: string, subnetId: string, diskSize: int, diskType: string, monitoring: bool}|int
      */
     protected function gatherProvisioningDeets(array $accountData): array|int
     {
@@ -303,29 +347,29 @@ class ProvisionCommand extends BaseCommand
     /**
      * Validate that required account data is available.
      *
-     * @param array{instanceTypes: array<string, string>, keys: array<string, string>, images: array<string, string>, vpcs: array<string, string>} $accountData
+     * @param array{instanceFamilies: array<string, string>, validFamilyNames: array<int, string>, keys: array<string, string>, images: array<string, string>, vpcs: array<string, string>} $accountData
      *
      * @throws ValidationException
      */
     protected function validateAccountDataAvailability(array $accountData): void
     {
-        if (0 === count($accountData['instanceTypes'])) {
-            throw new ValidationException("No instance types available in {$this->aws->getRegion()}");
+        if (0 === count($accountData['instanceFamilies'])) {
+            throw new ValidationException('No instance families available');
         }
 
         if (0 === count($accountData['images'])) {
-            throw new ValidationException("No supported OS images available in {$this->aws->getRegion()}");
+            throw new ValidationException('No supported OS images available in this region');
         }
 
         if (0 === count($accountData['vpcs'])) {
-            throw new ValidationException("No VPCs found in {$this->aws->getRegion()}");
+            throw new ValidationException('No VPCs found in this region');
         }
     }
 
     /**
      * Gather core provisioning details (name, instance type, AMI, key pair, private key path).
      *
-     * @param array{instanceTypes: array<string, string>, keys: array<string, string>, images: array<string, string>, vpcs: array<string, string>} $accountData
+     * @param array{instanceFamilies: array<string, string>, validFamilyNames: array<int, string>, keys: array<string, string>, images: array<string, string>, vpcs: array<string, string>} $accountData
      *
      * @return array{name: string, instanceType: string, ami: string, amiName: string, keyPair: string, privateKeyPath: string}|int
      */
@@ -343,19 +387,14 @@ class ProvisionCommand extends BaseCommand
             fn ($value) => $this->validateServerName($value)
         );
 
-        /** @var string $instanceType */
-        $instanceType = $this->io->getValidatedOptionOrPrompt(
-            'instance-type',
-            fn ($validate) => $this->io->promptSelect(
-                label: 'Select instance type:',
-                options: $accountData['instanceTypes'],
-                hint: 'Choose CPU and RAM configuration',
-                default: 't3.micro',
-                scroll: 15,
-                validate: $validate
-            ),
-            fn ($value) => $this->validateAwsInstanceType($value, $accountData['instanceTypes'])
-        );
+        //
+        // Instance type selection (two-step or direct)
+
+        $instanceType = $this->gatherInstanceType($accountData);
+
+        if (is_int($instanceType)) {
+            return Command::FAILURE;
+        }
 
         /** @var string $ami */
         $ami = $this->io->getValidatedOptionOrPrompt(
@@ -394,6 +433,152 @@ class ProvisionCommand extends BaseCommand
             'keyPair' => $keyPair,
             'privateKeyPath' => $privateKeyPath,
         ];
+    }
+
+    /**
+     * Gather instance type via direct option or two-step family/size selection.
+     *
+     * Supports three modes:
+     * 1. --instance-type (full type like t3.large) - backwards compatible
+     * 2. --instance-family + --instance-size (CLI two-step)
+     * 3. Interactive two-step prompts
+     *
+     * @param array{instanceFamilies: array<string, string>, validFamilyNames: array<int, string>, keys: array<string, string>, images: array<string, string>, vpcs: array<string, string>} $accountData
+     *
+     * @return string|int Instance type string on success, Command::FAILURE on error
+     */
+    protected function gatherInstanceType(array $accountData): string|int
+    {
+        /** @var string|null $directType */
+        $directType = $this->io->getOptionValue('instance-type');
+
+        //
+        // Mode 1: Direct --instance-type option (backwards compatible)
+
+        if (null !== $directType) {
+            $error = $this->validateAwsFullInstanceType($directType, $accountData['validFamilyNames']);
+
+            if (null !== $error) {
+                $this->nay($error);
+
+                return Command::FAILURE;
+            }
+
+            // Verify the specific type exists in AWS
+            $parts = explode('.', $directType);
+            $family = $parts[0];
+
+            $availableTypes = $this->io->promptSpin(
+                fn () => $this->aws->account->getAvailableInstanceTypes($family),
+                "Verifying instance type '{$directType}'..."
+            );
+
+            if (!isset($availableTypes[$directType])) {
+                $this->nay("Instance type '{$directType}' is not available in this region");
+
+                return Command::FAILURE;
+            }
+
+            return $directType;
+        }
+
+        //
+        // Mode 2 & 3: Two-step selection (CLI options or interactive)
+
+        /** @var string $family */
+        $family = $this->io->getValidatedOptionOrPrompt(
+            'instance-family',
+            fn ($validate) => $this->io->promptSelect(
+                label: 'Select instance family:',
+                options: $accountData['instanceFamilies'],
+                hint: 'Choose instance category based on workload',
+                default: 't3',
+                scroll: 15,
+                validate: $validate
+            ),
+            fn ($value) => $this->validateAwsInstanceFamily($value, $accountData['instanceFamilies'])
+        );
+
+        //
+        // Fetch available sizes for the selected family
+
+        $availableTypes = $this->io->promptSpin(
+            fn () => $this->aws->account->getAvailableInstanceTypes($family),
+            "Fetching available {$family} sizes..."
+        );
+
+        if (0 === count($availableTypes)) {
+            $this->nay("No instance sizes available for family '{$family}' in this region");
+
+            return Command::FAILURE;
+        }
+
+        //
+        // Select specific size
+
+        /** @var string $instanceType */
+        $instanceType = $this->io->getValidatedOptionOrPrompt(
+            'instance-size',
+            fn ($validate) => $this->io->promptSelect(
+                label: "Select {$family} size:",
+                options: $availableTypes,
+                hint: 'Choose CPU and RAM configuration',
+                scroll: 15,
+                validate: $validate
+            ),
+            fn ($value) => $this->validateAwsInstanceSizeInput($value, $family, $availableTypes)
+        );
+
+        // If --instance-size was provided as just the size (e.g., "large"), combine with family
+        if (!str_contains($instanceType, '.')) {
+            $instanceType = "{$family}.{$instanceType}";
+        }
+
+        return $instanceType;
+    }
+
+    /**
+     * Validate instance size input.
+     *
+     * Handles both full type (t3.large) and size-only (large) formats.
+     *
+     * @param array<string, string> $availableTypes Available instance types for the family
+     *
+     * @return string|null Error message if invalid, null if valid
+     */
+    protected function validateAwsInstanceSizeInput(mixed $size, string $family, array $availableTypes): ?string
+    {
+        if (!is_string($size)) {
+            return 'Instance size must be a string';
+        }
+
+        if ('' === trim($size)) {
+            return 'Instance size cannot be empty';
+        }
+
+        // Check if it's a full instance type (e.g., t3.large)
+        if (str_contains($size, '.')) {
+            if (!isset($availableTypes[$size])) {
+                return "Invalid instance type: '{$size}' is not available in this region";
+            }
+
+            return null;
+        }
+
+        // It's just the size (e.g., "large"), combine with family
+        $fullType = "{$family}.{$size}";
+
+        if (!isset($availableTypes[$fullType])) {
+            $validSizes = array_map(
+                fn ($type) => explode('.', $type)[1] ?? $type,
+                array_keys($availableTypes)
+            );
+            $validSizesStr = implode(', ', $validSizes);
+
+            return "Invalid size: '{$size}'. Valid sizes for {$family}: {$validSizesStr}";
+        }
+
+        return null;
     }
 
     /**
@@ -442,20 +627,49 @@ class ProvisionCommand extends BaseCommand
     }
 
     /**
-     * Gather optional parameters (public IP, monitoring).
+     * Gather optional parameters (disk config, monitoring).
      *
-     * @return array{publicIp: bool, monitoring: bool}
+     * @return array{diskSize: int, diskType: string, monitoring: bool}
      */
     protected function gatherOptionalDeets(): array
     {
-        $publicIp = $this->io->getBooleanOptionOrPrompt(
-            'public-ip',
-            fn () => $this->io->promptConfirm(
-                label: 'Assign public IP address?',
-                default: true,
-                hint: 'Required for internet access'
-            )
+        //
+        // Disk size
+
+        /** @var string $diskSizeInput */
+        $diskSizeInput = $this->io->getValidatedOptionOrPrompt(
+            'disk-size',
+            fn ($validate) => $this->io->promptText(
+                label: 'Root disk size (GB):',
+                default: '8',
+                required: true,
+                validate: $validate
+            ),
+            fn ($value) => $this->validateAwsDiskSize($value)
         );
+
+        $diskSize = (int) $diskSizeInput;
+
+        //
+        // Disk type
+
+        $diskTypeOptions = $this->getAwsDiskTypeOptions();
+
+        /** @var string $diskType */
+        $diskType = $this->io->getValidatedOptionOrPrompt(
+            'disk-type',
+            fn ($validate) => $this->io->promptSelect(
+                label: 'Select root disk type:',
+                options: $diskTypeOptions,
+                hint: 'gp3 recommended for most workloads',
+                default: 'gp3',
+                validate: $validate
+            ),
+            fn ($value) => $this->validateAwsDiskType($value)
+        );
+
+        //
+        // Monitoring
 
         $monitoring = $this->io->getBooleanOptionOrPrompt(
             'monitoring',
@@ -467,7 +681,8 @@ class ProvisionCommand extends BaseCommand
         );
 
         return [
-            'publicIp' => $publicIp,
+            'diskSize' => $diskSize,
+            'diskType' => $diskType,
             'monitoring' => $monitoring,
         ];
     }

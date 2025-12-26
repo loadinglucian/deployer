@@ -97,7 +97,7 @@ trait AwsTrait
         // Check if no keys are available
 
         if (0 === count($keys)) {
-            $this->info("No EC2 key pairs found in your AWS account for {$this->aws->getRegion()}");
+            $this->info('No EC2 key pairs found in your AWS account for this region');
             $this->ul([
                 'Run <fg=cyan>pro:aws:key:add</> to add a public SSH key',
             ]);
@@ -158,6 +158,32 @@ trait AwsTrait
     // ----
 
     /**
+     * Validate instance family against available families.
+     *
+     * @param array<string, string> $validFamilies Available instance families (family => description)
+     *
+     * @return string|null Error message if invalid, null if valid
+     */
+    protected function validateAwsInstanceFamily(mixed $family, array $validFamilies): ?string
+    {
+        if (!is_string($family)) {
+            return 'Instance family must be a string';
+        }
+
+        if ('' === trim($family)) {
+            return 'Instance family cannot be empty';
+        }
+
+        if (!isset($validFamilies[$family])) {
+            $validFamilyNames = implode(', ', array_keys($validFamilies));
+
+            return "Invalid instance family: '{$family}'. Valid families: {$validFamilyNames}";
+        }
+
+        return null;
+    }
+
+    /**
      * Validate instance type against available types.
      *
      * @param array<string, string> $validTypes Available instance types
@@ -175,7 +201,43 @@ trait AwsTrait
         }
 
         if (!isset($validTypes[$type])) {
-            return "Invalid instance type: '{$type}' is not available";
+            return "Invalid instance type: '{$type}' is not available in this region";
+        }
+
+        return null;
+    }
+
+    /**
+     * Validate full instance type format and family.
+     *
+     * Used for backwards-compatible --instance-type option.
+     *
+     * @param array<int, string> $validFamilies List of valid family names
+     *
+     * @return string|null Error message if invalid, null if valid
+     */
+    protected function validateAwsFullInstanceType(mixed $type, array $validFamilies): ?string
+    {
+        if (!is_string($type)) {
+            return 'Instance type must be a string';
+        }
+
+        if ('' === trim($type)) {
+            return 'Instance type cannot be empty';
+        }
+
+        // Validate format: family.size (e.g., t3.large)
+        if (!preg_match('/^[a-z0-9]+\.[a-z0-9]+$/i', $type)) {
+            return "Invalid instance type format: '{$type}'. Expected format: family.size (e.g., t3.large)";
+        }
+
+        $parts = explode('.', $type);
+        $family = $parts[0];
+
+        if (!in_array($family, $validFamilies, true)) {
+            $validFamilyNames = implode(', ', $validFamilies);
+
+            return "Invalid instance family: '{$family}'. Valid families: {$validFamilyNames}";
         }
 
         return null;
@@ -199,7 +261,7 @@ trait AwsTrait
         }
 
         if (!isset($validImages[$ami])) {
-            return "Invalid AMI: '{$ami}' is not available in {$this->aws->getRegion()}";
+            return "Invalid AMI: '{$ami}' is not available in this region";
         }
 
         return null;
@@ -223,7 +285,7 @@ trait AwsTrait
         }
 
         if (!isset($validKeys[$keyName])) {
-            return "Invalid key pair: '{$keyName}' is not available in {$this->aws->getRegion()}";
+            return "Invalid key pair: '{$keyName}' is not available in this region";
         }
 
         return null;
@@ -252,7 +314,7 @@ trait AwsTrait
         }
 
         if (!isset($availableVpcs[$vpcId])) {
-            return "Invalid VPC: '{$vpcId}' not found in {$this->aws->getRegion()}";
+            return "Invalid VPC: '{$vpcId}' not found in this region";
         }
 
         return null;
@@ -309,5 +371,72 @@ trait AwsTrait
         }
 
         return null;
+    }
+
+    /**
+     * Validate disk size input.
+     *
+     * @return string|null Error message if invalid, null if valid
+     */
+    protected function validateAwsDiskSize(mixed $size): ?string
+    {
+        if (!is_string($size) && !is_int($size)) {
+            return 'Disk size must be a number';
+        }
+
+        $sizeInt = is_string($size) ? (int) $size : $size;
+
+        if (8 > $sizeInt) {
+            return 'Disk size must be at least 8 GB';
+        }
+
+        if (16384 < $sizeInt) {
+            return 'Disk size cannot exceed 16384 GB (16 TB)';
+        }
+
+        return null;
+    }
+
+    /**
+     * Validate disk type input.
+     *
+     * @return string|null Error message if invalid, null if valid
+     */
+    protected function validateAwsDiskType(mixed $type): ?string
+    {
+        $validTypes = ['gp2', 'gp3', 'io1', 'io2', 'st1', 'sc1'];
+
+        if (!is_string($type)) {
+            return 'Disk type must be a string';
+        }
+
+        if ('' === trim($type)) {
+            return 'Disk type cannot be empty';
+        }
+
+        if (!in_array($type, $validTypes, true)) {
+            $validTypesStr = implode(', ', $validTypes);
+
+            return "Invalid disk type: '{$type}'. Valid types: {$validTypesStr}";
+        }
+
+        return null;
+    }
+
+    /**
+     * Get available disk types with descriptions.
+     *
+     * @return array<string, string>
+     */
+    protected function getAwsDiskTypeOptions(): array
+    {
+        return [
+            'gp3' => 'gp3 - General Purpose SSD (recommended)',
+            'gp2' => 'gp2 - General Purpose SSD (legacy)',
+            'io1' => 'io1 - Provisioned IOPS SSD (high performance)',
+            'io2' => 'io2 - Provisioned IOPS SSD (high durability)',
+            'st1' => 'st1 - Throughput Optimized HDD (big data)',
+            'sc1' => 'sc1 - Cold HDD (infrequent access)',
+        ];
     }
 }
