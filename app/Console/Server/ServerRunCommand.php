@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Deployer\Console\Server;
 
 use Deployer\Contracts\BaseCommand;
-use Deployer\Exceptions\SSHTimeoutException;
+use Deployer\Exceptions\SshTimeoutException;
 use Deployer\Exceptions\ValidationException;
 use Deployer\Traits\PlaybooksTrait;
 use Deployer\Traits\ServersTrait;
@@ -96,7 +96,7 @@ class ServerRunCommand extends BaseCommand
             if (0 !== $result['exit_code']) {
                 throw new \RuntimeException("Command failed with exit code {$result['exit_code']}");
             }
-        } catch (SSHTimeoutException $e) {
+        } catch (SshTimeoutException $e) {
             $this->nay($e->getMessage());
             $this->warn('The command took longer than expected. Either:');
             $this->ul([

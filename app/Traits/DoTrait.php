@@ -7,7 +7,7 @@ namespace Deployer\Traits;
 use Deployer\Exceptions\ValidationException;
 use Deployer\Services\DoService;
 use Deployer\Services\EnvService;
-use Deployer\Services\IOService;
+use Deployer\Services\IoService;
 use Symfony\Component\Console\Command\Command;
 
 /**
@@ -15,7 +15,7 @@ use Symfony\Component\Console\Command\Command;
  *
  * @property DoService $do
  * @property EnvService $env
- * @property IOService $io
+ * @property IoService $io
  */
 trait DoTrait
 {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Deployer\Services;
 
 use Deployer\DTOs\ServerDTO;
-use Deployer\Exceptions\SSHTimeoutException;
+use Deployer\Exceptions\SshTimeoutException;
 use phpseclib3\Crypt\Common\PrivateKey;
 use phpseclib3\Crypt\PublicKeyLoader;
 use phpseclib3\Net\SFTP;
@@ -34,7 +34,7 @@ use phpseclib3\Net\SSH2;
  * // Download files from remote server
  * $ssh->downloadFile($server, '/remote/config.yml', './local-config.yml');
  */
-class SSHService
+class SshService
 {
     public function __construct(
         private readonly FilesystemService $fs,
@@ -63,7 +63,7 @@ class SSHService
      * @param int $timeout Timeout in seconds (default: 300 = 5 minutes)
      * @return array{output: string, exit_code: int}
      *
-     * @throws SSHTimeoutException When command execution times out
+     * @throws SshTimeoutException When command execution times out
      * @throws \RuntimeException When connection, authentication, or command execution fails
      */
     public function executeCommand(
@@ -83,7 +83,7 @@ class SSHService
 
             // Check if command timed out (phpseclib returns false on timeout)
             if ($output === false) {
-                throw new SSHTimeoutException(
+                throw new SshTimeoutException(
                     "Command execution timed out after {$timeout} seconds on {$server->host}"
                 );
             }
@@ -92,7 +92,7 @@ class SSHService
                 'output' => is_string($output) ? $output : '',
                 'exit_code' => $exitCode,
             ];
-        } catch (SSHTimeoutException $e) {
+        } catch (SshTimeoutException $e) {
             throw $e;
         } catch (\Throwable $e) {
             throw new \RuntimeException("Error executing command on {$server->host}: " . $e->getMessage(), previous: $e);

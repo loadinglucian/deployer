@@ -11,21 +11,21 @@ use Deployer\Exceptions\ValidationException;
 use Deployer\Repositories\ServerRepository;
 use Deployer\Repositories\SiteRepository;
 use Deployer\Services\GitService;
-use Deployer\Services\IOService;
+use Deployer\Services\IoService;
 use Deployer\Services\ProcessService;
-use Deployer\Services\SSHService;
+use Deployer\Services\SshService;
 use Symfony\Component\Console\Command\Command;
 
 /**
  * Reusable site things.
  *
- * Requires classes using this trait to have IOService, ProcessService, ServerRepository, SiteRepository, and SSHService properties.
+ * Requires classes using this trait to have IoService, ProcessService, ServerRepository, SiteRepository, and SshService properties.
  *
- * @property IOService $io
+ * @property IoService $io
  * @property ProcessService $proc
  * @property ServerRepository $servers
  * @property SiteRepository $sites
- * @property SSHService $ssh
+ * @property SshService $ssh
  * @property GitService $git
  */
 trait SitesTrait

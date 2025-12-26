@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Deployer\Traits;
 
 use Deployer\DTOs\ServerDTO;
-use Deployer\Services\SSHService;
+use Deployer\Services\SshService;
 
 /**
  * Shared utilities for log-viewing commands.
  *
- * @property SSHService $ssh
+ * @property SshService $ssh
  */
 trait LogsTrait
 {

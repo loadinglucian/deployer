@@ -6,7 +6,7 @@ namespace Deployer\Traits;
 
 use Deployer\Exceptions\ValidationException;
 use Deployer\Services\FilesystemService;
-use Deployer\Services\IOService;
+use Deployer\Services\IoService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -14,7 +14,7 @@ use Symfony\Component\Console\Input\InputOption;
  * Reusable scaffold file copying helpers.
  *
  * @property FilesystemService $fs
- * @property IOService $io
+ * @property IoService $io
  *
  * @method void displayDeets(array<string, string> $details)
  * @method void nay(string $message)

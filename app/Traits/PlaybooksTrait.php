@@ -9,22 +9,22 @@ use Deployer\DTOs\CronDTO;
 use Deployer\DTOs\ServerDTO;
 use Deployer\DTOs\SiteServerDTO;
 use Deployer\DTOs\SupervisorDTO;
-use Deployer\Exceptions\SSHTimeoutException;
+use Deployer\Exceptions\SshTimeoutException;
 use Deployer\Services\FilesystemService;
-use Deployer\Services\IOService;
-use Deployer\Services\SSHService;
+use Deployer\Services\IoService;
+use Deployer\Services\SshService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Yaml\Yaml;
 
 /**
  * Reusable playbook things.
  *
- * Requires classes using this trait to have Container, IOService, SSHService, and FilesystemService properties.
+ * Requires classes using this trait to have Container, IoService, SshService, and FilesystemService properties.
  *
  * @property Container $container
  * @property FilesystemService $fs
- * @property IOService $io
- * @property SSHService $ssh
+ * @property IoService $io
+ * @property SshService $ssh
  */
 trait PlaybooksTrait
 {
@@ -37,7 +37,7 @@ trait PlaybooksTrait
      *
      * Handles SSH execution, error display, and YAML parsing.
      * Playbooks write YAML output to a temp file (DEPLOYER_OUTPUT_FILE).
-     * Displays errors via IOService and returns Command::FAILURE on any error.
+     * Displays errors via IoService and returns Command::FAILURE on any error.
      *
      * Standard playbook environment variables (auto-injected from context):
      *   - DEPLOYER_OUTPUT_FILE: Output file path (always provided)
@@ -196,7 +196,7 @@ trait PlaybooksTrait
             }
 
             $capture = trim((string) $result['output']);
-        } catch (SSHTimeoutException $e) {
+        } catch (SshTimeoutException $e) {
             $this->nay($e->getMessage());
             $this->out([
                 '',
