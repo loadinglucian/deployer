@@ -90,6 +90,17 @@ class IoService
     // ----
 
     /**
+     * Get raw option value from input.
+     *
+     * Simple accessor for commands that need to check option values
+     * without prompting (e.g., optional configuration).
+     */
+    public function getOptionValue(string $optionName): mixed
+    {
+        return $this->input->getOption($optionName);
+    }
+
+    /**
      * Get option value or prompt user, with automatic validation.
      *
      * Combines getOptionOrPrompt with validation. The validator is automatically

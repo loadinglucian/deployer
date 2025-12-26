@@ -20,8 +20,8 @@ class AwsInstanceService extends BaseAwsService
      * @param string $keyName EC2 key pair name
      * @param string $subnetId Subnet ID
      * @param string $securityGroupId Security group ID
-     * @param bool $publicIp Associate public IP address
      * @param bool $monitoring Enable detailed monitoring
+     * @param int|null $diskSize Root disk size in GB (null = AMI default, uses gp3 SSD)
      *
      * @return array{id: string, name: string} Instance data
      *
@@ -34,13 +34,13 @@ class AwsInstanceService extends BaseAwsService
         string $keyName,
         string $subnetId,
         string $securityGroupId,
-        bool $publicIp = true,
-        bool $monitoring = false
+        bool $monitoring = false,
+        ?int $diskSize = null
     ): array {
         $ec2 = $this->createEc2Client();
 
         try {
-            $result = $ec2->runInstances([
+            $params = [
                 'ImageId' => $imageId,
                 'InstanceType' => $instanceType,
                 'KeyName' => $keyName,
@@ -54,7 +54,7 @@ class AwsInstanceService extends BaseAwsService
                         'DeviceIndex' => 0,
                         'SubnetId' => $subnetId,
                         'Groups' => [$securityGroupId],
-                        'AssociatePublicIpAddress' => $publicIp,
+                        'AssociatePublicIpAddress' => false,
                     ],
                 ],
                 'TagSpecifications' => [
@@ -66,7 +66,22 @@ class AwsInstanceService extends BaseAwsService
                         ],
                     ],
                 ],
-            ]);
+            ];
+
+            if (null !== $diskSize) {
+                $params['BlockDeviceMappings'] = [
+                    [
+                        'DeviceName' => '/dev/xvda',
+                        'Ebs' => [
+                            'VolumeSize' => $diskSize,
+                            'VolumeType' => 'gp3',
+                            'DeleteOnTermination' => true,
+                        ],
+                    ],
+                ];
+            }
+
+            $result = $ec2->runInstances($params);
 
             /** @var list<array<string, mixed>> $instances */
             $instances = $result['Instances'] ?? [];
@@ -248,5 +263,128 @@ class AwsInstanceService extends BaseAwsService
 
         // Default to ubuntu for unknown AMIs
         return 'ubuntu';
+    }
+
+    // ----
+    // Elastic IP
+    // ----
+
+    /**
+     * Find the Elastic IP allocation ID associated with an EC2 instance.
+     *
+     * @return string|null Allocation ID if found, null otherwise
+     *
+     * @throws \RuntimeException If the API call fails
+     */
+    public function findElasticIpByInstanceId(string $instanceId): ?string
+    {
+        $ec2 = $this->createEc2Client();
+
+        try {
+            $result = $ec2->describeAddresses([
+                'Filters' => [
+                    [
+                        'Name' => 'instance-id',
+                        'Values' => [$instanceId],
+                    ],
+                ],
+            ]);
+
+            /** @var list<array<string, mixed>> $addresses */
+            $addresses = $result['Addresses'] ?? [];
+
+            if (0 === count($addresses)) {
+                return null;
+            }
+
+            /** @var string $allocationId */
+            $allocationId = $addresses[0]['AllocationId'];
+
+            return $allocationId;
+        } catch (\Throwable $e) {
+            throw new \RuntimeException("Failed to find Elastic IP for instance: {$e->getMessage()}", 0, $e);
+        }
+    }
+
+    /**
+     * Allocate a new Elastic IP address.
+     *
+     * @return array{allocationId: string, publicIp: string}
+     *
+     * @throws \RuntimeException If allocation fails
+     */
+    public function allocateElasticIp(): array
+    {
+        $ec2 = $this->createEc2Client();
+
+        try {
+            $result = $ec2->allocateAddress([
+                'Domain' => 'vpc',
+                'TagSpecifications' => [
+                    [
+                        'ResourceType' => 'elastic-ip',
+                        'Tags' => [
+                            ['Key' => 'ManagedBy', 'Value' => 'deployer'],
+                        ],
+                    ],
+                ],
+            ]);
+
+            /** @var string $allocationId */
+            $allocationId = $result['AllocationId'];
+            /** @var string $publicIp */
+            $publicIp = $result['PublicIp'];
+
+            return [
+                'allocationId' => $allocationId,
+                'publicIp' => $publicIp,
+            ];
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Failed to allocate Elastic IP: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
+    /**
+     * Associate an Elastic IP with an EC2 instance.
+     *
+     * @throws \RuntimeException If association fails
+     */
+    public function associateElasticIp(string $allocationId, string $instanceId): void
+    {
+        $ec2 = $this->createEc2Client();
+
+        try {
+            $ec2->associateAddress([
+                'AllocationId' => $allocationId,
+                'InstanceId' => $instanceId,
+            ]);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Failed to associate Elastic IP: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
+    /**
+     * Release an Elastic IP address.
+     *
+     * Silently succeeds if the allocation doesn't exist.
+     *
+     * @throws \RuntimeException If release fails (non-404 errors)
+     */
+    public function releaseElasticIp(string $allocationId): void
+    {
+        $ec2 = $this->createEc2Client();
+
+        try {
+            $ec2->releaseAddress([
+                'AllocationId' => $allocationId,
+            ]);
+        } catch (\Throwable $e) {
+            $message = strtolower($e->getMessage());
+            if (str_contains($message, 'not found') || str_contains($message, 'does not exist')) {
+                return;
+            }
+
+            throw new \RuntimeException('Failed to release Elastic IP: ' . $e->getMessage(), 0, $e);
+        }
     }
 }
