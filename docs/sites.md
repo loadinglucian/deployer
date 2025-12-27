@@ -30,6 +30,7 @@
     - [Scaffolding Supervisors](#scaffolding-supervisors)
 
 <a name="introduction"></a>
+
 ## Introduction
 
 Sites are applications deployed to your servers. DeployerPHP manages the complete lifecycle from creation through deployment, including automation like cron jobs and background processes.
@@ -37,6 +38,7 @@ Sites are applications deployed to your servers. DeployerPHP manages the complet
 Sites are stored in your local inventory and linked to a server. Each site has its own Nginx configuration, PHP-FPM pool, and directory structure.
 
 <a name="creating-a-site"></a>
+
 ## Creating a Site
 
 The `site:create` command sets up a new site on a server:
@@ -47,12 +49,12 @@ deployer site:create
 
 You'll be prompted for:
 
-| Option | Description |
-| ------ | ----------- |
-| `--server` | Server from your inventory |
-| `--domain` | Site domain (e.g., example.com) |
-| `--php-version` | PHP version for this site |
-| `--www` | WWW handling mode |
+| Option          | Description                     |
+| --------------- | ------------------------------- |
+| `--server`      | Server from your inventory      |
+| `--domain`      | Site domain (e.g., example.com) |
+| `--php-version` | PHP version for this site       |
+| `--www`         | WWW handling mode               |
 
 WWW handling options:
 
@@ -83,6 +85,7 @@ example.com/
 ```
 
 <a name="deploying-a-site"></a>
+
 ## Deploying a Site
 
 The `site:deploy` command deploys your application from a Git repository:
@@ -93,11 +96,11 @@ deployer site:deploy
 
 Options:
 
-| Option | Description |
-| ------ | ----------- |
-| `--site` | Site domain |
-| `--repo` | Git repository URL |
-| `--branch` | Branch to deploy |
+| Option     | Description        |
+| ---------- | ------------------ |
+| `--site`   | Site domain        |
+| `--repo`   | Git repository URL |
+| `--branch` | Branch to deploy   |
 
 Example:
 
@@ -109,15 +112,16 @@ deployer site:deploy \
 ```
 
 <a name="deployment-hooks"></a>
+
 ### Deployment Hooks
 
 DeployerPHP runs deployment hooks from your repository's `.deployer/hooks/` directory:
 
-| Hook | Purpose | Example Tasks |
-| ---- | ------- | ------------- |
-| `1-building.sh` | Install dependencies, build assets | composer install, npm run build |
-| `2-releasing.sh` | Prepare the release | php artisan migrate, php artisan config:cache |
-| `3-finishing.sh` | Post-release tasks | php artisan queue:restart |
+| Hook             | Purpose                            | Example Tasks                                 |
+| ---------------- | ---------------------------------- | --------------------------------------------- |
+| `1-building.sh`  | Install dependencies, build assets | composer install, npm run build               |
+| `2-releasing.sh` | Prepare the release                | php artisan migrate, php artisan config:cache |
+| `3-finishing.sh` | Post-release tasks                 | php artisan queue:restart                     |
 
 Example `1-building.sh` for Laravel:
 
@@ -146,6 +150,7 @@ php artisan view:cache
 > Hooks run in the release directory with the `deployer` user. Use `set -e` to stop deployment on errors.
 
 <a name="release-management"></a>
+
 ### Release Management
 
 Each deployment creates a new release directory with a timestamp. The `current` symlink points to the active release. By default, DeployerPHP keeps the 5 most recent releases.
@@ -153,6 +158,7 @@ Each deployment creates a new release directory with a timestamp. The `current` 
 The `shared/` directory contains files that persist across releases (like `.env`). These are symlinked into each release.
 
 <a name="enabling-https"></a>
+
 ## Enabling HTTPS
 
 The `site:https` command installs an SSL certificate using Certbot:
@@ -172,11 +178,13 @@ This:
 > Your domain's DNS must point to your server before running this command.
 
 <a name="shared-files"></a>
+
 ## Shared Files
 
 Shared files persist across deployments. Common examples include `.env` files, user uploads, and configuration files.
 
 <a name="pushing-files"></a>
+
 ### Pushing Files
 
 The `site:shared:push` command uploads files to the shared directory:
@@ -188,6 +196,7 @@ deployer site:shared:push --site=example.com
 You'll be prompted to select files from your local directory. Selected files are uploaded to `/home/deployer/sites/example.com/shared/`.
 
 <a name="pulling-files"></a>
+
 ### Pulling Files
 
 The `site:shared:pull` command downloads files from the shared directory:
@@ -199,6 +208,7 @@ deployer site:shared:pull --site=example.com
 This is useful for backing up configuration or syncing environment files.
 
 <a name="viewing-logs"></a>
+
 ## Viewing Logs
 
 The `site:logs` command displays site-specific logs:
@@ -215,6 +225,7 @@ This shows:
 - Supervisor process output
 
 <a name="ssh-access"></a>
+
 ## SSH Access
 
 The `site:ssh` command opens an SSH session in the site's directory:
@@ -226,6 +237,7 @@ deployer site:ssh --site=example.com
 You'll be logged in as the `deployer` user in `/home/deployer/sites/example.com/current/`.
 
 <a name="rollbacks"></a>
+
 ## Rollbacks
 
 DeployerPHP follows a forward-only deployment philosophy:
@@ -243,6 +255,7 @@ Rather than reverting to a previous release, this command provides guidance on f
 If you need to revert code, revert in Git and redeploy.
 
 <a name="deleting-a-site"></a>
+
 ## Deleting a Site
 
 The `site:delete` command removes a site:
@@ -258,22 +271,24 @@ Safety features:
 
 Options:
 
-| Option | Description |
-| ------ | ----------- |
-| `--site` | Site domain to delete |
-| `--force` | Skip type-to-confirm |
-| `--yes` | Skip Yes/No confirmation |
+| Option             | Description                      |
+| ------------------ | -------------------------------- |
+| `--site`           | Site domain to delete            |
+| `--force`          | Skip type-to-confirm             |
+| `--yes`            | Skip Yes/No confirmation         |
 | `--inventory-only` | Only remove from local inventory |
 
 > [!WARNING]
 > This permanently deletes all site files, releases, and shared data from the server.
 
 <a name="cron-jobs"></a>
+
 ## Cron Jobs
 
 Cron jobs run scheduled tasks for your site. DeployerPHP manages cron definitions in your repository and syncs them to the server.
 
 <a name="creating-cron-jobs"></a>
+
 ### Creating Cron Jobs
 
 The `cron:create` command adds a cron job to a site:
@@ -300,6 +315,7 @@ deployer cron:create \
 ```
 
 <a name="syncing-cron-jobs"></a>
+
 ### Syncing Cron Jobs
 
 The `cron:sync` command syncs cron definitions from your repository to the server:
@@ -312,15 +328,16 @@ Define crons in `.deployer/crons.yml`:
 
 ```yaml
 scheduler:
-  schedule: "* * * * *"
-  command: "php artisan schedule:run"
+    schedule: '* * * * *'
+    command: 'php artisan schedule:run'
 
 cleanup:
-  schedule: "0 3 * * *"
-  command: "php artisan cleanup:old-records"
+    schedule: '0 3 * * *'
+    command: 'php artisan cleanup:old-records'
 ```
 
 <a name="viewing-cron-logs"></a>
+
 ### Viewing Cron Logs
 
 ```bash
@@ -328,6 +345,7 @@ deployer cron:logs --site=example.com --lines=100
 ```
 
 <a name="deleting-cron-jobs"></a>
+
 ### Deleting Cron Jobs
 
 ```bash
@@ -335,11 +353,13 @@ deployer cron:delete --site=example.com --name=cleanup
 ```
 
 <a name="supervisor-processes"></a>
+
 ## Supervisor Processes
 
 Supervisor manages long-running processes like queue workers, WebSocket servers, or custom daemons.
 
 <a name="creating-processes"></a>
+
 ### Creating Processes
 
 The `supervisor:create` command adds a supervised process:
@@ -366,6 +386,7 @@ deployer supervisor:create \
 ```
 
 <a name="managing-processes"></a>
+
 ### Managing Processes
 
 ```bash
@@ -380,6 +401,7 @@ deployer supervisor:restart --site=example.com --name=queue-worker
 ```
 
 <a name="syncing-processes"></a>
+
 ### Syncing Processes
 
 The `supervisor:sync` command syncs process definitions from your repository:
@@ -392,15 +414,16 @@ Define supervisors in `.deployer/supervisors.yml`:
 
 ```yaml
 queue-worker:
-  command: "php artisan queue:work --sleep=3 --tries=3"
-  processes: 2
+    command: 'php artisan queue:work --sleep=3 --tries=3'
+    processes: 2
 
 websocket:
-  command: "php artisan websockets:serve"
-  processes: 1
+    command: 'php artisan websockets:serve'
+    processes: 1
 ```
 
 <a name="viewing-supervisor-logs"></a>
+
 ### Viewing Supervisor Logs
 
 ```bash
@@ -408,6 +431,7 @@ deployer supervisor:logs --site=example.com --name=queue-worker --lines=100
 ```
 
 <a name="deleting-processes"></a>
+
 ### Deleting Processes
 
 ```bash
@@ -415,11 +439,13 @@ deployer supervisor:delete --site=example.com --name=queue-worker
 ```
 
 <a name="scaffolding"></a>
+
 ## Scaffolding
 
 Scaffolding commands generate the `.deployer/` directory structure in your project.
 
 <a name="scaffolding-hooks"></a>
+
 ### Scaffolding Hooks
 
 ```bash
@@ -439,6 +465,7 @@ This creates:
 Templates are pre-filled for common PHP/Laravel workflows.
 
 <a name="scaffolding-crons"></a>
+
 ### Scaffolding Crons
 
 ```bash
@@ -448,6 +475,7 @@ deployer scaffold:crons
 This creates `.deployer/crons.yml` with example cron definitions.
 
 <a name="scaffolding-supervisors"></a>
+
 ### Scaffolding Supervisors
 
 ```bash

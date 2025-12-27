@@ -9,6 +9,7 @@
     - [Deploy Your Site](#deploy-your-site)
 
 <a name="installation"></a>
+
 ## Installation
 
 DeployerPHP is installed via Composer. You can install it globally or as a project dependency:
@@ -34,6 +35,7 @@ If installed as a project dependency, run it via the vendor bin:
 ```
 
 <a name="requirements"></a>
+
 ## Requirements
 
 DeployerPHP requires the following:
@@ -48,6 +50,7 @@ Your target servers should be running a supported Linux distribution:
 - Debian 11 or newer
 
 <a name="your-first-deployment"></a>
+
 ## Your First Deployment
 
 This guide walks you through deploying your first PHP application with DeployerPHP. The typical workflow is:
@@ -58,6 +61,7 @@ This guide walks you through deploying your first PHP application with DeployerP
 4. Deploy your application
 
 <a name="add-your-server"></a>
+
 ### Add Your Server
 
 First, add your server to DeployerPHP's inventory. You'll need SSH access to the server:
@@ -77,6 +81,7 @@ DeployerPHP will prompt you for:
 Once connected, DeployerPHP gathers information about your server's capabilities and stores it in your local inventory.
 
 <a name="install-your-server"></a>
+
 ### Install Your Server
 
 Next, install the base packages and PHP on your server:
@@ -98,6 +103,7 @@ This command will:
 > After installation, add the displayed deploy key to your Git provider (GitHub, GitLab, Bitbucket) to allow the server to pull your repositories.
 
 <a name="create-your-site"></a>
+
 ### Create Your Site
 
 With your server installed, create a site:
@@ -116,6 +122,7 @@ You'll be prompted for:
 DeployerPHP creates the Nginx configuration and directory structure for your site.
 
 <a name="deploy-your-site"></a>
+
 ### Deploy Your Site
 
 Finally, deploy your application:

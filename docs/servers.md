@@ -11,6 +11,7 @@
 - [Deleting a Server](#deleting-a-server)
 
 <a name="introduction"></a>
+
 ## Introduction
 
 DeployerPHP maintains a local inventory of your servers. Before you can deploy sites or install services, you need to add servers to this inventory and install the base packages.
@@ -18,6 +19,7 @@ DeployerPHP maintains a local inventory of your servers. Before you can deploy s
 All server commands follow the pattern `server:<action>` and can be run interactively or with command-line options for automation.
 
 <a name="adding-a-server"></a>
+
 ## Adding a Server
 
 The `server:add` command adds a new server to your local inventory:
@@ -28,13 +30,13 @@ deployer server:add
 
 You'll be prompted for connection details:
 
-| Option | Description | Default |
-| ------ | ----------- | ------- |
-| `--name` | Friendly name for the server | (prompted) |
-| `--host` | IP address or hostname | (prompted) |
-| `--port` | SSH port | 22 |
-| `--username` | SSH username | root |
-| `--private-key-path` | Path to SSH private key | (prompted) |
+| Option               | Description                  | Default    |
+| -------------------- | ---------------------------- | ---------- |
+| `--name`             | Friendly name for the server | (prompted) |
+| `--host`             | IP address or hostname       | (prompted) |
+| `--port`             | SSH port                     | 22         |
+| `--username`         | SSH username                 | root       |
+| `--private-key-path` | Path to SSH private key      | (prompted) |
 
 For automation, provide all options on the command line:
 
@@ -50,6 +52,7 @@ deployer server:add \
 When adding a server, DeployerPHP connects and gathers information about the server's distribution, hardware, and running services.
 
 <a name="installing-a-server"></a>
+
 ## Installing a Server
 
 The `server:install` command prepares a fresh server for hosting PHP applications:
@@ -68,14 +71,14 @@ This installs:
 
 Options:
 
-| Option | Description |
-| ------ | ----------- |
-| `--server` | Server name from inventory |
-| `--php-version` | PHP version to install (e.g., 8.3) |
-| `--php-extensions` | Comma-separated list of extensions |
-| `--php-default` | Set as default PHP version |
-| `--generate-deploy-key` | Generate deploy key on server |
-| `--custom-deploy-key` | Path to custom deploy key |
+| Option                  | Description                        |
+| ----------------------- | ---------------------------------- |
+| `--server`              | Server name from inventory         |
+| `--php-version`         | PHP version to install (e.g., 8.3) |
+| `--php-extensions`      | Comma-separated list of extensions |
+| `--php-default`         | Set as default PHP version         |
+| `--generate-deploy-key` | Generate deploy key on server      |
+| `--custom-deploy-key`   | Path to custom deploy key          |
 
 Example with options:
 
@@ -91,6 +94,7 @@ deployer server:install \
 > After installation, the command displays the server's public deploy key. Add this key to your Git provider to allow deployments.
 
 <a name="server-information"></a>
+
 ## Server Information
 
 The `server:info` command displays comprehensive information about a server:
@@ -111,6 +115,7 @@ This shows:
 - **Sites** - Configured sites with HTTPS status
 
 <a name="firewall-configuration"></a>
+
 ## Firewall Configuration
 
 The `server:firewall` command configures UFW firewall rules:
@@ -134,6 +139,7 @@ deployer server:firewall \
 > SSH access is always preserved regardless of your selections.
 
 <a name="running-commands"></a>
+
 ## Running Commands
 
 The `server:run` command executes arbitrary shell commands on a server:
@@ -155,6 +161,7 @@ deployer server:run \
 This is useful for quick administrative tasks without opening a full SSH session.
 
 <a name="ssh-access"></a>
+
 ## SSH Access
 
 The `server:ssh` command opens an interactive SSH session:
@@ -166,6 +173,7 @@ deployer server:ssh --server=production
 This drops you into a terminal on the server. Use `exit` to return to your local machine.
 
 <a name="viewing-logs"></a>
+
 ## Viewing Logs
 
 The `server:logs` command retrieves logs from various sources on the server:
@@ -184,11 +192,11 @@ You can select from:
 
 Options:
 
-| Option | Description | Default |
-| ------ | ----------- | ------- |
-| `--server` | Server name | (prompted) |
+| Option      | Description                   | Default    |
+| ----------- | ----------------------------- | ---------- |
+| `--server`  | Server name                   | (prompted) |
 | `--service` | Comma-separated service names | (prompted) |
-| `--lines` | Number of lines to retrieve | 50 |
+| `--lines`   | Number of lines to retrieve   | 50         |
 
 Example:
 
@@ -200,6 +208,7 @@ deployer server:logs \
 ```
 
 <a name="deleting-a-server"></a>
+
 ## Deleting a Server
 
 The `server:delete` command removes a server from your inventory:
@@ -215,11 +224,11 @@ This command includes safety features:
 
 Options:
 
-| Option | Description |
-| ------ | ----------- |
-| `--server` | Server name to delete |
-| `--force` | Skip type-to-confirm prompt |
-| `--yes` | Skip Yes/No confirmation |
+| Option             | Description                      |
+| ------------------ | -------------------------------- |
+| `--server`         | Server name to delete            |
+| `--force`          | Skip type-to-confirm prompt      |
+| `--yes`            | Skip Yes/No confirmation         |
 | `--inventory-only` | Only remove from local inventory |
 
 > [!WARNING]

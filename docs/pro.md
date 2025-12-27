@@ -11,6 +11,7 @@
     - [Provisioning Droplets](#do-provisioning)
 
 <a name="introduction"></a>
+
 ## Introduction
 
 DeployerPHP's Pro features integrate with cloud providers to provision servers directly from the command line. Instead of manually creating servers through web dashboards, you can provision, configure, and destroy cloud resources with simple commands.
@@ -24,11 +25,13 @@ Currently supported providers:
 > Pro features require API credentials from your cloud provider. These credentials are stored locally and never transmitted to third parties.
 
 <a name="aws-ec2"></a>
+
 ## AWS EC2
 
 DeployerPHP can provision EC2 instances and manage SSH keys in your AWS account.
 
 <a name="aws-configuration"></a>
+
 ### Configuration
 
 Set your AWS credentials as environment variables:
@@ -60,6 +63,7 @@ Required IAM permissions:
 - `ec2:AssociateAddress`
 
 <a name="aws-ssh-keys"></a>
+
 ### Managing SSH Keys
 
 Before provisioning, upload your SSH public key to AWS:
@@ -89,6 +93,7 @@ deployer aws:key:add \
 ```
 
 <a name="aws-provisioning"></a>
+
 ### Provisioning Servers
 
 The `aws:provision` command creates a new EC2 instance:
@@ -99,12 +104,12 @@ deployer aws:provision
 
 You'll be prompted for:
 
-| Option | Description |
-| ------ | ----------- |
-| `--name` | Server name for your inventory |
-| `--region` | AWS region (e.g., us-east-1) |
+| Option            | Description                    |
+| ----------------- | ------------------------------ |
+| `--name`          | Server name for your inventory |
+| `--region`        | AWS region (e.g., us-east-1)   |
 | `--instance-type` | Instance size (e.g., t3.micro) |
-| `--key-name` | SSH key name in AWS |
+| `--key-name`      | SSH key name in AWS            |
 
 Example:
 
@@ -133,11 +138,13 @@ deployer server:install --server=production
 > When you delete a server provisioned through AWS, DeployerPHP also terminates the EC2 instance and releases the Elastic IP.
 
 <a name="digitalocean"></a>
+
 ## DigitalOcean
 
 DeployerPHP can provision Droplets and manage SSH keys in your DigitalOcean account.
 
 <a name="do-configuration"></a>
+
 ### Configuration
 
 Set your DigitalOcean API token as an environment variable:
@@ -155,6 +162,7 @@ DIGITALOCEAN_TOKEN=your-api-token
 Generate an API token at [https://cloud.digitalocean.com/account/api/tokens](https://cloud.digitalocean.com/account/api/tokens) with read and write access.
 
 <a name="do-ssh-keys"></a>
+
 ### Managing SSH Keys
 
 ```bash
@@ -177,6 +185,7 @@ deployer do:key:add \
 ```
 
 <a name="do-provisioning"></a>
+
 ### Provisioning Droplets
 
 The `do:provision` command creates a new Droplet:
@@ -187,12 +196,12 @@ deployer do:provision
 
 You'll be prompted for:
 
-| Option | Description |
-| ------ | ----------- |
-| `--name` | Server name for your inventory |
-| `--region` | DigitalOcean region (e.g., nyc1) |
-| `--size` | Droplet size (e.g., s-1vcpu-1gb) |
-| `--ssh-key` | SSH key name in DigitalOcean |
+| Option      | Description                      |
+| ----------- | -------------------------------- |
+| `--name`    | Server name for your inventory   |
+| `--region`  | DigitalOcean region (e.g., nyc1) |
+| `--size`    | Droplet size (e.g., s-1vcpu-1gb) |
+| `--ssh-key` | SSH key name in DigitalOcean     |
 
 Example:
 
@@ -223,27 +232,27 @@ deployer server:install --server=production
 
 Common DigitalOcean regions:
 
-| Slug | Location |
-| ---- | -------- |
-| `nyc1`, `nyc3` | New York |
-| `sfo3` | San Francisco |
-| `ams3` | Amsterdam |
-| `sgp1` | Singapore |
-| `lon1` | London |
-| `fra1` | Frankfurt |
-| `tor1` | Toronto |
-| `blr1` | Bangalore |
+| Slug           | Location      |
+| -------------- | ------------- |
+| `nyc1`, `nyc3` | New York      |
+| `sfo3`         | San Francisco |
+| `ams3`         | Amsterdam     |
+| `sgp1`         | Singapore     |
+| `lon1`         | London        |
+| `fra1`         | Frankfurt     |
+| `tor1`         | Toronto       |
+| `blr1`         | Bangalore     |
 
 ### Available Sizes
 
 Common Droplet sizes:
 
-| Slug | Specs | Monthly |
-| ---- | ----- | ------- |
-| `s-1vcpu-512mb-10gb` | 1 vCPU, 512MB, 10GB | $4 |
-| `s-1vcpu-1gb` | 1 vCPU, 1GB, 25GB | $6 |
-| `s-1vcpu-2gb` | 1 vCPU, 2GB, 50GB | $12 |
-| `s-2vcpu-4gb` | 2 vCPU, 4GB, 80GB | $24 |
-| `s-4vcpu-8gb` | 4 vCPU, 8GB, 160GB | $48 |
+| Slug                 | Specs               | Monthly |
+| -------------------- | ------------------- | ------- |
+| `s-1vcpu-512mb-10gb` | 1 vCPU, 512MB, 10GB | $4      |
+| `s-1vcpu-1gb`        | 1 vCPU, 1GB, 25GB   | $6      |
+| `s-1vcpu-2gb`        | 1 vCPU, 2GB, 50GB   | $12     |
+| `s-2vcpu-4gb`        | 2 vCPU, 4GB, 80GB   | $24     |
+| `s-4vcpu-8gb`        | 4 vCPU, 8GB, 160GB  | $48     |
 
 Use `deployer do:provision` interactively to see all available options.

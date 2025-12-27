@@ -11,6 +11,7 @@
 - [PHP-FPM](#php-fpm)
 
 <a name="introduction"></a>
+
 ## Introduction
 
 DeployerPHP can install and manage various services on your servers. Each service follows a consistent command pattern:
@@ -24,6 +25,7 @@ DeployerPHP can install and manage various services on your servers. Each servic
 All commands accept a `--server` option to specify the target server, or will prompt you to select one interactively.
 
 <a name="mysql"></a>
+
 ## MySQL
 
 MySQL is a popular open-source relational database.
@@ -61,6 +63,7 @@ deployer mysql:logs --server=production --lines=100
 ```
 
 <a name="mariadb"></a>
+
 ## MariaDB
 
 MariaDB is a community-developed fork of MySQL with enhanced features.
@@ -86,6 +89,7 @@ deployer mariadb:logs --server=production --lines=100
 > MySQL and MariaDB are mutually exclusive. Install only one on each server.
 
 <a name="postgresql"></a>
+
 ## PostgreSQL
 
 PostgreSQL is a powerful, open-source object-relational database system.
@@ -108,6 +112,7 @@ deployer postgresql:logs --server=production --lines=100
 ```
 
 <a name="redis"></a>
+
 ## Redis
 
 Redis is an in-memory data structure store, commonly used for caching and queues.
@@ -130,6 +135,7 @@ deployer redis:logs --server=production --lines=100
 ```
 
 <a name="memcached"></a>
+
 ## Memcached
 
 Memcached is a distributed memory caching system.
@@ -150,6 +156,7 @@ deployer memcached:logs --server=production --lines=100
 ```
 
 <a name="valkey"></a>
+
 ## Valkey
 
 Valkey is an open-source fork of Redis, fully compatible with Redis clients and commands.
@@ -173,6 +180,7 @@ deployer valkey:logs --server=production --lines=100
 > Valkey and Redis are mutually exclusive. Install only one on each server.
 
 <a name="nginx"></a>
+
 ## Nginx
 
 Nginx is installed automatically during `server:install`. These commands control the running service.
@@ -197,6 +205,7 @@ deployer nginx:logs --server=production --lines=100
 > Site-specific Nginx configurations are managed automatically by `site:create` and `site:delete`.
 
 <a name="php-fpm"></a>
+
 ## PHP-FPM
 
 PHP-FPM is installed during `server:install` for each PHP version you select. These commands control PHP-FPM for all installed versions.
