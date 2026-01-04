@@ -36,15 +36,28 @@ MySQL is a popular open-source relational database.
 deployer mysql:install --server=production
 ```
 
-During installation, DeployerPHP:
+During installation, DeployerPHP will prompt you for:
+
+- **Server** - The target server (or use `--server` option)
+- **Credential output** - How to receive the generated credentials
+
+The installation process:
 
 1. Installs the MySQL server package
 2. Generates a secure root password
 3. Creates a `deployer` database user with its own password
 4. Creates a `deployer` database
 
+| Option                  | Description                                 |
+| ----------------------- | ------------------------------------------- |
+| `--server`              | Server name                                 |
+| `--display-credentials` | Display credentials on screen               |
+| `--save-credentials`    | Save credentials to file (0600 permissions) |
+
 > [!WARNING]
-> Credentials are displayed only once after installation. Choose to display them on screen or save to a file with secure permissions (0600).
+> Credentials are generated only once during installation. If MySQL is already installed, credentials will not be displayed again.
+
+If saving to a file fails, DeployerPHP will automatically fall back to displaying the credentials on screen so you don't lose them.
 
 ### Managing MySQL
 
@@ -58,8 +71,8 @@ deployer mysql:stop --server=production
 # Restart the service
 deployer mysql:restart --server=production
 
-# View logs
-deployer mysql:logs --server=production --lines=100
+# View logs (-n is shorthand for --lines)
+deployer mysql:logs --server=production -n 100
 ```
 
 <a name="mariadb"></a>
@@ -74,7 +87,28 @@ MariaDB is a community-developed fork of MySQL with enhanced features.
 deployer mariadb:install --server=production
 ```
 
-The installation process is identical to MySQL, creating a root password, `deployer` user, and `deployer` database.
+During installation, DeployerPHP will prompt you for:
+
+- **Server** - The target server (or use `--server` option)
+- **Credential output** - How to receive the generated credentials
+
+The installation process:
+
+1. Installs the MariaDB server package
+2. Generates a secure root password
+3. Creates a `deployer` database user with its own password
+4. Creates a `deployer` database
+
+| Option                  | Description                                 |
+| ----------------------- | ------------------------------------------- |
+| `--server`              | Server name                                 |
+| `--display-credentials` | Display credentials on screen               |
+| `--save-credentials`    | Save credentials to file (0600 permissions) |
+
+> [!WARNING]
+> Credentials are displayed only once after installation. Choose to display them on screen or save to a file with secure permissions (0600).
+
+If saving to a file fails, DeployerPHP will automatically fall back to displaying the credentials on screen so you don't lose them.
 
 ### Managing MariaDB
 
@@ -108,6 +142,26 @@ Like MySQL/MariaDB, this creates credentials for the `deployer` user and a `depl
 deployer postgresql:start --server=production
 deployer postgresql:stop --server=production
 deployer postgresql:restart --server=production
+```
+
+### Viewing Logs
+
+The `postgresql:logs` command retrieves logs from two sources: the systemd journal and the PostgreSQL error log file.
+
+```bash
+deployer postgresql:logs
+```
+
+Options:
+
+| Option          | Description                 | Default |
+| --------------- | --------------------------- | ------- |
+| `--server`      | Server name                 |         |
+| `--lines`, `-n` | Number of lines to retrieve | 50      |
+
+For automation:
+
+```bash
 deployer postgresql:logs --server=production --lines=100
 ```
 
@@ -123,7 +177,20 @@ Redis is an in-memory data structure store, commonly used for caching and queues
 deployer redis:install --server=production
 ```
 
-Redis is installed with a secure default configuration, binding to localhost only.
+During installation, DeployerPHP:
+
+1. Installs the Redis server package
+2. Generates a secure password for authentication
+3. Configures Redis to bind to localhost only
+
+| Option                  | Description                                 |
+| ----------------------- | ------------------------------------------- |
+| `--server`              | Server name                                 |
+| `--display-credentials` | Display credentials on screen               |
+| `--save-credentials`    | Save credentials to file (0600 permissions) |
+
+> [!WARNING]
+> Credentials are displayed only once after installation. Choose to display them on screen or save to a file with secure permissions (0600).
 
 ### Managing Redis
 
@@ -131,7 +198,7 @@ Redis is installed with a secure default configuration, binding to localhost onl
 deployer redis:start --server=production
 deployer redis:stop --server=production
 deployer redis:restart --server=production
-deployer redis:logs --server=production --lines=100
+deployer redis:logs --server=production --lines=50
 ```
 
 <a name="memcached"></a>
@@ -167,6 +234,21 @@ Valkey is an open-source fork of Redis, fully compatible with Redis clients and 
 deployer valkey:install --server=production
 ```
 
+During installation, DeployerPHP:
+
+1. Installs the Valkey server package
+2. Generates a secure password for authentication
+3. Configures Valkey to bind to localhost only
+
+| Option                  | Description                                 |
+| ----------------------- | ------------------------------------------- |
+| `--server`              | Server name                                 |
+| `--display-credentials` | Display credentials on screen               |
+| `--save-credentials`    | Save credentials to file (0600 permissions) |
+
+> [!WARNING]
+> Credentials are displayed only once after installation. Choose to display them on screen or save to a file with secure permissions (0600).
+
 ### Managing Valkey
 
 ```bash
@@ -197,9 +279,21 @@ deployer nginx:stop --server=production
 # Restart Nginx (use after configuration changes)
 deployer nginx:restart --server=production
 
-# View access and error logs
+# View Nginx logs
 deployer nginx:logs --server=production --lines=100
 ```
+
+### Viewing Nginx Logs
+
+The `nginx:logs` command displays two types of logs:
+
+- **Nginx service logs** - Systemd journal logs for the Nginx service (startup, errors, warnings)
+- **Site access logs** - Per-site access logs for each site deployed on the server
+
+| Option          | Description                 |
+| --------------- | --------------------------- |
+| `--server`      | Server name                 |
+| `--lines`, `-n` | Number of lines to retrieve |
 
 > [!NOTE]
 > Site-specific Nginx configurations are managed automatically by `site:create` and `site:delete`.
@@ -216,7 +310,7 @@ PHP-FPM is installed during `server:install` for each PHP version you select. Th
 # Start PHP-FPM (all versions)
 deployer php:start --server=production
 
-# Stop PHP-FPM
+# Stop PHP-FPM (all versions)
 deployer php:stop --server=production
 
 # Restart PHP-FPM (use after php.ini changes)
@@ -226,10 +320,13 @@ deployer php:restart --server=production
 deployer php:logs --server=production --lines=100
 ```
 
-You can also target a specific PHP version:
+You can target a specific PHP version with any of the service commands:
 
 ```bash
+deployer php:start --server=production --version=8.3
+deployer php:stop --server=production --version=8.3
 deployer php:restart --server=production --version=8.3
+deployer php:logs --server=production --version=8.3 --lines=100
 ```
 
 ### Installing Additional PHP Versions
