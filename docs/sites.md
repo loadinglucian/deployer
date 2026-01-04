@@ -453,15 +453,18 @@ deployer supervisor:create \
 The supervisor service commands operate at the server level, controlling the supervisord daemon:
 
 ```bash
-# Start supervisord service
 deployer supervisor:start --server=production
-
-# Stop supervisord service
 deployer supervisor:stop --server=production
-
-# Restart supervisord service (useful after deployments)
 deployer supervisor:restart --server=production
 ```
+
+Options:
+
+| Option     | Description                |
+| ---------- | -------------------------- |
+| `--server` | Server from your inventory |
+
+These commands start, stop, or restart the supervisord service. Restarting is useful after deployments to pick up new process configurations.
 
 <a name="syncing-processes"></a>
 
@@ -551,6 +554,10 @@ This creates `.deployer/crons/` with example cron scripts:
 deployer scaffold:supervisors
 ```
 
+You'll be prompted for:
+
+- **Destination directory** - Project root where `.deployer/supervisors/` will be created (defaults to current directory)
+
 This creates `.deployer/supervisors/` with example supervisor scripts:
 
 ```
@@ -558,4 +565,10 @@ This creates `.deployer/supervisors/` with example supervisor scripts:
 └── supervisors/
     ├── messenger.sh
     └── queue-worker.sh
+```
+
+For automation:
+
+```bash
+deployer scaffold:supervisors --destination=/path/to/project
 ```
