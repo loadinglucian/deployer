@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace DeployerPHP\Console\Scaffold;
 
 use DeployerPHP\Contracts\BaseCommand;
-use DeployerPHP\Exceptions\ValidationException;
-use DeployerPHP\Traits\PathOperationsTrait;
+use DeployerPHP\Traits\ScaffoldsTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -19,7 +17,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class AiCommand extends BaseCommand
 {
-    use PathOperationsTrait;
+    use ScaffoldsTrait;
 
     /** @var array<string, string> */
     private const AGENT_DIRS = [
@@ -35,8 +33,8 @@ class AiCommand extends BaseCommand
     protected function configure(): void
     {
         parent::configure();
+        $this->configureScaffoldOptions();
         $this->addOption('agent', null, InputOption::VALUE_REQUIRED, 'AI agent (claude, cursor, codex)');
-        $this->addOption('destination', null, InputOption::VALUE_REQUIRED, 'Project root directory');
     }
 
     // ----
@@ -49,66 +47,52 @@ class AiCommand extends BaseCommand
 
         $this->h1('Scaffold AI Rules');
 
-        // Get destination directory
-        try {
-            /** @var string $destinationDir */
-            $destinationDir = $this->io->getValidatedOptionOrPrompt(
-                'destination',
-                fn ($validate) => $this->io->promptText(
-                    label: 'Destination directory:',
-                    placeholder: $this->fs->getCwd(),
-                    default: $this->fs->getCwd(),
-                    required: true,
-                    validate: $validate
-                ),
-                fn ($value) => $this->validatePathInput($value)
-            );
-        } catch (ValidationException $e) {
-            $this->nay($e->getMessage());
+        return $this->scaffoldFiles('ai');
+    }
 
-            return Command::FAILURE;
-        }
+    // ----
+    // Hook Overrides
+    // ----
 
-        // Convert relative path to absolute if needed
-        if (! str_starts_with($destinationDir, '/')) {
-            $destinationDir = $this->fs->joinPaths($this->fs->getCwd(), $destinationDir);
-        }
-
-        // Determine target agent
-        $agent = $this->determineAgent($destinationDir, $input);
+    /**
+     * Resolve agent selection context.
+     *
+     * @return array{agent: string}|null
+     */
+    protected function resolveScaffoldContext(string $destinationDir, string $type): ?array
+    {
+        $agent = $this->determineAgent($destinationDir);
         if (null === $agent) {
-            return Command::FAILURE;
+            return null;
         }
 
-        // Build target path
-        $agentDir = self::AGENT_DIRS[$agent];
-        $rulesDir = $this->fs->joinPaths($destinationDir, $agentDir, 'rules');
-        $targetFile = $this->fs->joinPaths($rulesDir, 'deployer-php.md');
+        return ['agent' => $agent];
+    }
 
-        // Check if file exists (skip like other scaffold commands)
-        $status = [];
-        if ($this->fs->exists($targetFile)) {
-            $status['deployer-php.md'] = 'skipped';
-        } else {
-            // Create directory structure if needed
-            if (! $this->fs->isDirectory($rulesDir)) {
-                $this->fs->mkdir($rulesDir);
-            }
+    /**
+     * Build target path for AI agent rules directory.
+     *
+     * @param array{agent: string} $context
+     */
+    protected function buildTargetPath(string $destinationDir, string $type, array $context): string
+    {
+        $agentDir = self::AGENT_DIRS[$context['agent']];
 
-            // Write rules file
-            $this->fs->dumpFile($targetFile, $this->getRulesContent());
-            $status['deployer-php.md'] = 'created';
-        }
+        return $this->fs->joinPaths($destinationDir, $agentDir, 'rules');
+    }
 
-        $this->displayDeets($status);
-        $this->yay('Finished scaffolding AI rules');
-
-        $this->commandReplay('scaffold:ai', [
-            'agent' => $agent,
+    /**
+     * Include agent in replay options.
+     *
+     * @param array{agent: string} $context
+     * @return array<string, mixed>
+     */
+    protected function buildReplayOptions(string $destinationDir, array $context): array
+    {
+        return [
+            'agent' => $context['agent'],
             'destination' => $destinationDir,
-        ]);
-
-        return Command::SUCCESS;
+        ];
     }
 
     // ----
@@ -118,11 +102,11 @@ class AiCommand extends BaseCommand
     /**
      * Determine which AI agent to target.
      */
-    private function determineAgent(string $destinationDir, InputInterface $input): ?string
+    private function determineAgent(string $destinationDir): ?string
     {
         // Check for --agent option first
         /** @var string|null $agentOption */
-        $agentOption = $input->getOption('agent');
+        $agentOption = $this->io->getOptionValue('agent');
         if (null !== $agentOption) {
             $error = $this->validateAgentInput($agentOption);
             if (null !== $error) {
@@ -146,7 +130,7 @@ class AiCommand extends BaseCommand
             // Multiple found - ask which to use
             $options = [];
             foreach ($existing as $agent) {
-                $options[$agent] = self::AGENT_DIRS[$agent].' (exists)';
+                $options[$agent] = self::AGENT_DIRS[$agent] . ' (exists)';
             }
 
             /** @var string */
@@ -185,22 +169,6 @@ class AiCommand extends BaseCommand
         }
 
         return $existing;
-    }
-
-    /**
-     * Get the rules file content from template.
-     *
-     * @throws \RuntimeException If template file not found
-     */
-    private function getRulesContent(): string
-    {
-        $templatePath = $this->fs->joinPaths(dirname(__DIR__, 3), 'scaffolds', 'ai', 'deployer-php.md');
-
-        if (! $this->fs->exists($templatePath)) {
-            throw new \RuntimeException("Template file not found: {$templatePath}");
-        }
-
-        return $this->fs->readFile($templatePath);
     }
 
     // ----
