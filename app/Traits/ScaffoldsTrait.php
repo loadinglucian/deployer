@@ -167,7 +167,7 @@ trait ScaffoldsTrait
 
         // Expand tilde and convert relative path to absolute if needed
         $destinationDir = $this->fs->expandPath($destinationDir);
-        if (! str_starts_with($destinationDir, '/')) {
+        if (! str_starts_with((string) $destinationDir, '/')) {
             $destinationDir = $this->fs->joinPaths($this->fs->getCwd(), $destinationDir);
         }
 
