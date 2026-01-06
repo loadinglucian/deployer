@@ -117,12 +117,15 @@ jobs:
                    - side: "RIGHT" (for additions/changes)
                    - body: severity emoji + message (🔴 high, 🟡 medium, 🟢 low)
 
-                3. Submit the review:
-                   gh api -X POST repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
-                     -f commit_id="${{ github.event.pull_request.head.sha }}" \
-                     -f body="SUMMARY_TEXT" \
-                     -f event="COMMENT" \
-                     -F comments='JSON_ARRAY'
+                3. Submit the review using --input to pass JSON via stdin:
+                   gh api -X POST repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews --input - <<'EOF'
+                   {
+                     "commit_id": "${{ github.event.pull_request.head.sha }}",
+                     "body": "SUMMARY_TEXT",
+                     "event": "COMMENT",
+                     "comments": [JSON_ARRAY]
+                   }
+                   EOF
 
                 4. If no inline comments but general issues exist, submit review with just summary body.
 
