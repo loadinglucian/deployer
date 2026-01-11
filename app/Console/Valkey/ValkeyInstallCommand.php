@@ -156,7 +156,7 @@ class ValkeyInstallCommand extends BaseCommand
             }
         }
 
-        $this->commandReplay('valkey:install', $replayOptions);
+        $this->commandReplay($replayOptions);
 
         return Command::SUCCESS;
     }

@@ -78,7 +78,7 @@ class NginxStopCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('nginx:stop', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

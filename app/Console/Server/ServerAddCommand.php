@@ -106,7 +106,7 @@ class ServerAddCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('server:add', [
+        $this->commandReplay([
             'name' => $name,
             'host' => $host,
             'port' => $port,

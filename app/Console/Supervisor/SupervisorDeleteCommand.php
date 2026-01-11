@@ -126,7 +126,7 @@ class SupervisorDeleteCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('supervisor:delete', [
+        $this->commandReplay([
             'domain' => $site->domain,
             'program' => $supervisor->program,
             'force' => true,

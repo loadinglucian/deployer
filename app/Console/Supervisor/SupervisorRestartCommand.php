@@ -78,7 +78,7 @@ class SupervisorRestartCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('supervisor:restart', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

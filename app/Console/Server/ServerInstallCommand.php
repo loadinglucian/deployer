@@ -173,7 +173,7 @@ class ServerInstallCommand extends BaseCommand
             $replayOptions['php-default'] = $phpDefault;
         }
 
-        $this->commandReplay('server:install', $replayOptions);
+        $this->commandReplay($replayOptions);
 
         return Command::SUCCESS;
     }

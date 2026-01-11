@@ -78,7 +78,7 @@ class PostgresqlStopCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('postgresql:stop', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

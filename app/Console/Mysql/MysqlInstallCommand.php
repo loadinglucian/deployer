@@ -169,7 +169,7 @@ class MysqlInstallCommand extends BaseCommand
             }
         }
 
-        $this->commandReplay('mysql:install', $replayOptions);
+        $this->commandReplay($replayOptions);
 
         return Command::SUCCESS;
     }

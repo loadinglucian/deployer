@@ -49,7 +49,7 @@ class KeyListCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('pro:do:key:list', []);
+        $this->commandReplay([]);
 
         return Command::SUCCESS;
     }

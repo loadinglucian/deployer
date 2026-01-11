@@ -270,7 +270,7 @@ class ServerDeleteCommand extends BaseCommand
             $replayOptions['inventory-only'] = true;
         }
 
-        $this->commandReplay('server:delete', $replayOptions);
+        $this->commandReplay($replayOptions);
 
         return Command::SUCCESS;
     }

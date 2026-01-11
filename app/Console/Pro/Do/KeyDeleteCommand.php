@@ -92,7 +92,7 @@ class KeyDeleteCommand extends BaseCommand
             return Command::FAILURE;
         }
 
-        $this->commandReplay('pro:do:key:delete', [
+        $this->commandReplay([
             'key' => (string) $keyId,
             'force' => true,
             'yes' => $confirmed,

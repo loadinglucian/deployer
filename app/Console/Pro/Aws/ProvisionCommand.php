@@ -102,7 +102,7 @@ class ProvisionCommand extends BaseCommand
             return Command::FAILURE;
         }
 
-        $this->commandReplay('pro:aws:provision', [
+        $this->commandReplay([
             'name' => $deets['name'],
             'instance-type' => $deets['instanceType'],
             'ami' => $deets['ami'],

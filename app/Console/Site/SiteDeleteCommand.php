@@ -195,7 +195,7 @@ class SiteDeleteCommand extends BaseCommand
             $replayOptions['inventory-only'] = true;
         }
 
-        $this->commandReplay('site:delete', $replayOptions);
+        $this->commandReplay($replayOptions);
 
         return Command::SUCCESS;
     }

@@ -169,7 +169,7 @@ class MariadbInstallCommand extends BaseCommand
             }
         }
 
-        $this->commandReplay('mariadb:install', $replayOptions);
+        $this->commandReplay($replayOptions);
 
         return Command::SUCCESS;
     }

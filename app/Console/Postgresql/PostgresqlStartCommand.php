@@ -78,7 +78,7 @@ class PostgresqlStartCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('postgresql:start', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

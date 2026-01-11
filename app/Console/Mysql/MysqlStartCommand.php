@@ -78,7 +78,7 @@ class MysqlStartCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('mysql:start', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

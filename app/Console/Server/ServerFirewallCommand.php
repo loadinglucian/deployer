@@ -122,7 +122,7 @@ class ServerFirewallCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('server:firewall', [
+        $this->commandReplay([
             'server' => $server->name,
             'allow' => implode(',', $selectedPorts),
             'yes' => true,

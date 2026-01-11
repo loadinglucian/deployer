@@ -90,7 +90,7 @@ class KeyAddCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('pro:do:key:add', [
+        $this->commandReplay([
             'public-key-path' => $publicKeyPath,
             'name' => $keyName,
         ]);

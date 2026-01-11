@@ -78,7 +78,7 @@ class ValkeyStartCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('valkey:start', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

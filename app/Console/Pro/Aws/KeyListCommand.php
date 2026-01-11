@@ -55,7 +55,7 @@ class KeyListCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('pro:aws:key:list', []);
+        $this->commandReplay([]);
 
         return Command::SUCCESS;
     }

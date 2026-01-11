@@ -182,7 +182,7 @@ class ServerLogsCommand extends BaseCommand
             $replayOptions['site'] = $siteFilter;
         }
 
-        $this->commandReplay('server:logs', $replayOptions);
+        $this->commandReplay($replayOptions);
 
         return Command::SUCCESS;
     }

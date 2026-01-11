@@ -93,7 +93,7 @@ class ProvisionCommand extends BaseCommand
             return Command::FAILURE;
         }
 
-        $this->commandReplay('pro:do:provision', [
+        $this->commandReplay([
             'name' => $deets['name'],
             'region' => $deets['region'],
             'size' => $deets['size'],

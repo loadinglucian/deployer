@@ -78,7 +78,7 @@ class RedisStartCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('redis:start', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

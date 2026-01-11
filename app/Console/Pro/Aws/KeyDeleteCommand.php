@@ -94,7 +94,7 @@ class KeyDeleteCommand extends BaseCommand
             return Command::FAILURE;
         }
 
-        $this->commandReplay('pro:aws:key:delete', [
+        $this->commandReplay([
             'key' => $keyName,
             'force' => true,
             'yes' => $confirmed,
