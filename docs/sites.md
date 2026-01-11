@@ -242,40 +242,13 @@ deployer site:shared:pull \
 
 ## Viewing Logs
 
-To view logs for a specific site, use the unified `server:logs` command with the `--site` option:
-
-```bash
-deployer server:logs --server=production --site=example.com
-```
-
-This filters the available log sources to only show that site's logs:
-
-- The site's Nginx access log
-- The site's cron script logs (if configured)
-- The site's supervisor program logs (if configured)
-
-You can also view all site access logs across the server:
-
-```bash
-deployer server:logs --server=production --service=all-sites
-```
-
-For more details on available log sources and options, see the [Viewing Logs](/docs/servers#viewing-logs) section in server management.
+To view logs for a specific site, use the `server:logs` command with the `--site` option to filter log sources to that site's Nginx access logs, cron logs, and supervisor logs. For full documentation, see [Viewing Logs](/docs/pro#server-logs) in the Pro documentation.
 
 <a name="ssh-access"></a>
 
 ## SSH Access
 
-The `site:ssh` command opens an SSH session in the site's directory:
-
-```bash
-deployer site:ssh --domain=example.com
-```
-
-> [!NOTE]
-> This command is also available as `pro:site:ssh`. The `site:ssh` alias is provided for convenience.
-
-You'll be logged in as the `deployer` user in `/home/deployer/sites/example.com/current/`.
+The `site:ssh` command opens an SSH session directly in a site's directory. For full documentation, see [Site SSH Access](/docs/pro#site-ssh) in the Pro documentation.
 
 <a name="rollbacks"></a>
 

@@ -243,6 +243,9 @@ deployer pro:aws:key:delete \
     --yes
 ```
 
+> [!NOTE]
+> These commands are also available as `aws:key:list`, `aws:key:add`, and `aws:key:delete` for convenience.
+
 <a name="aws-provisioning"></a>
 
 ### Provisioning Servers
@@ -316,6 +319,9 @@ After provisioning, install the server:
 ```bash
 deployer server:install --server=production
 ```
+
+> [!NOTE]
+> This command is also available as `aws:provision` for convenience.
 
 > [!NOTE]
 > When you delete a server provisioned through AWS, DeployerPHP also terminates the EC2 instance and releases the Elastic IP.
@@ -402,6 +408,9 @@ deployer pro:do:key:delete \
     --yes
 ```
 
+> [!NOTE]
+> These commands are also available as `do:key:list`, `do:key:add`, and `do:key:delete` for convenience.
+
 <a name="do-provisioning"></a>
 
 ### Provisioning Droplets
@@ -457,6 +466,9 @@ After provisioning:
 ```bash
 deployer server:install --server=production
 ```
+
+> [!NOTE]
+> This command is also available as `do:provision` for convenience.
 
 > [!NOTE]
 > When you delete a server provisioned through DigitalOcean, DeployerPHP also destroys the Droplet.
