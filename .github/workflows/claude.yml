@@ -155,15 +155,23 @@ jobs:
               </step>
 
               <step name="acknowledge-addressed">
-                For each addressed issue, post friendly reply to the thread:
-                gh api repos/{0}/pulls/{1}/comments -f body="MESSAGE" -F in_reply_to=COMMENT_ID
+                For each addressed issue, spawn pr-comment agents IN PARALLEL using the Task tool.
 
-                Use warm, specific acknowledgments like:
-                - "Makes sense! Thanks for the explanation"
-                - "Got it, the null check handles this. Thanks for clarifying!"
-                - "Fair enough! The pattern is idiomatic here. Withdrawn."
+                For each item in acknowledgment_queue:
+                - subagent_type: pr-comment
+                - prompt: "Post a reply to this PR comment:
 
-                AVOID: "Ok", "Understood", "Noted" - too dismissive
+                  **PR:** {0}#{1}
+                  **Comment ID:** (the comment ID from acknowledgment_queue)
+                  **Type:** review_comment
+                  **Original author:** @(username from the comment)
+
+                  **Our verdict:** ADDRESSED
+                  **Our assessment:** The author has addressed this concern.
+
+                  Reply with a friendly acknowledgment that the issue has been resolved."
+
+                Run all acknowledgment replies in parallel using a single message with multiple Task tool calls.
               </step>
 
               <step name="submit-review">
