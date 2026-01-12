@@ -156,7 +156,8 @@ final class SymfonyApp extends SymfonyApplication
 
         $this->io->writeln([
             '',
-            '<fg=cyan>▒ ▶</> <fg=cyan;options=bold>DeployerPHP</> <fg=cyan>━━━━━━━━━━━━━━━━</><fg=bright-blue>━━━━━━━━━━━━━━━━</><fg=magenta>━━━━━━━━━━━━━━━━</><fg=gray>━━━━━━━━━━━━━━━━━</>',
+            '<fg=cyan>▒ ≡</> <fg=cyan;options=bold>DeployerPHP</> <fg=cyan>━━━━━━━━━━━━━━━━</><fg=bright-blue>━━━━━━━━━━━━━━━</><fg=magenta>━━━━━━━━━━━━━━━</><fg=gray>━━━━━━━━━━━━━━━━</>',
+            '<fg=gray>▒ </>',
             '<fg=gray>▒ Ver: '.$version.'</>',
         ]);
     }
@@ -294,7 +295,7 @@ final class SymfonyApp extends SymfonyApplication
         foreach ($commands as $command) {
             /** @var Command $commandInstance */
             $commandInstance = $this->container->build($command);
-            $this->add($commandInstance);
+            $this->addCommand($commandInstance);
         }
     }
 }
