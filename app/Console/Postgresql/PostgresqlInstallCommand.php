@@ -169,7 +169,7 @@ class PostgresqlInstallCommand extends BaseCommand
             }
         }
 
-        $this->commandReplay('postgresql:install', $replayOptions);
+        $this->commandReplay($replayOptions);
 
         return Command::SUCCESS;
     }

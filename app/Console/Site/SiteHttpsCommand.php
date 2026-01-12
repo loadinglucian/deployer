@@ -82,7 +82,7 @@ class SiteHttpsCommand extends BaseCommand
         if (true === $config['https_enabled']) {
             $this->info("HTTPS is already enabled for '{$siteServer->site->domain}'");
 
-            $this->commandReplay('site:https', [
+            $this->commandReplay([
                 'domain' => $siteServer->site->domain,
             ]);
 
@@ -112,7 +112,7 @@ class SiteHttpsCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('site:https', [
+        $this->commandReplay([
             'domain' => $siteServer->site->domain,
         ]);
 

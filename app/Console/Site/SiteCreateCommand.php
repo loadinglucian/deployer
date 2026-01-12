@@ -161,7 +161,7 @@ class SiteCreateCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('site:create', [
+        $this->commandReplay([
             'domain' => $domain,
             'server' => $server->name,
             'php-version' => $phpVersion,

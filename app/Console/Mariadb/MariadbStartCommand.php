@@ -78,7 +78,7 @@ class MariadbStartCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('mariadb:start', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

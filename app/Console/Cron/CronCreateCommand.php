@@ -117,7 +117,7 @@ class CronCreateCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('cron:create', [
+        $this->commandReplay([
             'domain' => $site->domain,
             'script' => $cronDeets['script'],
             'schedule' => $cronDeets['schedule'],

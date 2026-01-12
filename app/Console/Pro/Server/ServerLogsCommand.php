@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Server;
+namespace DeployerPHP\Console\Pro\Server;
 
-use DeployerPHP\Contracts\BaseCommand;
+use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\DTOs\ServerDTO;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\LogsTrait;
@@ -19,10 +19,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'server:logs',
+    name: 'pro:server:logs|server:logs',
     description: 'View server logs (system, services, sites, and supervisors)'
 )]
-class ServerLogsCommand extends BaseCommand
+class ServerLogsCommand extends ProCommand
 {
     use LogsTrait;
     use PlaybooksTrait;
@@ -182,7 +182,7 @@ class ServerLogsCommand extends BaseCommand
             $replayOptions['site'] = $siteFilter;
         }
 
-        $this->commandReplay('server:logs', $replayOptions);
+        $this->commandReplay($replayOptions);
 
         return Command::SUCCESS;
     }

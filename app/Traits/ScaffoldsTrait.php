@@ -25,7 +25,7 @@ use Symfony\Component\Console\Input\InputOption;
  * @method void displayDeets(array<string, string> $details)
  * @method void nay(string $message)
  * @method void yay(string $message)
- * @method void commandReplay(string $command, array<string, mixed> $options)
+ * @method void commandReplay(array<string, mixed> $options)
  */
 trait ScaffoldsTrait
 {
@@ -84,10 +84,7 @@ trait ScaffoldsTrait
         // Step 5: Display results and replay
         $this->displayDeets($status);
         $this->yay('Finished scaffolding ' . $type);
-        $this->commandReplay(
-            'scaffold:' . $type,
-            $this->buildReplayOptions($destinationDir, $context)
-        );
+        $this->commandReplay($this->buildReplayOptions($destinationDir, $context));
 
         return Command::SUCCESS;
     }

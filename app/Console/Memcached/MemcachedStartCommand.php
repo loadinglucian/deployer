@@ -78,7 +78,7 @@ class MemcachedStartCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('memcached:start', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

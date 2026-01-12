@@ -156,7 +156,7 @@ class RedisInstallCommand extends BaseCommand
             }
         }
 
-        $this->commandReplay('redis:install', $replayOptions);
+        $this->commandReplay($replayOptions);
 
         return Command::SUCCESS;
     }

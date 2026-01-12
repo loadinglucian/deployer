@@ -120,7 +120,7 @@ class PhpRestartCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('php:restart', [
+        $this->commandReplay([
             'server' => $server->name,
             'version' => $version,
         ]);

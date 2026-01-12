@@ -125,7 +125,7 @@ class SupervisorCreateCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('supervisor:create', [
+        $this->commandReplay([
             'domain' => $site->domain,
             'program' => $supervisor->program,
             'script' => $supervisor->script,

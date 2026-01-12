@@ -37,6 +37,9 @@ use DeployerPHP\Console\Pro\Do\KeyAddCommand as DoKeyAddCommand;
 use DeployerPHP\Console\Pro\Do\KeyDeleteCommand as DoKeyDeleteCommand;
 use DeployerPHP\Console\Pro\Do\KeyListCommand as DoKeyListCommand;
 use DeployerPHP\Console\Pro\Do\ProvisionCommand as DoProvisionCommand;
+use DeployerPHP\Console\Pro\Server\ServerLogsCommand as ProServerLogsCommand;
+use DeployerPHP\Console\Pro\Server\ServerSshCommand as ProServerSshCommand;
+use DeployerPHP\Console\Pro\Site\SiteSshCommand as ProSiteSshCommand;
 use DeployerPHP\Console\Redis\RedisInstallCommand;
 use DeployerPHP\Console\Redis\RedisRestartCommand;
 use DeployerPHP\Console\Redis\RedisStartCommand;
@@ -50,9 +53,7 @@ use DeployerPHP\Console\Server\ServerDeleteCommand;
 use DeployerPHP\Console\Server\ServerFirewallCommand;
 use DeployerPHP\Console\Server\ServerInfoCommand;
 use DeployerPHP\Console\Server\ServerInstallCommand;
-use DeployerPHP\Console\Server\ServerLogsCommand;
 use DeployerPHP\Console\Server\ServerRunCommand;
-use DeployerPHP\Console\Server\ServerSshCommand;
 use DeployerPHP\Console\Site\SiteCreateCommand;
 use DeployerPHP\Console\Site\SiteDeleteCommand;
 use DeployerPHP\Console\Site\SiteDeployCommand;
@@ -60,7 +61,6 @@ use DeployerPHP\Console\Site\SiteHttpsCommand;
 use DeployerPHP\Console\Site\SiteRollbackCommand;
 use DeployerPHP\Console\Site\SiteSharedPullCommand;
 use DeployerPHP\Console\Site\SiteSharedPushCommand;
-use DeployerPHP\Console\Site\SiteSshCommand;
 use DeployerPHP\Console\Supervisor\SupervisorCreateCommand;
 use DeployerPHP\Console\Supervisor\SupervisorDeleteCommand;
 use DeployerPHP\Console\Supervisor\SupervisorRestartCommand;
@@ -156,7 +156,8 @@ final class SymfonyApp extends SymfonyApplication
 
         $this->io->writeln([
             '',
-            '<fg=cyan>▒ ▶</> <fg=cyan;options=bold>DeployerPHP</> <fg=cyan>━━━━━━━━━━━━━━━━</><fg=bright-blue>━━━━━━━━━━━━━━━━</><fg=magenta>━━━━━━━━━━━━━━━━</><fg=gray>━━━━━━━━━━━━━━━━━</>',
+            '<fg=cyan>▒ ≡</> <fg=cyan;options=bold>DeployerPHP</> <fg=cyan>━━━━━━━━━━━━━━━━</><fg=bright-blue>━━━━━━━━━━━━━━━</><fg=magenta>━━━━━━━━━━━━━━━</><fg=gray>━━━━━━━━━━━━━━━━</>',
+            '<fg=gray>▒ </>',
             '<fg=gray>▒ Ver: '.$version.'</>',
         ]);
     }
@@ -183,9 +184,7 @@ final class SymfonyApp extends SymfonyApplication
             ServerFirewallCommand::class,
             ServerInfoCommand::class,
             ServerInstallCommand::class,
-            ServerLogsCommand::class,
             ServerRunCommand::class,
-            ServerSshCommand::class,
 
             //
             // Provider integrations (keys + provisioning)
@@ -198,6 +197,9 @@ final class SymfonyApp extends SymfonyApplication
             DoKeyDeleteCommand::class,
             DoKeyListCommand::class,
             DoProvisionCommand::class,
+            ProServerLogsCommand::class,
+            ProServerSshCommand::class,
+            ProSiteSshCommand::class,
 
             //
             // Site management
@@ -209,7 +211,6 @@ final class SymfonyApp extends SymfonyApplication
             SiteRollbackCommand::class,
             SiteSharedPullCommand::class,
             SiteSharedPushCommand::class,
-            SiteSshCommand::class,
 
             //
             // Cron management
@@ -294,7 +295,7 @@ final class SymfonyApp extends SymfonyApplication
         foreach ($commands as $command) {
             /** @var Command $commandInstance */
             $commandInstance = $this->container->build($command);
-            $this->add($commandInstance);
+            $this->addCommand($commandInstance);
         }
     }
 }

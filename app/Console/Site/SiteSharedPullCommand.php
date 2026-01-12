@@ -141,7 +141,7 @@ class SiteSharedPullCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('site:shared:pull', [
+        $this->commandReplay([
             'domain' => $site->domain,
             'remote' => $remoteRelative,
             'local' => $localPath,

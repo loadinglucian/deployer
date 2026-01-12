@@ -78,7 +78,7 @@ class SupervisorStopCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('supervisor:stop', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

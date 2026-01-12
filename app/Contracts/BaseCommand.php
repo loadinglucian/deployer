@@ -322,12 +322,29 @@ abstract class BaseCommand extends Command
     }
 
     /**
+     * Get the command name as it was invoked by the user.
+     *
+     * Returns the actual alias used (e.g., 'do:key:add' vs 'pro:do:key:add')
+     * by checking $_SERVER['argv'], falling back to the primary name.
+     */
+    protected function getInvokedCommandName(): string
+    {
+        /** @var array<int, string> $argv */
+        $argv = $_SERVER['argv'] ?? [];
+        $argv1 = $argv[1] ?? '';
+        $allNames = [$this->getName(), ...$this->getAliases()];
+
+        return in_array($argv1, $allNames, true) ? $argv1 : (string) $this->getName();
+    }
+
+    /**
      * Display a command replay hint showing how to run non-interactively.
      *
      * @param array<string, mixed> $options Array of option name => value pairs
      */
-    protected function commandReplay(string $commandName, array $options): void
+    protected function commandReplay(array $options): void
     {
+        $commandName = $this->getInvokedCommandName();
         //
         // Build command options
 

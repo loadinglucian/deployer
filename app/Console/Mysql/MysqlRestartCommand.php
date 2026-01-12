@@ -78,7 +78,7 @@ class MysqlRestartCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('mysql:restart', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

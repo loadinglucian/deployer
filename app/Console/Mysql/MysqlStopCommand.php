@@ -78,7 +78,7 @@ class MysqlStopCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('mysql:stop', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

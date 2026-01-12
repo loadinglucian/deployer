@@ -62,7 +62,7 @@ class ServerInfoCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('server:info', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 
