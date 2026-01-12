@@ -19,6 +19,8 @@ use Symfony\Component\Console\Command\Command;
  */
 trait CloudflareTrait
 {
+    use DomainValidationTrait;
+
     // ----
     // Helpers
     // ----
@@ -111,13 +113,15 @@ trait CloudflareTrait
     // ----
 
     /**
-     * Validate zone input.
+     * Validate zone input (domain name only).
+     *
+     * Zone ID resolution is handled by resolveZoneId() via API lookup.
      *
      * @return string|null Error message if invalid, null if valid
      */
     protected function validateZoneInput(mixed $zone): ?string
     {
-        if (!is_string($zone)) {
+        if (! is_string($zone)) {
             return 'Zone must be a string';
         }
 
@@ -125,13 +129,7 @@ trait CloudflareTrait
             return 'Zone cannot be empty';
         }
 
-        // Valid: zone ID (32-char hex) or domain name
-        // Domain pattern validates proper label boundaries (no consecutive dots, no leading/trailing hyphens)
-        if (1 !== preg_match('/^[a-f0-9]{32}$/i', $zone) && 1 !== preg_match('/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}$/i', $zone)) {
-            return "Invalid zone format: '{$zone}'. Use a domain name (example.com) or zone ID (32-char hex)";
-        }
-
-        return null;
+        return $this->validateDomainFormat($zone);
     }
 
     /**
@@ -166,20 +164,7 @@ trait CloudflareTrait
      */
     protected function validateRecordNameInput(mixed $name): ?string
     {
-        if (!is_string($name)) {
-            return 'Record name must be a string';
-        }
-
-        if ('' === trim($name)) {
-            return 'Record name cannot be empty';
-        }
-
-        // Allow "@" for root, or valid hostname pattern (allows underscores for DKIM/DMARC records)
-        if ('@' !== $name && 1 !== preg_match('/^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$/i', $name)) {
-            return "Invalid record name: '{$name}'. Use '@' for root or a valid hostname";
-        }
-
-        return null;
+        return $this->validateRecordNameFormat($name);
     }
 
     /**

@@ -16,6 +16,8 @@ use DeployerPHP\Services\IoService;
  */
 trait DoDnsTrait
 {
+    use DomainValidationTrait;
+
     // ----
     // Helpers
     // ----
@@ -65,7 +67,7 @@ trait DoDnsTrait
      */
     protected function validateDoDomainInput(mixed $domain): ?string
     {
-        if (!is_string($domain)) {
+        if (! is_string($domain)) {
             return 'Domain must be a string';
         }
 
@@ -73,25 +75,7 @@ trait DoDnsTrait
             return 'Domain cannot be empty';
         }
 
-        // RFC 1035: total domain length limit
-        if (strlen($domain) > 253) {
-            return 'Domain exceeds maximum length of 253 characters';
-        }
-
-        // RFC 1035: label length limit (63 chars per label)
-        $labels = explode('.', $domain);
-        foreach ($labels as $label) {
-            if (strlen($label) > 63) {
-                return 'Domain label exceeds maximum length of 63 characters';
-            }
-        }
-
-        // Basic domain format validation
-        if (!preg_match('/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i', $domain)) {
-            return 'Invalid domain format';
-        }
-
-        return null;
+        return $this->validateDomainFormat($domain);
     }
 
     /**
@@ -125,39 +109,7 @@ trait DoDnsTrait
      */
     protected function validateDoRecordNameInput(mixed $name): ?string
     {
-        if (!is_string($name)) {
-            return 'Record name must be a string';
-        }
-
-        if ('' === trim($name)) {
-            return 'Record name cannot be empty';
-        }
-
-        // Allow "@" for root/apex
-        if ('@' === $name) {
-            return null;
-        }
-
-        // RFC 1035: total name length limit
-        if (strlen($name) > 253) {
-            return 'Record name exceeds maximum length of 253 characters';
-        }
-
-        // RFC 1035: label length limit (63 chars per label)
-        $checkName = str_starts_with($name, '*.') ? substr($name, 2) : $name;
-        $labels = explode('.', $checkName);
-        foreach ($labels as $label) {
-            if (strlen($label) > 63) {
-                return 'Record name label exceeds maximum length of 63 characters';
-            }
-        }
-
-        // Basic hostname validation (allows wildcards like *)
-        if (!preg_match('/^(\*\.)?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i', $name)) {
-            return 'Invalid record name format. Use "@" for root or a valid hostname';
-        }
-
-        return null;
+        return $this->validateRecordNameFormat($name);
     }
 
     /**

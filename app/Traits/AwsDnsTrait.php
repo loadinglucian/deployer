@@ -16,6 +16,8 @@ use DeployerPHP\Services\IoService;
  */
 trait AwsDnsTrait
 {
+    use DomainValidationTrait;
+
     // ----
     // Helpers
     // ----
@@ -71,13 +73,15 @@ trait AwsDnsTrait
     // ----
 
     /**
-     * Validate hosted zone input.
+     * Validate hosted zone input (domain name only).
+     *
+     * Zone ID resolution is handled by resolveAwsHostedZoneId() via API lookup.
      *
      * @return string|null Error message if invalid, null if valid
      */
     protected function validateAwsHostedZoneInput(mixed $zone): ?string
     {
-        if (!is_string($zone)) {
+        if (! is_string($zone)) {
             return 'Hosted zone must be a string';
         }
 
@@ -85,7 +89,7 @@ trait AwsDnsTrait
             return 'Hosted zone cannot be empty';
         }
 
-        return null;
+        return $this->validateDomainFormat($zone);
     }
 
     /**
@@ -119,25 +123,7 @@ trait AwsDnsTrait
      */
     protected function validateAwsRecordNameInput(mixed $name): ?string
     {
-        if (!is_string($name)) {
-            return 'Record name must be a string';
-        }
-
-        if ('' === trim($name)) {
-            return 'Record name cannot be empty';
-        }
-
-        // Allow "@" for root/apex
-        if ('@' === $name) {
-            return null;
-        }
-
-        // Basic hostname validation (allows wildcards like *)
-        if (!preg_match('/^(\*\.)?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.?$/i', $name)) {
-            return 'Invalid record name format. Use "@" for root or a valid hostname';
-        }
-
-        return null;
+        return $this->validateRecordNameFormat($name);
     }
 
     /**

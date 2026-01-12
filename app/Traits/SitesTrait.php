@@ -30,6 +30,7 @@ use Symfony\Component\Console\Command\Command;
  */
 trait SitesTrait
 {
+    use DomainValidationTrait;
     use ServersTrait;
 
     // ----
@@ -362,13 +363,13 @@ trait SitesTrait
 
         $domain = $this->normalizeDomain($domain);
 
-        // Check format
-        $isValid = false !== filter_var($domain, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME);
-        if (! $isValid) {
-            return 'Must be a valid domain name (e.g., example.com, subdomain.example.com)';
+        // Check format using centralized validation
+        $formatError = $this->validateDomainFormat($domain);
+        if (null !== $formatError) {
+            return $formatError;
         }
 
-        // Check uniqueness
+        // Check uniqueness in inventory
         $existing = $this->sites->findByDomain($domain);
         if (null !== $existing) {
             return "Domain '{$domain}' already exists in inventory";
