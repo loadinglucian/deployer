@@ -174,8 +174,8 @@ trait CloudflareTrait
             return 'Record name cannot be empty';
         }
 
-        // Allow "@" for root, or valid hostname pattern
-        if ('@' !== $name && 1 !== preg_match('/^[a-z0-9][a-z0-9\-\.\_]*$/i', $name)) {
+        // Allow "@" for root, or valid hostname pattern (allows underscores for DKIM/DMARC records)
+        if ('@' !== $name && 1 !== preg_match('/^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$/i', $name)) {
             return "Invalid record name: '{$name}'. Use '@' for root or a valid hostname";
         }
 

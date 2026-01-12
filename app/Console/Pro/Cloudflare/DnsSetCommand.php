@@ -37,7 +37,7 @@ final class DnsSetCommand extends ProCommand
             ->addOption('value', null, InputOption::VALUE_REQUIRED, 'Record value (IP, hostname, text)')
             ->addOption('ttl', null, InputOption::VALUE_REQUIRED, 'TTL in seconds (1 = auto when proxied)')
             ->addOption('proxied', null, InputOption::VALUE_NEGATABLE, 'Enable Cloudflare proxy (orange cloud)')
-            ->addOption('priority', null, InputOption::VALUE_REQUIRED, 'MX/SRV priority (0-65535)');
+            ->addOption('priority', null, InputOption::VALUE_REQUIRED, 'MX priority (0-65535)');
     }
 
     // ----
@@ -231,9 +231,9 @@ final class DnsSetCommand extends ProCommand
                 );
             }
 
-            // Priority (only for MX, SRV)
+            // Priority (only for MX)
             $priority = null;
-            if (in_array($type, ['MX', 'SRV'], true)) {
+            if ('MX' === $type) {
                 /** @var string $priorityInput */
                 $priorityInput = $this->io->getValidatedOptionOrPrompt(
                     'priority',
@@ -278,7 +278,6 @@ final class DnsSetCommand extends ProCommand
             'MX' => 'Mail server hostname (e.g., mail.example.com)',
             'TXT' => 'Text content (e.g., v=spf1 include:_spf.google.com ~all)',
             'NS' => 'Nameserver hostname',
-            'SRV' => 'Format: weight port target (e.g., 5 5060 sipserver.example.com)',
             'CAA' => 'Format: flags tag value (e.g., 0 issue "letsencrypt.org")',
             default => 'Record value',
         };

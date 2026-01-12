@@ -27,6 +27,9 @@ class CloudflareDnsService extends BaseCloudflareService
     /**
      * List DNS records in a zone.
      *
+     * Note: Returns up to 100 records matching the filters. For zones with
+     * many records of the same type/name, use filters to narrow results.
+     *
      * @param string      $zoneId Zone ID
      * @param string|null $type   Filter by record type
      * @param string|null $name   Filter by record name
