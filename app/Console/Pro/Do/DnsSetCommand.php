@@ -7,6 +7,7 @@ namespace DeployerPHP\Console\Pro\Do;
 use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Services\Do\DoDnsService;
+use DeployerPHP\Traits\DnsCommandTrait;
 use DeployerPHP\Traits\DoDnsTrait;
 use DeployerPHP\Traits\DoTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -21,6 +22,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class DnsSetCommand extends ProCommand
 {
+    use DnsCommandTrait;
     use DoDnsTrait;
     use DoTrait;
 
@@ -62,7 +64,7 @@ class DnsSetCommand extends ProCommand
         // Gather record details
         // ----
 
-        $deets = $this->gatherRecordDeets($input);
+        $deets = $this->gatherRecordDeets();
 
         if (is_int($deets)) {
             return Command::FAILURE;
@@ -128,7 +130,7 @@ class DnsSetCommand extends ProCommand
      *
      * @return array{zone: string, type: string, name: string, value: string, ttl: int}|int
      */
-    protected function gatherRecordDeets(InputInterface $input): array|int
+    protected function gatherRecordDeets(): array|int
     {
         try {
             $domains = $this->io->promptSpin(
@@ -218,16 +220,4 @@ class DnsSetCommand extends ProCommand
         }
     }
 
-    /**
-     * Get placeholder text for record value based on type.
-     */
-    protected function getValuePlaceholder(string $type): string
-    {
-        return match ($type) {
-            'A' => '192.0.2.1',
-            'AAAA' => '2001:db8::1',
-            'CNAME' => 'target.example.com',
-            default => '',
-        };
-    }
 }

@@ -8,6 +8,7 @@ use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Services\Cloudflare\CloudflareDnsService;
 use DeployerPHP\Traits\CloudflareTrait;
+use DeployerPHP\Traits\DnsCommandTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -15,12 +16,13 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:cloudflare:dns:delete|cf:dns:delete',
+    name: 'pro:cf:dns:delete|cf:dns:delete|pro:cloudflare:dns:delete|cloudflare:dns:delete',
     description: 'Delete a DNS record from Cloudflare'
 )]
-final class DnsDeleteCommand extends ProCommand
+class DnsDeleteCommand extends ProCommand
 {
     use CloudflareTrait;
+    use DnsCommandTrait;
 
     // ----
     // Configuration
@@ -31,7 +33,7 @@ final class DnsDeleteCommand extends ProCommand
         parent::configure();
 
         $this
-            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone name (domain) or zone ID')
+            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone (domain name)')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME)')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Record name (use "@" for root domain)')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Skip typing the record name to confirm')
@@ -46,7 +48,7 @@ final class DnsDeleteCommand extends ProCommand
     {
         parent::execute($input, $output);
 
-        $this->h1('Delete Cloudflare DNS Record');
+        $this->h1('Delete DNS Record');
 
         //
         // Initialize Cloudflare API
@@ -60,52 +62,9 @@ final class DnsDeleteCommand extends ProCommand
         // Gather input
         // ----
 
-        try {
-            /** @var string $zone */
-            $zone = $this->io->getValidatedOptionOrPrompt(
-                'zone',
-                fn ($validate) => $this->io->promptText(
-                    label: 'Zone (domain name or zone ID):',
-                    placeholder: 'example.com',
-                    required: true,
-                    validate: $validate
-                ),
-                fn ($value) => $this->validateZoneInput($value)
-            );
+        $deets = $this->gatherRecordDeets();
 
-            $typeOptions = array_combine(
-                CloudflareDnsService::RECORD_TYPES,
-                CloudflareDnsService::RECORD_TYPES
-            );
-
-            /** @var string $type */
-            $type = $this->io->getValidatedOptionOrPrompt(
-                'type',
-                fn ($validate) => $this->io->promptSelect(
-                    label: 'Record type:',
-                    options: $typeOptions,
-                    default: 'A',
-                    validate: $validate
-                ),
-                fn ($value) => $this->validateRecordTypeInput($value)
-            );
-
-            $type = strtoupper($type);
-
-            /** @var string $name */
-            $name = $this->io->getValidatedOptionOrPrompt(
-                'name',
-                fn ($validate) => $this->io->promptText(
-                    label: 'Record name (use "@" for root):',
-                    placeholder: '@',
-                    required: true,
-                    validate: $validate
-                ),
-                fn ($value) => $this->validateRecordNameInput($value)
-            );
-        } catch (ValidationException $e) {
-            $this->nay($e->getMessage());
-
+        if (is_int($deets)) {
             return Command::FAILURE;
         }
 
@@ -114,7 +73,7 @@ final class DnsDeleteCommand extends ProCommand
         // ----
 
         try {
-            $zoneId = $this->resolveZoneId($zone);
+            $zoneId = $this->resolveZoneId($deets['zone']);
 
             // Get zone name for record normalization
             $zoneName = $this->io->promptSpin(
@@ -122,16 +81,16 @@ final class DnsDeleteCommand extends ProCommand
                 'Fetching zone details...'
             );
 
-            $fullName = $this->normalizeRecordName($name, $zoneName);
+            $fullName = $this->normalizeRecordName($deets['name'], $zoneName);
 
             /** @var array{id: string, type: string, name: string, content: string, ttl: int, proxied: bool}|null $record */
             $record = $this->io->promptSpin(
-                fn () => $this->cloudflare->dns->findRecord($zoneId, $type, $fullName),
+                fn () => $this->cloudflare->dns->findRecord($zoneId, $deets['type'], $fullName),
                 'Finding DNS record...'
             );
 
             if (null === $record) {
-                $this->nay("Record not found: {$type} {$fullName}");
+                $this->nay("No {$deets['type']} record found for '{$deets['name']}' in zone '{$zoneName}'");
 
                 return Command::FAILURE;
             }
@@ -155,7 +114,7 @@ final class DnsDeleteCommand extends ProCommand
             /** @var bool $forceSkip */
             $forceSkip = $input->getOption('force');
 
-            $confirmed = $this->confirmDeletion($fullName, $forceSkip);
+            $confirmed = $this->confirmDnsDeletion($fullName, $forceSkip);
 
             if (null === $confirmed) {
                 return Command::FAILURE;
@@ -176,7 +135,7 @@ final class DnsDeleteCommand extends ProCommand
                 'Deleting DNS record...'
             );
 
-            $this->yay("Deleted {$type} record: {$fullName}");
+            $this->yay('DNS record deleted successfully');
         } catch (\RuntimeException $e) {
             $this->nay($e->getMessage());
 
@@ -188,9 +147,9 @@ final class DnsDeleteCommand extends ProCommand
         // ----
 
         $this->commandReplay([
-            'zone' => $zone,
-            'type' => $type,
-            'name' => $name,
+            'zone' => $deets['zone'],
+            'type' => $deets['type'],
+            'name' => $deets['name'],
             'force' => true,
             'yes' => true,
         ]);
@@ -203,34 +162,74 @@ final class DnsDeleteCommand extends ProCommand
     // ----
 
     /**
-     * Confirm DNS record deletion with type-to-confirm and yes/no prompt.
+     * Gather record details from user input or CLI options.
      *
-     * @param string $recordName The full record name to confirm
-     * @param bool   $forceSkip  Skip the type-to-confirm step
-     *
-     * @return bool|null True if confirmed, false if cancelled, null if validation failed
+     * @return array{zone: string, type: string, name: string}|int
      */
-    private function confirmDeletion(string $recordName, bool $forceSkip): ?bool
+    protected function gatherRecordDeets(): array|int
     {
-        if (!$forceSkip) {
-            $typedName = $this->io->promptText(
-                label: "Type the record name '{$recordName}' to confirm deletion:",
-                required: true
+        try {
+            $zones = $this->io->promptSpin(
+                fn () => $this->cloudflare->zone->getZones(),
+                'Fetching zones...'
             );
 
-            if ($typedName !== $recordName) {
-                $this->nay('Record name does not match. Deletion cancelled.');
+            if (0 === count($zones)) {
+                $this->info('No zones found in your Cloudflare account');
 
-                return null;
+                return Command::FAILURE;
             }
-        }
 
-        return $this->io->getBooleanOptionOrPrompt(
-            'yes',
-            fn (): bool => $this->io->promptConfirm(
-                label: 'Are you absolutely sure?',
-                default: false
-            )
-        );
+            /** @var string $zone */
+            $zone = $this->io->getValidatedOptionOrPrompt(
+                'zone',
+                fn ($validate) => $this->io->promptSelect(
+                    label: 'Select zone:',
+                    options: $zones,
+                    validate: $validate
+                ),
+                fn ($value) => $this->validateZoneInput($value)
+            );
+
+            $typeOptions = array_combine(
+                CloudflareDnsService::RECORD_TYPES,
+                CloudflareDnsService::RECORD_TYPES
+            );
+
+            /** @var string $type */
+            $type = $this->io->getValidatedOptionOrPrompt(
+                'type',
+                fn ($validate) => $this->io->promptSelect(
+                    label: 'Record type:',
+                    options: $typeOptions,
+                    validate: $validate
+                ),
+                fn ($value) => $this->validateRecordTypeInput($value)
+            );
+
+            $type = strtoupper($type);
+
+            /** @var string $name */
+            $name = $this->io->getValidatedOptionOrPrompt(
+                'name',
+                fn ($validate) => $this->io->promptText(
+                    label: 'Record name:',
+                    placeholder: '@',
+                    hint: 'Use "@" for root domain',
+                    validate: $validate
+                ),
+                fn ($value) => $this->validateRecordNameInput($value)
+            );
+
+            return [
+                'zone' => $zone,
+                'type' => $type,
+                'name' => $name,
+            ];
+        } catch (ValidationException $e) {
+            $this->nay($e->getMessage());
+
+            return Command::FAILURE;
+        }
     }
 }

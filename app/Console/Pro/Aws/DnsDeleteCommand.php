@@ -9,6 +9,7 @@ use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Services\Aws\AwsRoute53DnsService;
 use DeployerPHP\Traits\AwsDnsTrait;
 use DeployerPHP\Traits\AwsTrait;
+use DeployerPHP\Traits\DnsCommandTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -23,6 +24,7 @@ class DnsDeleteCommand extends ProCommand
 {
     use AwsDnsTrait;
     use AwsTrait;
+    use DnsCommandTrait;
 
     // ----
     // Configuration
@@ -62,7 +64,7 @@ class DnsDeleteCommand extends ProCommand
         // Gather input
         // ----
 
-        $deets = $this->gatherRecordDeets($input);
+        $deets = $this->gatherRecordDeets();
 
         if (is_int($deets)) {
             return Command::FAILURE;
@@ -134,9 +136,9 @@ class DnsDeleteCommand extends ProCommand
         // ----
 
         /** @var bool $forceSkip */
-        $forceSkip = $input->getOption('force') ?? false;
+        $forceSkip = $input->getOption('force');
 
-        $confirmed = $this->confirmDeletion($deets['name'], $forceSkip);
+        $confirmed = $this->confirmDnsDeletion($deets['name'], $forceSkip);
 
         if (null === $confirmed) {
             return Command::FAILURE;
@@ -195,7 +197,7 @@ class DnsDeleteCommand extends ProCommand
      *
      * @return array{zone: string, type: string, name: string}|int
      */
-    protected function gatherRecordDeets(InputInterface $input): array|int
+    protected function gatherRecordDeets(): array|int
     {
         try {
             $zones = $this->io->promptSpin(
@@ -257,34 +259,5 @@ class DnsDeleteCommand extends ProCommand
 
             return Command::FAILURE;
         }
-    }
-
-    /**
-     * Confirm record deletion with type-to-confirm and yes/no prompt.
-     *
-     * @return bool|null True if confirmed, false if cancelled, null if validation failed
-     */
-    protected function confirmDeletion(string $recordName, bool $forceSkip): ?bool
-    {
-        if (!$forceSkip) {
-            $typedName = $this->io->promptText(
-                label: "Type the record name '{$recordName}' to confirm deletion:",
-                required: true
-            );
-
-            if ($typedName !== $recordName) {
-                $this->nay('Record name does not match. Deletion cancelled.');
-
-                return null;
-            }
-        }
-
-        return $this->io->getBooleanOptionOrPrompt(
-            'yes',
-            fn (): bool => $this->io->promptConfirm(
-                label: 'Are you absolutely sure?',
-                default: false
-            )
-        );
     }
 }

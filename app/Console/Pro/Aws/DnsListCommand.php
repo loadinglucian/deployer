@@ -8,6 +8,7 @@ use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\AwsDnsTrait;
 use DeployerPHP\Traits\AwsTrait;
+use DeployerPHP\Traits\DnsCommandTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -22,6 +23,7 @@ class DnsListCommand extends ProCommand
 {
     use AwsDnsTrait;
     use AwsTrait;
+    use DnsCommandTrait;
 
     // ----
     // Configuration
@@ -126,7 +128,15 @@ class DnsListCommand extends ProCommand
             return Command::SUCCESS;
         }
 
-        $this->displayRecords($records);
+        // Normalize records for display (AWS uses is_alias flag)
+        $normalizedRecords = array_map(fn ($r) => [
+            'type' => $r['type'],
+            'name' => $r['name'],
+            'value' => $r['value'],
+            'ttl' => $r['is_alias'] ? 'ALIAS' : $r['ttl'],
+        ], $records);
+
+        $this->displayDnsRecords($normalizedRecords);
 
         //
         // Show command replay
@@ -140,48 +150,5 @@ class DnsListCommand extends ProCommand
         $this->commandReplay($replayOptions);
 
         return Command::SUCCESS;
-    }
-
-    // ----
-    // Helpers
-    // ----
-
-    /**
-     * Display DNS records in a formatted list.
-     *
-     * @param array<int, array{type: string, name: string, value: string, ttl: int, is_alias: bool}> $records
-     */
-    protected function displayRecords(array $records): void
-    {
-        $rows = [];
-
-        foreach ($records as $record) {
-            $rows[] = [
-                'Type' => $record['type'],
-                'Name' => $record['name'],
-                'Value' => $this->truncateValue($record['value']),
-                'TTL' => $record['is_alias'] ? 'ALIAS' : (string) $record['ttl'],
-            ];
-        }
-
-        // Display as key-value pairs grouped by record
-        foreach ($rows as $index => $row) {
-            if ($index > 0) {
-                $this->out('');
-            }
-            $this->displayDeets($row);
-        }
-    }
-
-    /**
-     * Truncate long values for display.
-     */
-    protected function truncateValue(string $value): string
-    {
-        if (strlen($value) > 60) {
-            return substr($value, 0, 57) . '...';
-        }
-
-        return $value;
     }
 }

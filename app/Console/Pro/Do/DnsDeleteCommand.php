@@ -7,6 +7,7 @@ namespace DeployerPHP\Console\Pro\Do;
 use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Services\Do\DoDnsService;
+use DeployerPHP\Traits\DnsCommandTrait;
 use DeployerPHP\Traits\DoDnsTrait;
 use DeployerPHP\Traits\DoTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -21,6 +22,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class DnsDeleteCommand extends ProCommand
 {
+    use DnsCommandTrait;
     use DoDnsTrait;
     use DoTrait;
 
@@ -110,7 +112,7 @@ class DnsDeleteCommand extends ProCommand
         /** @var bool $forceSkip */
         $forceSkip = $input->getOption('force');
 
-        $confirmed = $this->confirmDeletion($deets['name'], $forceSkip);
+        $confirmed = $this->confirmDnsDeletion($deets['name'], $forceSkip);
 
         if (null === $confirmed) {
             return Command::FAILURE;
@@ -225,34 +227,5 @@ class DnsDeleteCommand extends ProCommand
 
             return Command::FAILURE;
         }
-    }
-
-    /**
-     * Confirm record deletion with type-to-confirm and yes/no prompt.
-     *
-     * @return bool|null True if confirmed, false if cancelled, null if validation failed
-     */
-    protected function confirmDeletion(string $recordName, bool $forceSkip): ?bool
-    {
-        if (!$forceSkip) {
-            $typedName = $this->io->promptText(
-                label: "Type the record name '{$recordName}' to confirm deletion:",
-                required: true
-            );
-
-            if ($typedName !== $recordName) {
-                $this->nay('Record name does not match. Deletion cancelled.');
-
-                return null;
-            }
-        }
-
-        return $this->io->getBooleanOptionOrPrompt(
-            'yes',
-            fn (): bool => $this->io->promptConfirm(
-                label: 'Are you absolutely sure?',
-                default: false
-            )
-        );
     }
 }

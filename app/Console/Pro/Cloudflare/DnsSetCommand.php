@@ -8,6 +8,7 @@ use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Services\Cloudflare\CloudflareDnsService;
 use DeployerPHP\Traits\CloudflareTrait;
+use DeployerPHP\Traits\DnsCommandTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -15,12 +16,13 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:cloudflare:dns:set|cf:dns:set',
+    name: 'pro:cf:dns:set|cf:dns:set|pro:cloudflare:dns:set|cloudflare:dns:set',
     description: 'Create or update a DNS record in Cloudflare (upsert)'
 )]
-final class DnsSetCommand extends ProCommand
+class DnsSetCommand extends ProCommand
 {
     use CloudflareTrait;
+    use DnsCommandTrait;
 
     // ----
     // Configuration
@@ -31,7 +33,7 @@ final class DnsSetCommand extends ProCommand
         parent::configure();
 
         $this
-            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone name (domain) or zone ID')
+            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone (domain name)')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME)')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Record name (use "@" for root domain)')
             ->addOption('value', null, InputOption::VALUE_REQUIRED, 'Record value (IP, hostname)')
@@ -47,7 +49,7 @@ final class DnsSetCommand extends ProCommand
     {
         parent::execute($input, $output);
 
-        $this->h1('Set Cloudflare DNS Record');
+        $this->h1('Set DNS Record');
 
         //
         // Initialize Cloudflare API
@@ -95,8 +97,8 @@ final class DnsSetCommand extends ProCommand
                 'Setting DNS record...'
             );
 
-            $actionVerb = 'created' === $result['action'] ? 'Created' : 'Updated';
-            $this->yay("{$actionVerb} {$deets['type']} record: {$fullName} -> {$deets['value']}");
+            $action = 'created' === $result['action'] ? 'created' : 'updated';
+            $this->yay("DNS record {$action} successfully");
         } catch (\RuntimeException $e) {
             $this->nay($e->getMessage());
 
@@ -128,16 +130,26 @@ final class DnsSetCommand extends ProCommand
      *
      * @return array{zone: string, type: string, name: string, value: string, ttl: int, proxied: bool}|int
      */
-    private function gatherRecordDeets(): array|int
+    protected function gatherRecordDeets(): array|int
     {
         try {
+            $zones = $this->io->promptSpin(
+                fn () => $this->cloudflare->zone->getZones(),
+                'Fetching zones...'
+            );
+
+            if (0 === count($zones)) {
+                $this->info('No zones found in your Cloudflare account');
+
+                return Command::FAILURE;
+            }
+
             /** @var string $zone */
             $zone = $this->io->getValidatedOptionOrPrompt(
                 'zone',
-                fn ($validate) => $this->io->promptText(
-                    label: 'Zone (domain name or zone ID):',
-                    placeholder: 'example.com',
-                    required: true,
+                fn ($validate) => $this->io->promptSelect(
+                    label: 'Select zone:',
+                    options: $zones,
                     validate: $validate
                 ),
                 fn ($value) => $this->validateZoneInput($value)
@@ -154,7 +166,6 @@ final class DnsSetCommand extends ProCommand
                 fn ($validate) => $this->io->promptSelect(
                     label: 'Record type:',
                     options: $typeOptions,
-                    default: 'A',
                     validate: $validate
                 ),
                 fn ($value) => $this->validateRecordTypeInput($value)
@@ -166,25 +177,20 @@ final class DnsSetCommand extends ProCommand
             $name = $this->io->getValidatedOptionOrPrompt(
                 'name',
                 fn ($validate) => $this->io->promptText(
-                    label: 'Record name (use "@" for root):',
+                    label: 'Record name:',
                     placeholder: '@',
-                    required: true,
-                    hint: 'e.g., @ for root, www for subdomain',
+                    hint: 'Use "@" for root domain',
                     validate: $validate
                 ),
                 fn ($value) => $this->validateRecordNameInput($value)
             );
-
-            $valueHint = $this->getValueHintForType($type);
 
             /** @var string $value */
             $value = $this->io->getValidatedOptionOrPrompt(
                 'value',
                 fn ($validate) => $this->io->promptText(
                     label: 'Record value:',
-                    placeholder: $this->getValuePlaceholderForType($type),
-                    required: true,
-                    hint: $valueHint,
+                    placeholder: $this->getValuePlaceholder($type),
                     validate: $validate
                 ),
                 fn ($v) => $this->validateRecordValueInput($v)
@@ -196,8 +202,6 @@ final class DnsSetCommand extends ProCommand
                 fn ($validate) => $this->io->promptText(
                     label: 'TTL (seconds):',
                     default: '300',
-                    required: true,
-                    hint: 'Use 1 for auto TTL when proxied',
                     validate: $validate
                 ),
                 fn ($v) => $this->validateTtlInput($v)
@@ -228,31 +232,5 @@ final class DnsSetCommand extends ProCommand
             'ttl' => $ttl,
             'proxied' => $proxied,
         ];
-    }
-
-    /**
-     * Get hint text for value field based on record type.
-     */
-    private function getValueHintForType(string $type): string
-    {
-        return match ($type) {
-            'A' => 'IPv4 address (e.g., 192.0.2.1)',
-            'AAAA' => 'IPv6 address (e.g., 2001:db8::1)',
-            'CNAME' => 'Target hostname (e.g., example.com)',
-            default => 'Record value',
-        };
-    }
-
-    /**
-     * Get placeholder text for value field based on record type.
-     */
-    private function getValuePlaceholderForType(string $type): string
-    {
-        return match ($type) {
-            'A' => '192.0.2.1',
-            'AAAA' => '2001:db8::1',
-            'CNAME' => 'target.example.com',
-            default => '',
-        };
     }
 }

@@ -7,6 +7,7 @@ namespace DeployerPHP\Console\Pro\Cloudflare;
 use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\CloudflareTrait;
+use DeployerPHP\Traits\DnsCommandTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -14,12 +15,13 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:cloudflare:dns:list|cf:dns:list',
+    name: 'pro:cf:dns:list|cf:dns:list|pro:cloudflare:dns:list|cloudflare:dns:list',
     description: 'List DNS records in a Cloudflare zone'
 )]
-final class DnsListCommand extends ProCommand
+class DnsListCommand extends ProCommand
 {
     use CloudflareTrait;
+    use DnsCommandTrait;
 
     // ----
     // Configuration
@@ -30,7 +32,7 @@ final class DnsListCommand extends ProCommand
         parent::configure();
 
         $this
-            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone name (domain) or zone ID')
+            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone (domain name)')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Filter by record type (A, AAAA, CNAME)');
     }
 
@@ -42,7 +44,7 @@ final class DnsListCommand extends ProCommand
     {
         parent::execute($input, $output);
 
-        $this->h1('List Cloudflare DNS Records');
+        $this->h1('List DNS Records');
 
         //
         // Initialize Cloudflare API
@@ -57,13 +59,23 @@ final class DnsListCommand extends ProCommand
         // ----
 
         try {
+            $zones = $this->io->promptSpin(
+                fn () => $this->cloudflare->zone->getZones(),
+                'Fetching zones...'
+            );
+
+            if (0 === count($zones)) {
+                $this->info('No zones found in your Cloudflare account');
+
+                return Command::SUCCESS;
+            }
+
             /** @var string $zone */
             $zone = $this->io->getValidatedOptionOrPrompt(
                 'zone',
-                fn ($validate) => $this->io->promptText(
-                    label: 'Zone (domain name or zone ID):',
-                    placeholder: 'example.com',
-                    required: true,
+                fn ($validate) => $this->io->promptSelect(
+                    label: 'Select zone:',
+                    options: $zones,
                     validate: $validate
                 ),
                 fn ($value) => $this->validateZoneInput($value)
@@ -84,6 +96,7 @@ final class DnsListCommand extends ProCommand
 
                 return Command::FAILURE;
             }
+            $typeFilter = strtoupper($typeFilter);
         }
 
         //
@@ -105,7 +118,10 @@ final class DnsListCommand extends ProCommand
         }
 
         if (0 === count($records)) {
-            $this->info('No DNS records found' . (null !== $typeFilter ? " for type {$typeFilter}" : ''));
+            $message = null === $typeFilter
+                ? "No DNS records found for '{$zone}'"
+                : "No {$typeFilter} records found for '{$zone}'";
+            $this->info($message);
 
             $this->commandReplay([
                 'zone' => $zone,
@@ -115,31 +131,26 @@ final class DnsListCommand extends ProCommand
             return Command::SUCCESS;
         }
 
-        $this->info(count($records) . ' record(s) found');
-        $this->out('');
+        // Normalize records for display (CF uses 'content' instead of 'value', has 'proxied')
+        $normalizedRecords = array_map(fn ($r) => [
+            'type' => $r['type'],
+            'name' => $r['name'],
+            'value' => $r['content'],
+            'ttl' => 1 === $r['ttl'] ? 'auto' : $r['ttl'],
+        ], $records);
 
-        foreach ($records as $record) {
-            $proxiedIcon = $record['proxied'] ? ' [proxied]' : '';
-            $ttl = 1 === $record['ttl'] ? 'auto' : "{$record['ttl']}s";
-
-            $this->out(sprintf(
-                '%s %s -> %s (TTL: %s)%s',
-                str_pad($record['type'], 6),
-                $record['name'],
-                $record['content'],
-                $ttl,
-                $proxiedIcon
-            ));
-        }
+        $this->displayDnsRecords($normalizedRecords);
 
         //
         // Show command replay
         // ----
 
-        $this->commandReplay([
-            'zone' => $zone,
-            'type' => $typeFilter,
-        ]);
+        $replayOptions = ['zone' => $zone];
+        if (null !== $typeFilter) {
+            $replayOptions['type'] = $typeFilter;
+        }
+
+        $this->commandReplay($replayOptions);
 
         return Command::SUCCESS;
     }
