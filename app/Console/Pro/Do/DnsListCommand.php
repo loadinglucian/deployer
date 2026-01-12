@@ -32,7 +32,7 @@ class DnsListCommand extends ProCommand
         parent::configure();
 
         $this
-            ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name')
+            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone (domain name)')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Filter by record type (A, AAAA, CNAME)');
     }
 
@@ -70,11 +70,11 @@ class DnsListCommand extends ProCommand
                 return Command::SUCCESS;
             }
 
-            /** @var string $domain */
-            $domain = $this->io->getValidatedOptionOrPrompt(
-                'domain',
+            /** @var string $zone */
+            $zone = $this->io->getValidatedOptionOrPrompt(
+                'zone',
                 fn ($validate) => $this->io->promptSelect(
-                    label: 'Select domain:',
+                    label: 'Select zone:',
                     options: $domains,
                     validate: $validate
                 ),
@@ -105,7 +105,7 @@ class DnsListCommand extends ProCommand
 
         try {
             $records = $this->io->promptSpin(
-                fn () => $this->do->dns->listRecords($domain, $typeFilter),
+                fn () => $this->do->dns->listRecords($zone, $typeFilter),
                 'Fetching DNS records...'
             );
         } catch (\RuntimeException $e) {
@@ -116,8 +116,8 @@ class DnsListCommand extends ProCommand
 
         if (0 === count($records)) {
             $message = null === $typeFilter
-                ? "No DNS records found for '{$domain}'"
-                : "No {$typeFilter} records found for '{$domain}'";
+                ? "No DNS records found for '{$zone}'"
+                : "No {$typeFilter} records found for '{$zone}'";
             $this->info($message);
 
             return Command::SUCCESS;
@@ -129,7 +129,7 @@ class DnsListCommand extends ProCommand
         // Show command replay
         // ----
 
-        $replayOptions = ['domain' => $domain];
+        $replayOptions = ['zone' => $zone];
         if (null !== $typeFilter) {
             $replayOptions['type'] = $typeFilter;
         }

@@ -35,7 +35,7 @@ final class DnsSetCommand extends ProCommand
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME)')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Record name (use "@" for root domain)')
             ->addOption('value', null, InputOption::VALUE_REQUIRED, 'Record value (IP, hostname)')
-            ->addOption('ttl', null, InputOption::VALUE_REQUIRED, 'TTL in seconds (1 = auto when proxied)')
+            ->addOption('ttl', null, InputOption::VALUE_REQUIRED, 'TTL in seconds (default: 300, or 1 for auto)')
             ->addOption('proxied', null, InputOption::VALUE_NEGATABLE, 'Enable Cloudflare proxy (orange cloud)');
     }
 
@@ -195,9 +195,9 @@ final class DnsSetCommand extends ProCommand
                 'ttl',
                 fn ($validate) => $this->io->promptText(
                     label: 'TTL (seconds):',
-                    default: '1',
+                    default: '300',
                     required: true,
-                    hint: '1 = auto (recommended when proxied)',
+                    hint: 'Use 1 for auto TTL when proxied',
                     validate: $validate
                 ),
                 fn ($v) => $this->validateTtlInput($v)

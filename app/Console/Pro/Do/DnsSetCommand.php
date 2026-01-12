@@ -33,11 +33,11 @@ class DnsSetCommand extends ProCommand
         parent::configure();
 
         $this
-            ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name')
+            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone (domain name)')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME)')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Record name (use "@" for root)')
             ->addOption('value', null, InputOption::VALUE_REQUIRED, 'Record value')
-            ->addOption('ttl', null, InputOption::VALUE_REQUIRED, 'TTL in seconds (default: 1800)');
+            ->addOption('ttl', null, InputOption::VALUE_REQUIRED, 'TTL in seconds (default: 300)');
     }
 
     // ----
@@ -73,7 +73,7 @@ class DnsSetCommand extends ProCommand
         // ----
 
         try {
-            $this->resolveDoDomain($deets['domain']);
+            $this->resolveDoDomain($deets['zone']);
         } catch (\RuntimeException $e) {
             $this->nay($e->getMessage());
 
@@ -87,7 +87,7 @@ class DnsSetCommand extends ProCommand
         try {
             $result = $this->io->promptSpin(
                 fn () => $this->do->dns->setRecord(
-                    $deets['domain'],
+                    $deets['zone'],
                     $deets['type'],
                     $deets['name'],
                     $deets['value'],
@@ -109,7 +109,7 @@ class DnsSetCommand extends ProCommand
         // ----
 
         $this->commandReplay([
-            'domain' => $deets['domain'],
+            'zone' => $deets['zone'],
             'type' => $deets['type'],
             'name' => $deets['name'],
             'value' => $deets['value'],
@@ -126,7 +126,7 @@ class DnsSetCommand extends ProCommand
     /**
      * Gather record details from user input or CLI options.
      *
-     * @return array{domain: string, type: string, name: string, value: string, ttl: int}|int
+     * @return array{zone: string, type: string, name: string, value: string, ttl: int}|int
      */
     protected function gatherRecordDeets(InputInterface $input): array|int
     {
@@ -142,11 +142,11 @@ class DnsSetCommand extends ProCommand
                 return Command::FAILURE;
             }
 
-            /** @var string $domain */
-            $domain = $this->io->getValidatedOptionOrPrompt(
-                'domain',
+            /** @var string $zone */
+            $zone = $this->io->getValidatedOptionOrPrompt(
+                'zone',
                 fn ($validate) => $this->io->promptSelect(
-                    label: 'Select domain:',
+                    label: 'Select zone:',
                     options: $domains,
                     validate: $validate
                 ),
@@ -196,7 +196,7 @@ class DnsSetCommand extends ProCommand
                 'ttl',
                 fn ($validate) => $this->io->promptText(
                     label: 'TTL (seconds):',
-                    default: '1800',
+                    default: '300',
                     validate: $validate
                 ),
                 fn ($v) => $this->validateDoTtlInput($v)
@@ -205,7 +205,7 @@ class DnsSetCommand extends ProCommand
             $ttl = (int) $ttlRaw;
 
             return [
-                'domain' => $domain,
+                'zone' => $zone,
                 'type' => $type,
                 'name' => $name,
                 'value' => $value,

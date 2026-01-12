@@ -33,7 +33,7 @@ class DnsDeleteCommand extends ProCommand
         parent::configure();
 
         $this
-            ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name')
+            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone (domain name)')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME)')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Record name (use "@" for root)')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Skip typing the record name to confirm')
@@ -74,7 +74,7 @@ class DnsDeleteCommand extends ProCommand
 
         try {
             $record = $this->io->promptSpin(
-                fn () => $this->do->dns->findRecord($deets['domain'], $deets['type'], $deets['name']),
+                fn () => $this->do->dns->findRecord($deets['zone'], $deets['type'], $deets['name']),
                 'Finding DNS record...'
             );
         } catch (\RuntimeException $e) {
@@ -84,7 +84,7 @@ class DnsDeleteCommand extends ProCommand
         }
 
         if (null === $record) {
-            $this->nay("No {$deets['type']} record found for '{$deets['name']}' in domain '{$deets['domain']}'");
+            $this->nay("No {$deets['type']} record found for '{$deets['name']}' in zone '{$deets['zone']}'");
 
             return Command::FAILURE;
         }
@@ -128,7 +128,7 @@ class DnsDeleteCommand extends ProCommand
 
         try {
             $this->io->promptSpin(
-                fn () => $this->do->dns->deleteRecord($deets['domain'], $record['id']),
+                fn () => $this->do->dns->deleteRecord($deets['zone'], $record['id']),
                 'Deleting DNS record...'
             );
 
@@ -144,7 +144,7 @@ class DnsDeleteCommand extends ProCommand
         // ----
 
         $this->commandReplay([
-            'domain' => $deets['domain'],
+            'zone' => $deets['zone'],
             'type' => $deets['type'],
             'name' => $deets['name'],
             'force' => true,
@@ -161,7 +161,7 @@ class DnsDeleteCommand extends ProCommand
     /**
      * Gather record details from user input or CLI options.
      *
-     * @return array{domain: string, type: string, name: string}|int
+     * @return array{zone: string, type: string, name: string}|int
      */
     protected function gatherRecordDeets(): array|int
     {
@@ -177,11 +177,11 @@ class DnsDeleteCommand extends ProCommand
                 return Command::FAILURE;
             }
 
-            /** @var string $domain */
-            $domain = $this->io->getValidatedOptionOrPrompt(
-                'domain',
+            /** @var string $zone */
+            $zone = $this->io->getValidatedOptionOrPrompt(
+                'zone',
                 fn ($validate) => $this->io->promptSelect(
-                    label: 'Select domain:',
+                    label: 'Select zone:',
                     options: $domains,
                     validate: $validate
                 ),
@@ -216,7 +216,7 @@ class DnsDeleteCommand extends ProCommand
             );
 
             return [
-                'domain' => $domain,
+                'zone' => $zone,
                 'type' => $type,
                 'name' => $name,
             ];
