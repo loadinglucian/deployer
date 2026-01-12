@@ -8,6 +8,8 @@ use Aws\Sdk;
 use DeployerPHP\Services\Aws\AwsAccountService;
 use DeployerPHP\Services\Aws\AwsInstanceService;
 use DeployerPHP\Services\Aws\AwsKeyService;
+use DeployerPHP\Services\Aws\AwsRoute53DnsService;
+use DeployerPHP\Services\Aws\AwsRoute53ZoneService;
 use DeployerPHP\Services\Aws\AwsSecurityGroupService;
 
 /**
@@ -26,8 +28,10 @@ class AwsService
 
     public function __construct(
         public readonly AwsAccountService $account,
-        public readonly AwsKeyService $key,
         public readonly AwsInstanceService $instance,
+        public readonly AwsKeyService $key,
+        public readonly AwsRoute53DnsService $route53Dns,
+        public readonly AwsRoute53ZoneService $route53Zone,
         public readonly AwsSecurityGroupService $securityGroup,
     ) {
     }
@@ -90,10 +94,14 @@ class AwsService
         // Distribute SDK to all sub-services
         $this->account->setSdk($this->sdk);
         $this->account->setRegion($region);
-        $this->key->setSdk($this->sdk);
-        $this->key->setRegion($region);
         $this->instance->setSdk($this->sdk);
         $this->instance->setRegion($region);
+        $this->key->setSdk($this->sdk);
+        $this->key->setRegion($region);
+        $this->route53Dns->setSdk($this->sdk);
+        $this->route53Dns->setRegion($region);
+        $this->route53Zone->setSdk($this->sdk);
+        $this->route53Zone->setRegion($region);
         $this->securityGroup->setSdk($this->sdk);
         $this->securityGroup->setRegion($region);
     }

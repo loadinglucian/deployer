@@ -29,6 +29,9 @@ use DeployerPHP\Console\Postgresql\PostgresqlInstallCommand;
 use DeployerPHP\Console\Postgresql\PostgresqlRestartCommand;
 use DeployerPHP\Console\Postgresql\PostgresqlStartCommand;
 use DeployerPHP\Console\Postgresql\PostgresqlStopCommand;
+use DeployerPHP\Console\Pro\Aws\DnsDeleteCommand as AwsDnsDeleteCommand;
+use DeployerPHP\Console\Pro\Aws\DnsListCommand as AwsDnsListCommand;
+use DeployerPHP\Console\Pro\Aws\DnsSetCommand as AwsDnsSetCommand;
 use DeployerPHP\Console\Pro\Aws\KeyAddCommand as AwsKeyAddCommand;
 use DeployerPHP\Console\Pro\Aws\KeyDeleteCommand as AwsKeyDeleteCommand;
 use DeployerPHP\Console\Pro\Aws\KeyListCommand as AwsKeyListCommand;
@@ -195,6 +198,9 @@ final class SymfonyApp extends SymfonyApplication
             //
             // Provider integrations (keys + provisioning)
 
+            AwsDnsDeleteCommand::class,
+            AwsDnsListCommand::class,
+            AwsDnsSetCommand::class,
             AwsKeyAddCommand::class,
             AwsKeyDeleteCommand::class,
             AwsKeyListCommand::class,
