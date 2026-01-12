@@ -49,13 +49,16 @@ trait AwsDnsTrait
      */
     protected function normalizeAwsRecordName(string $name, string $zoneName): string
     {
+        // Strip trailing dot if present (user may include it)
+        $name = rtrim($name, '.');
+
         // "@" means the zone apex
         if ('@' === $name) {
             return $zoneName;
         }
 
-        // If already fully qualified, return as-is
-        if (str_ends_with($name, $zoneName)) {
+        // If exact match or proper subdomain (with dot separator), return as-is
+        if ($name === $zoneName || str_ends_with($name, '.' . $zoneName)) {
             return $name;
         }
 

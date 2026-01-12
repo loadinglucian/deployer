@@ -24,7 +24,7 @@ class AwsRoute53DnsService extends BaseAwsService
      * @param string $zoneId Hosted zone ID
      * @param string|null $type Optional record type filter
      *
-     * @return array<int, array{type: string, name: string, value: string, ttl: int}>
+     * @return array<int, array{type: string, name: string, value: string, ttl: int, is_alias: bool}>
      */
     public function listRecords(string $zoneId, ?string $type = null): array
     {
@@ -73,8 +73,9 @@ class AwsRoute53DnsService extends BaseAwsService
                         $records[] = [
                             'type' => $recordType,
                             'name' => rtrim($recordName, '.'),
-                            'value' => 'ALIAS: ' . $aliasDnsName,
+                            'value' => $aliasDnsName,
                             'ttl' => 0,
+                            'is_alias' => true,
                         ];
 
                         continue;
@@ -94,6 +95,7 @@ class AwsRoute53DnsService extends BaseAwsService
                             'name' => rtrim($recordName, '.'),
                             'value' => $recordValue,
                             'ttl' => $ttl,
+                            'is_alias' => false,
                         ];
                     }
                 }
@@ -115,7 +117,7 @@ class AwsRoute53DnsService extends BaseAwsService
      * @param string $type Record type
      * @param string $name Record name (without trailing dot)
      *
-     * @return array{type: string, name: string, value: string, ttl: int}|null
+     * @return array{type: string, name: string, value: string, ttl: int, is_alias: bool}|null
      */
     public function findRecord(string $zoneId, string $type, string $name): ?array
     {
@@ -150,8 +152,9 @@ class AwsRoute53DnsService extends BaseAwsService
                         return [
                             'type' => $recordType,
                             'name' => rtrim($recordName, '.'),
-                            'value' => 'ALIAS: ' . $aliasDnsName,
+                            'value' => $aliasDnsName,
                             'ttl' => 0,
+                            'is_alias' => true,
                         ];
                     }
 
@@ -170,6 +173,7 @@ class AwsRoute53DnsService extends BaseAwsService
                             'name' => rtrim($recordName, '.'),
                             'value' => $recordValue,
                             'ttl' => $ttl,
+                            'is_alias' => false,
                         ];
                     }
                 }
@@ -253,6 +257,7 @@ class AwsRoute53DnsService extends BaseAwsService
     ): void {
         $route53 = $this->createRoute53Client();
         $fqdn = $this->ensureTrailingDot($name);
+        $formattedValue = $this->formatRecordValue($type, $value);
 
         try {
             $route53->changeResourceRecordSets([
@@ -266,7 +271,7 @@ class AwsRoute53DnsService extends BaseAwsService
                                 'Type' => $type,
                                 'TTL' => $ttl,
                                 'ResourceRecords' => [
-                                    ['Value' => $value],
+                                    ['Value' => $formattedValue],
                                 ],
                             ],
                         ],
@@ -312,9 +317,11 @@ class AwsRoute53DnsService extends BaseAwsService
      */
     private function formatTxtValue(string $value): string
     {
-        // If already quoted, return as-is
+        // Strip existing quotes if present and normalize
         if (str_starts_with($value, '"') && str_ends_with($value, '"')) {
-            return $value;
+            $value = substr($value, 1, -1);
+            // Unescape any escaped quotes
+            $value = str_replace('\\"', '"', $value);
         }
 
         // Escape internal quotes and wrap
@@ -329,12 +336,12 @@ class AwsRoute53DnsService extends BaseAwsService
     private function formatMxValue(string $value): string
     {
         // If it already has a priority, just ensure trailing dot on hostname
-        if (preg_match('/^(\d+)\s+(.+)$/', $value, $matches)) {
+        if (preg_match('/^(\d+)\s+(\S+)$/', $value, $matches)) {
             return $matches[1] . ' ' . $this->ensureTrailingDot($matches[2]);
         }
 
         // Assume it's just a hostname, add default priority
-        return '10 ' . $this->ensureTrailingDot($value);
+        return '10 ' . $this->ensureTrailingDot(trim($value));
     }
 
     /**
@@ -343,11 +350,13 @@ class AwsRoute53DnsService extends BaseAwsService
     private function formatSrvValue(string $value): string
     {
         // SRV format: priority weight port target
-        if (preg_match('/^(\d+)\s+(\d+)\s+(\d+)\s+(.+)$/', $value, $matches)) {
+        if (preg_match('/^(\d+)\s+(\d+)\s+(\d+)\s+(\S+)$/', $value, $matches)) {
             return $matches[1] . ' ' . $matches[2] . ' ' . $matches[3] . ' ' . $this->ensureTrailingDot($matches[4]);
         }
 
-        return $value;
+        throw new \RuntimeException(
+            "Invalid SRV record format: '{$value}'. Expected: 'priority weight port target' (e.g., '10 5 443 target.example.com')"
+        );
     }
 
     /**
@@ -356,8 +365,8 @@ class AwsRoute53DnsService extends BaseAwsService
     private function formatCaaValue(string $value): string
     {
         // CAA format: flags tag "value"
-        // If it looks complete, return as-is
-        if (preg_match('/^\d+\s+(issue|issuewild|iodef)\s+".+"$/', $value)) {
+        // If it looks complete (any valid tag), return as-is
+        if (preg_match('/^\d+\s+\w+\s+".+"$/', $value)) {
             return $value;
         }
 

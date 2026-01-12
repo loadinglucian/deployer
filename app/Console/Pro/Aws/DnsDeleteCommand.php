@@ -109,7 +109,7 @@ class DnsDeleteCommand extends ProCommand
         }
 
         // Check if it's an alias record (cannot delete normally)
-        if (str_starts_with($record['value'], 'ALIAS:')) {
+        if ($record['is_alias']) {
             $this->nay('Alias records must be deleted using the AWS Console or by creating the same alias with different settings');
 
             return Command::FAILURE;

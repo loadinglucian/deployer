@@ -149,7 +149,7 @@ class DnsListCommand extends ProCommand
     /**
      * Display DNS records in a formatted list.
      *
-     * @param array<int, array{type: string, name: string, value: string, ttl: int}> $records
+     * @param array<int, array{type: string, name: string, value: string, ttl: int, is_alias: bool}> $records
      */
     protected function displayRecords(array $records): void
     {
@@ -160,7 +160,7 @@ class DnsListCommand extends ProCommand
                 'Type' => $record['type'],
                 'Name' => $record['name'],
                 'Value' => $this->truncateValue($record['value']),
-                'TTL' => 0 === $record['ttl'] ? 'ALIAS' : (string) $record['ttl'],
+                'TTL' => $record['is_alias'] ? 'ALIAS' : (string) $record['ttl'],
             ];
         }
 
