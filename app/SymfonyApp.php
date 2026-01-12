@@ -33,6 +33,9 @@ use DeployerPHP\Console\Pro\Aws\KeyAddCommand as AwsKeyAddCommand;
 use DeployerPHP\Console\Pro\Aws\KeyDeleteCommand as AwsKeyDeleteCommand;
 use DeployerPHP\Console\Pro\Aws\KeyListCommand as AwsKeyListCommand;
 use DeployerPHP\Console\Pro\Aws\ProvisionCommand as AwsProvisionCommand;
+use DeployerPHP\Console\Pro\Cloudflare\DnsDeleteCommand as CloudflareDnsDeleteCommand;
+use DeployerPHP\Console\Pro\Cloudflare\DnsListCommand as CloudflareDnsListCommand;
+use DeployerPHP\Console\Pro\Cloudflare\DnsSetCommand as CloudflareDnsSetCommand;
 use DeployerPHP\Console\Pro\Do\KeyAddCommand as DoKeyAddCommand;
 use DeployerPHP\Console\Pro\Do\KeyDeleteCommand as DoKeyDeleteCommand;
 use DeployerPHP\Console\Pro\Do\KeyListCommand as DoKeyListCommand;
@@ -193,6 +196,9 @@ final class SymfonyApp extends SymfonyApplication
             AwsKeyDeleteCommand::class,
             AwsKeyListCommand::class,
             AwsProvisionCommand::class,
+            CloudflareDnsDeleteCommand::class,
+            CloudflareDnsListCommand::class,
+            CloudflareDnsSetCommand::class,
             DoKeyAddCommand::class,
             DoKeyDeleteCommand::class,
             DoKeyListCommand::class,
