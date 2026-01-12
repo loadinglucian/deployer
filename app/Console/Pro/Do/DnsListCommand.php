@@ -156,7 +156,7 @@ class DnsListCommand extends ProCommand
             $row = [
                 'Type' => $record['type'],
                 'Name' => $record['name'],
-                'Value' => $this->truncateValue((string) $record['data']),
+                'Value' => $this->truncateValue($record['data'] ?? ''),
                 'TTL' => (string) $record['ttl'],
             ];
 

@@ -126,10 +126,10 @@ class DoDnsService extends BaseDoService
                 $type,
                 $name,
                 $data,
-                null !== $priority ? (int) $priority : null,
-                null !== $port ? (int) $port : null,
-                null !== $weight ? (int) $weight : null,
-                null !== $flags ? (int) $flags : null,
+                $priority,
+                $port,
+                $weight,
+                $flags,
                 $tag,
                 $ttl
             );
@@ -177,10 +177,10 @@ class DoDnsService extends BaseDoService
                 $recordId,
                 $name,
                 $data,
-                null !== $priority ? (int) $priority : null,
-                null !== $port ? (int) $port : null,
-                null !== $weight ? (int) $weight : null,
-                null !== $flags ? (int) $flags : null,
+                $priority,
+                $port,
+                $weight,
+                $flags,
                 $tag,
                 $ttl
             );

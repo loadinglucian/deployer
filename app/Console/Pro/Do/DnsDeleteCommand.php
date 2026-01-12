@@ -108,7 +108,7 @@ class DnsDeleteCommand extends ProCommand
         // ----
 
         /** @var bool $forceSkip */
-        $forceSkip = $input->getOption('force') ?? false;
+        $forceSkip = $input->getOption('force');
 
         $confirmed = $this->confirmDeletion($deets['name'], $forceSkip);
 

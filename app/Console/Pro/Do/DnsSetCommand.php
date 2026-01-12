@@ -287,7 +287,7 @@ class DnsSetCommand extends ProCommand
         /** @var string|null $priorityOption */
         $priorityOption = $input->getOption('priority');
 
-        if (null !== $priorityOption) {
+        if (null !== $priorityOption && '' !== $priorityOption) {
             $error = $this->validateDoPriorityInput($priorityOption);
             if (null !== $error) {
                 throw new ValidationException($error);
@@ -319,7 +319,7 @@ class DnsSetCommand extends ProCommand
         /** @var string|null $portOption */
         $portOption = $input->getOption('port');
 
-        if (null !== $portOption) {
+        if (null !== $portOption && '' !== $portOption) {
             $error = $this->validateDoPortInput($portOption);
             if (null !== $error) {
                 throw new ValidationException($error);
@@ -350,7 +350,7 @@ class DnsSetCommand extends ProCommand
         /** @var string|null $weightOption */
         $weightOption = $input->getOption('weight');
 
-        if (null !== $weightOption) {
+        if (null !== $weightOption && '' !== $weightOption) {
             $error = $this->validateDoWeightInput($weightOption);
             if (null !== $error) {
                 throw new ValidationException($error);
@@ -385,7 +385,7 @@ class DnsSetCommand extends ProCommand
         /** @var string|null $tagOption */
         $tagOption = $input->getOption('tag');
 
-        if (null !== $flagsOption) {
+        if (null !== $flagsOption && '' !== $flagsOption) {
             $error = $this->validateDoFlagsInput($flagsOption);
             if (null !== $error) {
                 throw new ValidationException($error);

@@ -73,6 +73,19 @@ trait DoDnsTrait
             return 'Domain cannot be empty';
         }
 
+        // RFC 1035: total domain length limit
+        if (strlen($domain) > 253) {
+            return 'Domain exceeds maximum length of 253 characters';
+        }
+
+        // RFC 1035: label length limit (63 chars per label)
+        $labels = explode('.', $domain);
+        foreach ($labels as $label) {
+            if (strlen($label) > 63) {
+                return 'Domain label exceeds maximum length of 63 characters';
+            }
+        }
+
         // Basic domain format validation
         if (!preg_match('/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i', $domain)) {
             return 'Invalid domain format';
@@ -125,6 +138,20 @@ trait DoDnsTrait
             return null;
         }
 
+        // RFC 1035: total name length limit
+        if (strlen($name) > 253) {
+            return 'Record name exceeds maximum length of 253 characters';
+        }
+
+        // RFC 1035: label length limit (63 chars per label)
+        $checkName = str_starts_with($name, '*.') ? substr($name, 2) : $name;
+        $labels = explode('.', $checkName);
+        foreach ($labels as $label) {
+            if (strlen($label) > 63) {
+                return 'Record name label exceeds maximum length of 63 characters';
+            }
+        }
+
         // Basic hostname validation (allows wildcards like *)
         if (!preg_match('/^(\*\.)?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i', $name)) {
             return 'Invalid record name format. Use "@" for root or a valid hostname';
@@ -162,6 +189,10 @@ trait DoDnsTrait
             return 'TTL must be a number';
         }
 
+        if (is_string($ttl) && !is_numeric($ttl)) {
+            return 'TTL must be a number';
+        }
+
         $ttlInt = is_int($ttl) ? $ttl : (int) $ttl;
 
         // DigitalOcean minimum TTL is 30 seconds
@@ -184,6 +215,10 @@ trait DoDnsTrait
         }
 
         if (!is_string($priority) && !is_int($priority)) {
+            return 'Priority must be a number';
+        }
+
+        if (is_string($priority) && !is_numeric($priority)) {
             return 'Priority must be a number';
         }
 
@@ -211,6 +246,10 @@ trait DoDnsTrait
             return 'Port must be a number';
         }
 
+        if (is_string($port) && !is_numeric($port)) {
+            return 'Port must be a number';
+        }
+
         $portInt = is_int($port) ? $port : (int) $port;
 
         if ($portInt < 0 || $portInt > 65535) {
@@ -235,6 +274,10 @@ trait DoDnsTrait
             return 'Weight must be a number';
         }
 
+        if (is_string($weight) && !is_numeric($weight)) {
+            return 'Weight must be a number';
+        }
+
         $weightInt = is_int($weight) ? $weight : (int) $weight;
 
         if ($weightInt < 0 || $weightInt > 65535) {
@@ -256,6 +299,10 @@ trait DoDnsTrait
         }
 
         if (!is_string($flags) && !is_int($flags)) {
+            return 'Flags must be a number';
+        }
+
+        if (is_string($flags) && !is_numeric($flags)) {
             return 'Flags must be a number';
         }
 
