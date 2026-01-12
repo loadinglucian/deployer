@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace DeployerPHP\Services;
 
 use DeployerPHP\Services\Do\DoAccountService;
+use DeployerPHP\Services\Do\DoDnsService;
+use DeployerPHP\Services\Do\DoDomainService;
 use DeployerPHP\Services\Do\DoDropletService;
 use DeployerPHP\Services\Do\DoKeyService;
 use DigitalOceanV2\Client;
@@ -25,8 +27,10 @@ class DoService
 
     public function __construct(
         public readonly DoAccountService $account,
-        public readonly DoKeyService $key,
+        public readonly DoDnsService $dns,
+        public readonly DoDomainService $domain,
         public readonly DoDropletService $droplet,
+        public readonly DoKeyService $key,
     ) {
     }
 
@@ -83,8 +87,10 @@ class DoService
         $this->api->authenticate($this->token);
 
         $this->account->setAPI($this->api);
-        $this->key->setAPI($this->api);
+        $this->dns->setAPI($this->api);
+        $this->domain->setAPI($this->api);
         $this->droplet->setAPI($this->api);
+        $this->key->setAPI($this->api);
 
         return $this->api;
     }
