@@ -220,27 +220,4 @@ trait CloudflareTrait
         return null;
     }
 
-    /**
-     * Validate MX priority input.
-     *
-     * @return string|null Error message if invalid, null if valid
-     */
-    protected function validatePriorityInput(mixed $priority): ?string
-    {
-        if (null === $priority || '' === $priority) {
-            return null;
-        }
-
-        if (!is_string($priority) && !is_int($priority)) {
-            return 'Priority must be a number';
-        }
-
-        $priorityInt = is_string($priority) ? (int) $priority : $priority;
-
-        if (0 > $priorityInt || 65535 < $priorityInt) {
-            return 'Priority must be between 0 and 65535';
-        }
-
-        return null;
-    }
 }

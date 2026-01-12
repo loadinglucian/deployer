@@ -33,7 +33,7 @@ class DnsListCommand extends ProCommand
 
         $this
             ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name')
-            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Filter by record type (A, AAAA, CNAME, MX, TXT, NS, SRV, CAA)');
+            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Filter by record type (A, AAAA, CNAME)');
     }
 
     // ----
@@ -146,46 +146,19 @@ class DnsListCommand extends ProCommand
     /**
      * Display DNS records in a formatted table.
      *
-     * @param array<int, array{id: int, type: string, name: string, data: string|null, ttl: int, priority: int|null, port: int|null, weight: int|null, flags: int|null, tag: string|null}> $records
+     * @param array<int, array{id: int, type: string, name: string, data: string|null, ttl: int}> $records
      */
     protected function displayRecords(array $records): void
     {
         $rows = [];
 
         foreach ($records as $record) {
-            $row = [
+            $rows[] = [
                 'Type' => $record['type'],
                 'Name' => $record['name'],
                 'Value' => $this->truncateValue($record['data'] ?? ''),
                 'TTL' => (string) $record['ttl'],
             ];
-
-            // Add priority for MX/SRV
-            if (in_array($record['type'], ['MX', 'SRV'], true) && null !== $record['priority']) {
-                $row['Priority'] = (string) $record['priority'];
-            }
-
-            // Add port/weight for SRV
-            if ('SRV' === $record['type']) {
-                if (null !== $record['port']) {
-                    $row['Port'] = (string) $record['port'];
-                }
-                if (null !== $record['weight']) {
-                    $row['Weight'] = (string) $record['weight'];
-                }
-            }
-
-            // Add flags/tag for CAA
-            if ('CAA' === $record['type']) {
-                if (null !== $record['flags']) {
-                    $row['Flags'] = (string) $record['flags'];
-                }
-                if (null !== $record['tag']) {
-                    $row['Tag'] = $record['tag'];
-                }
-            }
-
-            $rows[] = $row;
         }
 
         // Display as key-value pairs grouped by record

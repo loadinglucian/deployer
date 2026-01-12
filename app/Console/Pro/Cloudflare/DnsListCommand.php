@@ -31,7 +31,7 @@ final class DnsListCommand extends ProCommand
 
         $this
             ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone name (domain) or zone ID')
-            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Filter by record type (A, AAAA, CNAME, etc.)');
+            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Filter by record type (A, AAAA, CNAME)');
     }
 
     // ----
@@ -93,7 +93,7 @@ final class DnsListCommand extends ProCommand
         try {
             $zoneId = $this->resolveZoneId($zone);
 
-            /** @var array<int, array{id: string, type: string, name: string, content: string, ttl: int, proxied: bool, priority?: int}> $records */
+            /** @var array<int, array{id: string, type: string, name: string, content: string, ttl: int, proxied: bool}> $records */
             $records = $this->io->promptSpin(
                 fn () => $this->cloudflare->dns->listRecords($zoneId, $typeFilter),
                 'Fetching DNS records...'
@@ -120,16 +120,14 @@ final class DnsListCommand extends ProCommand
 
         foreach ($records as $record) {
             $proxiedIcon = $record['proxied'] ? ' [proxied]' : '';
-            $priority = isset($record['priority']) ? " (priority: {$record['priority']})" : '';
             $ttl = 1 === $record['ttl'] ? 'auto' : "{$record['ttl']}s";
 
             $this->out(sprintf(
-                '%s %s -> %s (TTL: %s)%s%s',
+                '%s %s -> %s (TTL: %s)%s',
                 str_pad($record['type'], 6),
                 $record['name'],
                 $record['content'],
                 $ttl,
-                $priority,
                 $proxiedIcon
             ));
         }

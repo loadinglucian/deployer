@@ -14,7 +14,7 @@ use DigitalOceanV2\Exception\ResourceNotFoundException;
 class DoDnsService extends BaseDoService
 {
     /** @var array<int, string> Supported DNS record types */
-    public const RECORD_TYPES = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA'];
+    public const RECORD_TYPES = ['A', 'AAAA', 'CNAME'];
 
     //
     // Record retrieval
@@ -26,7 +26,7 @@ class DoDnsService extends BaseDoService
      * @param string $domain Domain name
      * @param string|null $type Optional record type filter
      *
-     * @return array<int, array{id: int, type: string, name: string, data: string|null, ttl: int, priority: int|null, port: int|null, weight: int|null, flags: int|null, tag: string|null}>
+     * @return array<int, array{id: int, type: string, name: string, data: string|null, ttl: int}>
      */
     public function listRecords(string $domain, ?string $type = null): array
     {
@@ -49,11 +49,6 @@ class DoDnsService extends BaseDoService
                     'name' => $record->name,
                     'data' => $record->data,
                     'ttl' => $record->ttl,
-                    'priority' => $record->priority,
-                    'port' => $record->port,
-                    'weight' => $record->weight,
-                    'flags' => $record->flags,
-                    'tag' => $record->tag,
                 ];
             }
 
@@ -70,7 +65,7 @@ class DoDnsService extends BaseDoService
      * @param string $type Record type
      * @param string $name Record name (use "@" for root)
      *
-     * @return array{id: int, type: string, name: string, data: string|null, ttl: int, priority: int|null, port: int|null, weight: int|null, flags: int|null, tag: string|null}|null
+     * @return array{id: int, type: string, name: string, data: string|null, ttl: int}|null
      */
     public function findRecord(string $domain, string $type, string $name): ?array
     {
@@ -97,11 +92,6 @@ class DoDnsService extends BaseDoService
      * @param string $name Record name (use "@" for root)
      * @param string $data Record value/data
      * @param int $ttl TTL in seconds
-     * @param int|null $priority MX/SRV priority
-     * @param int|null $port SRV port
-     * @param int|null $weight SRV weight
-     * @param int|null $flags CAA flags
-     * @param string|null $tag CAA tag
      *
      * @return int The new record ID
      */
@@ -111,11 +101,6 @@ class DoDnsService extends BaseDoService
         string $name,
         string $data,
         int $ttl = 1800,
-        ?int $priority = null,
-        ?int $port = null,
-        ?int $weight = null,
-        ?int $flags = null,
-        ?string $tag = null,
     ): int {
         $client = $this->getAPI();
 
@@ -126,11 +111,11 @@ class DoDnsService extends BaseDoService
                 $type,
                 $name,
                 $data,
-                $priority,
-                $port,
-                $weight,
-                $flags,
-                $tag,
+                null,
+                null,
+                null,
+                null,
+                null,
                 $ttl
             );
 
@@ -149,11 +134,6 @@ class DoDnsService extends BaseDoService
      * @param string $name Record name
      * @param string $data Record value/data
      * @param int $ttl TTL in seconds
-     * @param int|null $priority MX/SRV priority
-     * @param int|null $port SRV port
-     * @param int|null $weight SRV weight
-     * @param int|null $flags CAA flags
-     * @param string|null $tag CAA tag
      */
     public function updateRecord(
         string $domain,
@@ -162,11 +142,6 @@ class DoDnsService extends BaseDoService
         string $name,
         string $data,
         int $ttl = 1800,
-        ?int $priority = null,
-        ?int $port = null,
-        ?int $weight = null,
-        ?int $flags = null,
-        ?string $tag = null,
     ): void {
         $client = $this->getAPI();
 
@@ -177,11 +152,11 @@ class DoDnsService extends BaseDoService
                 $recordId,
                 $name,
                 $data,
-                $priority,
-                $port,
-                $weight,
-                $flags,
-                $tag,
+                null,
+                null,
+                null,
+                null,
+                null,
                 $ttl
             );
         } catch (\Throwable $e) {
@@ -222,11 +197,6 @@ class DoDnsService extends BaseDoService
      * @param string $name Record name (use "@" for root)
      * @param string $data Record value/data
      * @param int $ttl TTL in seconds
-     * @param int|null $priority MX/SRV priority
-     * @param int|null $port SRV port
-     * @param int|null $weight SRV weight
-     * @param int|null $flags CAA flags
-     * @param string|null $tag CAA tag
      *
      * @return array{action: 'created'|'updated', id: int}
      */
@@ -236,11 +206,6 @@ class DoDnsService extends BaseDoService
         string $name,
         string $data,
         int $ttl = 1800,
-        ?int $priority = null,
-        ?int $port = null,
-        ?int $weight = null,
-        ?int $flags = null,
-        ?string $tag = null,
     ): array {
         $existing = $this->findRecord($domain, $type, $name);
 
@@ -251,12 +216,7 @@ class DoDnsService extends BaseDoService
                 $type,
                 $name,
                 $data,
-                $ttl,
-                $priority,
-                $port,
-                $weight,
-                $flags,
-                $tag
+                $ttl
             );
 
             return ['action' => 'updated', 'id' => $existing['id']];
@@ -267,12 +227,7 @@ class DoDnsService extends BaseDoService
             $type,
             $name,
             $data,
-            $ttl,
-            $priority,
-            $port,
-            $weight,
-            $flags,
-            $tag
+            $ttl
         );
 
         return ['action' => 'created', 'id' => $id];

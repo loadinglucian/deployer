@@ -34,7 +34,7 @@ class DnsSetCommand extends ProCommand
 
         $this
             ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Hosted zone ID or domain name')
-            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME, MX, TXT, NS, SRV, CAA, PTR)')
+            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME)')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Record name (use "@" for root)')
             ->addOption('value', null, InputOption::VALUE_REQUIRED, 'Record value')
             ->addOption('ttl', null, InputOption::VALUE_REQUIRED, 'TTL in seconds (default: 300)');
@@ -233,12 +233,6 @@ class DnsSetCommand extends ProCommand
             'A' => '192.0.2.1',
             'AAAA' => '2001:db8::1',
             'CNAME' => 'target.example.com',
-            'MX' => '10 mail.example.com',
-            'TXT' => 'v=spf1 include:_spf.example.com ~all',
-            'NS' => 'ns1.example.com',
-            'SRV' => '10 5 443 target.example.com',
-            'CAA' => '0 issue "letsencrypt.org"',
-            'PTR' => 'example.com',
             default => '',
         };
     }

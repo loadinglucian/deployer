@@ -12,7 +12,7 @@ namespace DeployerPHP\Services\Aws;
 class AwsRoute53DnsService extends BaseAwsService
 {
     /** @var array<int, string> Supported DNS record types */
-    public const RECORD_TYPES = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA', 'PTR'];
+    public const RECORD_TYPES = ['A', 'AAAA', 'CNAME'];
 
     //
     // Record retrieval
@@ -298,83 +298,13 @@ class AwsRoute53DnsService extends BaseAwsService
     /**
      * Format record value based on type.
      *
-     * TXT records need to be quoted, CNAME/MX need trailing dots, etc.
+     * CNAME records need trailing dots.
      */
     private function formatRecordValue(string $type, string $value): string
     {
         return match ($type) {
-            'TXT' => $this->formatTxtValue($value),
-            'CNAME', 'NS', 'PTR' => $this->ensureTrailingDot($value),
-            'MX' => $this->formatMxValue($value),
-            'SRV' => $this->formatSrvValue($value),
-            'CAA' => $this->formatCaaValue($value),
+            'CNAME' => $this->ensureTrailingDot($value),
             default => $value,
         };
-    }
-
-    /**
-     * Format TXT record value with quotes.
-     */
-    private function formatTxtValue(string $value): string
-    {
-        // Strip existing quotes if present and normalize
-        if (str_starts_with($value, '"') && str_ends_with($value, '"')) {
-            $value = substr($value, 1, -1);
-            // Unescape any escaped quotes
-            $value = str_replace('\\"', '"', $value);
-        }
-
-        // Escape internal quotes and wrap
-        $escaped = str_replace('"', '\\"', $value);
-
-        return "\"{$escaped}\"";
-    }
-
-    /**
-     * Format MX record value (priority + hostname with trailing dot).
-     */
-    private function formatMxValue(string $value): string
-    {
-        // If it already has a priority, just ensure trailing dot on hostname
-        if (preg_match('/^(\d+)\s+(\S+)$/', $value, $matches)) {
-            return $matches[1] . ' ' . $this->ensureTrailingDot($matches[2]);
-        }
-
-        // Assume it's just a hostname, add default priority
-        return '10 ' . $this->ensureTrailingDot(trim($value));
-    }
-
-    /**
-     * Format SRV record value (priority weight port target with trailing dot).
-     */
-    private function formatSrvValue(string $value): string
-    {
-        // SRV format: priority weight port target
-        if (preg_match('/^(\d+)\s+(\d+)\s+(\d+)\s+(\S+)$/', $value, $matches)) {
-            return $matches[1] . ' ' . $matches[2] . ' ' . $matches[3] . ' ' . $this->ensureTrailingDot($matches[4]);
-        }
-
-        throw new \RuntimeException(
-            "Invalid SRV record format: '{$value}'. Expected: 'priority weight port target' (e.g., '10 5 443 target.example.com')"
-        );
-    }
-
-    /**
-     * Format CAA record value.
-     */
-    private function formatCaaValue(string $value): string
-    {
-        // CAA format: flags tag "value"
-        // If it looks complete (any valid tag), return as-is
-        if (preg_match('/^\d+\s+\w+\s+".+"$/', $value)) {
-            return $value;
-        }
-
-        // If just a domain (like letsencrypt.org), format it properly
-        if (!str_contains($value, ' ')) {
-            return '0 issue "' . $value . '"';
-        }
-
-        return $value;
     }
 }

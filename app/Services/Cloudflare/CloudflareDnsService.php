@@ -11,13 +11,8 @@ namespace DeployerPHP\Services\Cloudflare;
  */
 class CloudflareDnsService extends BaseCloudflareService
 {
-    /**
-     * Supported DNS record types.
-     *
-     * Note: SRV records require a nested `data` object structure with additional
-     * fields (weight, port, target) which this implementation doesn't support.
-     */
-    public const RECORD_TYPES = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'CAA'];
+    /** @var array<int, string> Supported DNS record types */
+    public const RECORD_TYPES = ['A', 'AAAA', 'CNAME'];
 
     /**
      * Record types that support proxying (orange cloud).
@@ -34,7 +29,7 @@ class CloudflareDnsService extends BaseCloudflareService
      * @param string|null $type   Filter by record type
      * @param string|null $name   Filter by record name
      *
-     * @return array<int, array{id: string, type: string, name: string, content: string, ttl: int, proxied: bool, priority?: int}>
+     * @return array<int, array{id: string, type: string, name: string, content: string, ttl: int, proxied: bool}>
      */
     public function listRecords(string $zoneId, ?string $type = null, ?string $name = null): array
     {
@@ -54,11 +49,11 @@ class CloudflareDnsService extends BaseCloudflareService
 
         $records = [];
 
-        /** @var array<int, array{id: string, type: string, name: string, content: string, ttl: int, proxied?: bool, priority?: int}> $results */
+        /** @var array<int, array{id: string, type: string, name: string, content: string, ttl: int, proxied?: bool}> $results */
         $results = $response['result'] ?? [];
 
         foreach ($results as $record) {
-            $item = [
+            $records[] = [
                 'id' => $record['id'],
                 'type' => $record['type'],
                 'name' => $record['name'],
@@ -66,12 +61,6 @@ class CloudflareDnsService extends BaseCloudflareService
                 'ttl' => $record['ttl'],
                 'proxied' => $record['proxied'] ?? false,
             ];
-
-            if (isset($record['priority'])) {
-                $item['priority'] = $record['priority'];
-            }
-
-            $records[] = $item;
         }
 
         return $records;
@@ -80,7 +69,7 @@ class CloudflareDnsService extends BaseCloudflareService
     /**
      * Find existing record by type and name.
      *
-     * @return array{id: string, type: string, name: string, content: string, ttl: int, proxied: bool, priority?: int}|null
+     * @return array{id: string, type: string, name: string, content: string, ttl: int, proxied: bool}|null
      */
     public function findRecord(string $zoneId, string $type, string $name): ?array
     {
@@ -98,13 +87,12 @@ class CloudflareDnsService extends BaseCloudflareService
     /**
      * Create a new DNS record.
      *
-     * @param string   $zoneId   Zone ID
-     * @param string   $type     Record type (A, AAAA, CNAME, MX, TXT, etc.)
-     * @param string   $name     Record name (full domain name)
-     * @param string   $content  Record value
-     * @param int      $ttl      TTL in seconds (1 = auto when proxied)
-     * @param bool     $proxied  Enable Cloudflare proxy (orange cloud)
-     * @param int|null $priority MX/SRV priority
+     * @param string $zoneId  Zone ID
+     * @param string $type    Record type (A, AAAA, CNAME)
+     * @param string $name    Record name (full domain name)
+     * @param string $content Record value
+     * @param int    $ttl     TTL in seconds (1 = auto when proxied)
+     * @param bool   $proxied Enable Cloudflare proxy (orange cloud)
      *
      * @return string Created record ID
      *
@@ -116,24 +104,15 @@ class CloudflareDnsService extends BaseCloudflareService
         string $name,
         string $content,
         int $ttl = 1,
-        bool $proxied = false,
-        ?int $priority = null
+        bool $proxied = false
     ): string {
         $data = [
             'type' => strtoupper($type),
             'name' => $name,
             'content' => $content,
             'ttl' => $ttl,
+            'proxied' => $proxied,
         ];
-
-        // Only include proxied for types that support it (API returns error 9004 otherwise)
-        if (in_array(strtoupper($type), self::PROXIABLE_TYPES, true)) {
-            $data['proxied'] = $proxied;
-        }
-
-        if (null !== $priority && 'MX' === strtoupper($type)) {
-            $data['priority'] = $priority;
-        }
 
         $response = $this->request('POST', "/zones/{$zoneId}/dns_records", [
             'json' => $data,
@@ -148,14 +127,13 @@ class CloudflareDnsService extends BaseCloudflareService
     /**
      * Update an existing DNS record.
      *
-     * @param string   $zoneId   Zone ID
-     * @param string   $recordId Record ID
-     * @param string   $type     Record type
-     * @param string   $name     Record name
-     * @param string   $content  Record value
-     * @param int      $ttl      TTL in seconds
-     * @param bool     $proxied  Enable proxy
-     * @param int|null $priority MX/SRV priority
+     * @param string $zoneId   Zone ID
+     * @param string $recordId Record ID
+     * @param string $type     Record type
+     * @param string $name     Record name
+     * @param string $content  Record value
+     * @param int    $ttl      TTL in seconds
+     * @param bool   $proxied  Enable proxy
      *
      * @throws \RuntimeException On API error
      */
@@ -166,24 +144,15 @@ class CloudflareDnsService extends BaseCloudflareService
         string $name,
         string $content,
         int $ttl = 1,
-        bool $proxied = false,
-        ?int $priority = null
+        bool $proxied = false
     ): void {
         $data = [
             'type' => strtoupper($type),
             'name' => $name,
             'content' => $content,
             'ttl' => $ttl,
+            'proxied' => $proxied,
         ];
-
-        // Only include proxied for types that support it (API returns error 9004 otherwise)
-        if (in_array(strtoupper($type), self::PROXIABLE_TYPES, true)) {
-            $data['proxied'] = $proxied;
-        }
-
-        if (null !== $priority && 'MX' === strtoupper($type)) {
-            $data['priority'] = $priority;
-        }
 
         $this->request('PUT', "/zones/{$zoneId}/dns_records/{$recordId}", [
             'json' => $data,
@@ -206,13 +175,12 @@ class CloudflareDnsService extends BaseCloudflareService
     /**
      * Create or update a DNS record (upsert).
      *
-     * @param string   $zoneId   Zone ID
-     * @param string   $type     Record type
-     * @param string   $name     Record name (full domain name)
-     * @param string   $content  Record value
-     * @param int      $ttl      TTL in seconds
-     * @param bool     $proxied  Enable proxy
-     * @param int|null $priority MX/SRV priority
+     * @param string $zoneId  Zone ID
+     * @param string $type    Record type
+     * @param string $name    Record name (full domain name)
+     * @param string $content Record value
+     * @param int    $ttl     TTL in seconds
+     * @param bool   $proxied Enable proxy
      *
      * @return array{action: 'created'|'updated', id: string}
      *
@@ -224,18 +192,17 @@ class CloudflareDnsService extends BaseCloudflareService
         string $name,
         string $content,
         int $ttl = 1,
-        bool $proxied = false,
-        ?int $priority = null
+        bool $proxied = false
     ): array {
         $existing = $this->findRecord($zoneId, $type, $name);
 
         if (null !== $existing) {
-            $this->updateRecord($zoneId, $existing['id'], $type, $name, $content, $ttl, $proxied, $priority);
+            $this->updateRecord($zoneId, $existing['id'], $type, $name, $content, $ttl, $proxied);
 
             return ['action' => 'updated', 'id' => $existing['id']];
         }
 
-        $recordId = $this->createRecord($zoneId, $type, $name, $content, $ttl, $proxied, $priority);
+        $recordId = $this->createRecord($zoneId, $type, $name, $content, $ttl, $proxied);
 
         return ['action' => 'created', 'id' => $recordId];
     }

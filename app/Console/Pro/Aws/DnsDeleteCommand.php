@@ -34,7 +34,7 @@ class DnsDeleteCommand extends ProCommand
 
         $this
             ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Hosted zone ID or domain name')
-            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME, MX, TXT, NS, SRV, CAA, PTR)')
+            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME)')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Record name (use "@" for root)')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Skip typing the record name to confirm')
             ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip Yes/No confirmation prompt');

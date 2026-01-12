@@ -33,7 +33,7 @@ class DnsListCommand extends ProCommand
 
         $this
             ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Hosted zone ID or domain name')
-            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Filter by record type (A, AAAA, CNAME, MX, TXT, NS, SRV, CAA, PTR)');
+            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Filter by record type (A, AAAA, CNAME)');
     }
 
     // ----

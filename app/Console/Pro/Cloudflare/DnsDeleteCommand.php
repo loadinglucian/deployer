@@ -32,7 +32,7 @@ final class DnsDeleteCommand extends ProCommand
 
         $this
             ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone name (domain) or zone ID')
-            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME, MX, TXT, etc.)')
+            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME)')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Record name (use "@" for root domain)')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Skip typing the record name to confirm')
             ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip Yes/No confirmation prompt');
@@ -124,7 +124,7 @@ final class DnsDeleteCommand extends ProCommand
 
             $fullName = $this->normalizeRecordName($name, $zoneName);
 
-            /** @var array{id: string, type: string, name: string, content: string, ttl: int, proxied: bool, priority?: int}|null $record */
+            /** @var array{id: string, type: string, name: string, content: string, ttl: int, proxied: bool}|null $record */
             $record = $this->io->promptSpin(
                 fn () => $this->cloudflare->dns->findRecord($zoneId, $type, $fullName),
                 'Finding DNS record...'

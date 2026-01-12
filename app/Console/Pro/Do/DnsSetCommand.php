@@ -34,15 +34,10 @@ class DnsSetCommand extends ProCommand
 
         $this
             ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name')
-            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME, MX, TXT, NS, SRV, CAA)')
+            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME)')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Record name (use "@" for root)')
             ->addOption('value', null, InputOption::VALUE_REQUIRED, 'Record value')
-            ->addOption('ttl', null, InputOption::VALUE_REQUIRED, 'TTL in seconds (default: 1800)')
-            ->addOption('priority', null, InputOption::VALUE_REQUIRED, 'Priority for MX/SRV records')
-            ->addOption('port', null, InputOption::VALUE_REQUIRED, 'Port for SRV records')
-            ->addOption('weight', null, InputOption::VALUE_REQUIRED, 'Weight for SRV records')
-            ->addOption('flags', null, InputOption::VALUE_REQUIRED, 'Flags for CAA records (0-255)')
-            ->addOption('tag', null, InputOption::VALUE_REQUIRED, 'Tag for CAA records (issue, issuewild, iodef)');
+            ->addOption('ttl', null, InputOption::VALUE_REQUIRED, 'TTL in seconds (default: 1800)');
     }
 
     // ----
@@ -96,12 +91,7 @@ class DnsSetCommand extends ProCommand
                     $deets['type'],
                     $deets['name'],
                     $deets['value'],
-                    $deets['ttl'],
-                    $deets['priority'],
-                    $deets['port'],
-                    $deets['weight'],
-                    $deets['flags'],
-                    $deets['tag']
+                    $deets['ttl']
                 ),
                 'Setting DNS record...'
             );
@@ -118,31 +108,13 @@ class DnsSetCommand extends ProCommand
         // Show command replay
         // ----
 
-        $replayOptions = [
+        $this->commandReplay([
             'domain' => $deets['domain'],
             'type' => $deets['type'],
             'name' => $deets['name'],
             'value' => $deets['value'],
             'ttl' => $deets['ttl'],
-        ];
-
-        if (null !== $deets['priority']) {
-            $replayOptions['priority'] = $deets['priority'];
-        }
-        if (null !== $deets['port']) {
-            $replayOptions['port'] = $deets['port'];
-        }
-        if (null !== $deets['weight']) {
-            $replayOptions['weight'] = $deets['weight'];
-        }
-        if (null !== $deets['flags']) {
-            $replayOptions['flags'] = $deets['flags'];
-        }
-        if (null !== $deets['tag']) {
-            $replayOptions['tag'] = $deets['tag'];
-        }
-
-        $this->commandReplay($replayOptions);
+        ]);
 
         return Command::SUCCESS;
     }
@@ -154,7 +126,7 @@ class DnsSetCommand extends ProCommand
     /**
      * Gather record details from user input or CLI options.
      *
-     * @return array{domain: string, type: string, name: string, value: string, ttl: int, priority: int|null, port: int|null, weight: int|null, flags: int|null, tag: string|null}|int
+     * @return array{domain: string, type: string, name: string, value: string, ttl: int}|int
      */
     protected function gatherRecordDeets(InputInterface $input): array|int
     {
@@ -232,23 +204,12 @@ class DnsSetCommand extends ProCommand
 
             $ttl = (int) $ttlRaw;
 
-            // Optional fields based on record type
-            $priority = $this->gatherPriorityIfNeeded($type, $input);
-            $port = $this->gatherPortIfNeeded($type, $input);
-            $weight = $this->gatherWeightIfNeeded($type, $input);
-            [$flags, $tag] = $this->gatherCaaFieldsIfNeeded($type, $input);
-
             return [
                 'domain' => $domain,
                 'type' => $type,
                 'name' => $name,
                 'value' => $value,
                 'ttl' => $ttl,
-                'priority' => $priority,
-                'port' => $port,
-                'weight' => $weight,
-                'flags' => $flags,
-                'tag' => $tag,
             ];
         } catch (ValidationException $e) {
             $this->nay($e->getMessage());
@@ -266,162 +227,7 @@ class DnsSetCommand extends ProCommand
             'A' => '192.0.2.1',
             'AAAA' => '2001:db8::1',
             'CNAME' => 'target.example.com',
-            'MX' => 'mail.example.com',
-            'TXT' => 'v=spf1 include:_spf.example.com ~all',
-            'NS' => 'ns1.example.com',
-            'SRV' => 'target.example.com',
-            'CAA' => 'letsencrypt.org',
             default => '',
         };
-    }
-
-    /**
-     * Gather priority for MX/SRV records.
-     */
-    protected function gatherPriorityIfNeeded(string $type, InputInterface $input): ?int
-    {
-        if (!in_array($type, ['MX', 'SRV'], true)) {
-            return null;
-        }
-
-        /** @var string|null $priorityOption */
-        $priorityOption = $input->getOption('priority');
-
-        if (null !== $priorityOption && '' !== $priorityOption) {
-            $error = $this->validateDoPriorityInput($priorityOption);
-            if (null !== $error) {
-                throw new ValidationException($error);
-            }
-
-            return (int) $priorityOption;
-        }
-
-        /** @var string $priority */
-        $priority = $this->io->promptText(
-            label: 'Priority:',
-            default: '10',
-            hint: 'Lower values = higher priority',
-            validate: fn ($v) => $this->validateDoPriorityInput($v)
-        );
-
-        return (int) $priority;
-    }
-
-    /**
-     * Gather port for SRV records.
-     */
-    protected function gatherPortIfNeeded(string $type, InputInterface $input): ?int
-    {
-        if ('SRV' !== $type) {
-            return null;
-        }
-
-        /** @var string|null $portOption */
-        $portOption = $input->getOption('port');
-
-        if (null !== $portOption && '' !== $portOption) {
-            $error = $this->validateDoPortInput($portOption);
-            if (null !== $error) {
-                throw new ValidationException($error);
-            }
-
-            return (int) $portOption;
-        }
-
-        /** @var string $port */
-        $port = $this->io->promptText(
-            label: 'Port:',
-            placeholder: '443',
-            validate: fn ($v) => $this->validateDoPortInput($v)
-        );
-
-        return (int) $port;
-    }
-
-    /**
-     * Gather weight for SRV records.
-     */
-    protected function gatherWeightIfNeeded(string $type, InputInterface $input): ?int
-    {
-        if ('SRV' !== $type) {
-            return null;
-        }
-
-        /** @var string|null $weightOption */
-        $weightOption = $input->getOption('weight');
-
-        if (null !== $weightOption && '' !== $weightOption) {
-            $error = $this->validateDoWeightInput($weightOption);
-            if (null !== $error) {
-                throw new ValidationException($error);
-            }
-
-            return (int) $weightOption;
-        }
-
-        /** @var string $weight */
-        $weight = $this->io->promptText(
-            label: 'Weight:',
-            default: '100',
-            validate: fn ($v) => $this->validateDoWeightInput($v)
-        );
-
-        return (int) $weight;
-    }
-
-    /**
-     * Gather flags and tag for CAA records.
-     *
-     * @return array{0: int|null, 1: string|null}
-     */
-    protected function gatherCaaFieldsIfNeeded(string $type, InputInterface $input): array
-    {
-        if ('CAA' !== $type) {
-            return [null, null];
-        }
-
-        /** @var string|null $flagsOption */
-        $flagsOption = $input->getOption('flags');
-        /** @var string|null $tagOption */
-        $tagOption = $input->getOption('tag');
-
-        if (null !== $flagsOption && '' !== $flagsOption) {
-            $error = $this->validateDoFlagsInput($flagsOption);
-            if (null !== $error) {
-                throw new ValidationException($error);
-            }
-            $flags = (int) $flagsOption;
-        } else {
-            /** @var string $flagsStr */
-            $flagsStr = $this->io->promptText(
-                label: 'Flags:',
-                default: '0',
-                hint: '0 = non-critical, 128 = critical',
-                validate: fn ($v) => $this->validateDoFlagsInput($v)
-            );
-            $flags = (int) $flagsStr;
-        }
-
-        if (null !== $tagOption) {
-            $error = $this->validateDoTagInput($tagOption);
-            if (null !== $error) {
-                throw new ValidationException($error);
-            }
-            $tag = strtolower($tagOption);
-        } else {
-            $tagOptions = [
-                'issue' => 'issue - Authorize CA for domain',
-                'issuewild' => 'issuewild - Authorize CA for wildcard',
-                'iodef' => 'iodef - Report policy violations',
-            ];
-
-            /** @var string $tag */
-            $tag = $this->io->promptSelect(
-                label: 'CAA tag:',
-                options: $tagOptions
-            );
-        }
-
-        return [$flags, $tag];
     }
 }
