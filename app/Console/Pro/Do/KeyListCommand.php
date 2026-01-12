@@ -12,7 +12,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:do:key:list|do:key:list',
+    name: 'pro:do:key:list|do:key:list|pro:digitalocean:key:list|digitalocean:key:list',
     description: 'List public SSH keys in DigitalOcean'
 )]
 class KeyListCommand extends ProCommand

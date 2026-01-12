@@ -29,10 +29,19 @@ use DeployerPHP\Console\Postgresql\PostgresqlInstallCommand;
 use DeployerPHP\Console\Postgresql\PostgresqlRestartCommand;
 use DeployerPHP\Console\Postgresql\PostgresqlStartCommand;
 use DeployerPHP\Console\Postgresql\PostgresqlStopCommand;
+use DeployerPHP\Console\Pro\Aws\DnsDeleteCommand as AwsDnsDeleteCommand;
+use DeployerPHP\Console\Pro\Aws\DnsListCommand as AwsDnsListCommand;
+use DeployerPHP\Console\Pro\Aws\DnsSetCommand as AwsDnsSetCommand;
 use DeployerPHP\Console\Pro\Aws\KeyAddCommand as AwsKeyAddCommand;
 use DeployerPHP\Console\Pro\Aws\KeyDeleteCommand as AwsKeyDeleteCommand;
 use DeployerPHP\Console\Pro\Aws\KeyListCommand as AwsKeyListCommand;
 use DeployerPHP\Console\Pro\Aws\ProvisionCommand as AwsProvisionCommand;
+use DeployerPHP\Console\Pro\Cf\DnsDeleteCommand as CfDnsDeleteCommand;
+use DeployerPHP\Console\Pro\Cf\DnsListCommand as CfDnsListCommand;
+use DeployerPHP\Console\Pro\Cf\DnsSetCommand as CfDnsSetCommand;
+use DeployerPHP\Console\Pro\Do\DnsDeleteCommand as DoDnsDeleteCommand;
+use DeployerPHP\Console\Pro\Do\DnsListCommand as DoDnsListCommand;
+use DeployerPHP\Console\Pro\Do\DnsSetCommand as DoDnsSetCommand;
 use DeployerPHP\Console\Pro\Do\KeyAddCommand as DoKeyAddCommand;
 use DeployerPHP\Console\Pro\Do\KeyDeleteCommand as DoKeyDeleteCommand;
 use DeployerPHP\Console\Pro\Do\KeyListCommand as DoKeyListCommand;
@@ -189,10 +198,19 @@ final class SymfonyApp extends SymfonyApplication
             //
             // Provider integrations (keys + provisioning)
 
+            AwsDnsDeleteCommand::class,
+            AwsDnsListCommand::class,
+            AwsDnsSetCommand::class,
             AwsKeyAddCommand::class,
             AwsKeyDeleteCommand::class,
             AwsKeyListCommand::class,
             AwsProvisionCommand::class,
+            CfDnsDeleteCommand::class,
+            CfDnsListCommand::class,
+            CfDnsSetCommand::class,
+            DoDnsDeleteCommand::class,
+            DoDnsListCommand::class,
+            DoDnsSetCommand::class,
             DoKeyAddCommand::class,
             DoKeyDeleteCommand::class,
             DoKeyListCommand::class,

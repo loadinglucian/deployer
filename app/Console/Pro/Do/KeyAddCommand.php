@@ -15,7 +15,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:do:key:add|do:key:add',
+    name: 'pro:do:key:add|do:key:add|pro:digitalocean:key:add|digitalocean:key:add',
     description: 'Add a local SSH public key to DigitalOcean'
 )]
 class KeyAddCommand extends ProCommand

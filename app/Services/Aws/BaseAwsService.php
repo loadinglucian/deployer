@@ -94,4 +94,16 @@ abstract class BaseAwsService
             'region' => $region ?? $this->getRegion(),
         ]);
     }
+
+    /**
+     * Create a Route53 client for DNS management.
+     *
+     * Route53 is a global service, so we always use us-east-1.
+     */
+    protected function createRoute53Client(): \Aws\Route53\Route53Client
+    {
+        return $this->getSdk()->createRoute53([
+            'region' => 'us-east-1',
+        ]);
+    }
 }

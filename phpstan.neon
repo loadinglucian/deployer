@@ -5,3 +5,12 @@ parameters:
 
     # Level 10 is the highest level
     level: 10
+
+    ignoreErrors:
+        # AWS SDK responses are mixed - casting is necessary to work with them
+        - identifier: cast.string
+          path: app/Services/Aws/AwsRoute53DnsService.php
+        - identifier: cast.int
+          path: app/Services/Aws/AwsRoute53DnsService.php
+        - identifier: cast.string
+          path: app/Services/Aws/AwsRoute53ZoneService.php
