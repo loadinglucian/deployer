@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Services;
 
-use DeployerPHP\Services\Cloudflare\CloudflareDnsService;
-use DeployerPHP\Services\Cloudflare\CloudflareZoneService;
+use DeployerPHP\Services\Cf\CfDnsService;
+use DeployerPHP\Services\Cf\CfZoneService;
 
 /**
  * Cloudflare API facade service.
  *
  * Provides access to specialized Cloudflare services through a unified interface.
  */
-class CloudflareService
+class CfService
 {
     public function __construct(
-        public readonly CloudflareZoneService $zone,
-        public readonly CloudflareDnsService $dns,
+        public readonly CfZoneService $zone,
+        public readonly CfDnsService $dns,
     ) {
     }
 

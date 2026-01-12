@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Services\Cloudflare;
+namespace DeployerPHP\Services\Cf;
 
 /**
  * Cloudflare DNS record management service.
  *
  * Handles DNS record CRUD operations.
  */
-class CloudflareDnsService extends BaseCloudflareService
+class CfDnsService extends BaseCfService
 {
     /** @var array<int, string> Supported DNS record types */
     public const RECORD_TYPES = ['A', 'AAAA', 'CNAME'];

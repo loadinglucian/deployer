@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Services\Cloudflare;
+namespace DeployerPHP\Services\Cf;
 
 /**
  * Cloudflare zone management service.
  *
  * Handles zone lookup with domain-to-ID resolution and caching.
  */
-class CloudflareZoneService extends BaseCloudflareService
+class CfZoneService extends BaseCfService
 {
     /** @var array<string, string> Zone name to ID cache */
     private array $zoneCache = [];

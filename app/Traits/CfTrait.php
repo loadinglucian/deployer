@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Traits;
 
-use DeployerPHP\Services\Cloudflare\CloudflareDnsService;
-use DeployerPHP\Services\CloudflareService;
+use DeployerPHP\Services\Cf\CfDnsService;
+use DeployerPHP\Services\CfService;
 use DeployerPHP\Services\EnvService;
 use DeployerPHP\Services\IoService;
 use Symfony\Component\Console\Command\Command;
@@ -13,11 +13,11 @@ use Symfony\Component\Console\Command\Command;
 /**
  * Reusable Cloudflare things.
  *
- * @property CloudflareService $cloudflare
+ * @property CfService $cf
  * @property EnvService $env
  * @property IoService $io
  */
-trait CloudflareTrait
+trait CfTrait
 {
     use DomainValidationTrait;
 
@@ -46,7 +46,7 @@ trait CloudflareTrait
             $apiToken = $this->env->get(['CLOUDFLARE_API_TOKEN', 'CF_API_TOKEN']);
 
             $this->io->promptSpin(
-                fn () => $this->cloudflare->initialize($apiToken),
+                fn () => $this->cf->initialize($apiToken),
                 'Initializing Cloudflare API...'
             );
 
@@ -80,7 +80,7 @@ trait CloudflareTrait
     protected function resolveZoneId(string $zoneOrDomain): string
     {
         return $this->io->promptSpin(
-            fn () => $this->cloudflare->zone->getZoneId($zoneOrDomain),
+            fn () => $this->cf->zone->getZoneId($zoneOrDomain),
             "Resolving zone '{$zoneOrDomain}'..."
         );
     }
@@ -147,7 +147,7 @@ trait CloudflareTrait
             return 'Record type cannot be empty';
         }
 
-        $validTypes = CloudflareDnsService::RECORD_TYPES;
+        $validTypes = CfDnsService::RECORD_TYPES;
         $upperType = strtoupper($type);
 
         if (!in_array($upperType, $validTypes, true)) {

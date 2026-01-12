@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Pro\Cloudflare;
+namespace DeployerPHP\Console\Pro\Cf;
 
 use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Exceptions\ValidationException;
-use DeployerPHP\Traits\CloudflareTrait;
+use DeployerPHP\Traits\CfTrait;
 use DeployerPHP\Traits\DnsCommandTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -20,7 +20,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class DnsListCommand extends ProCommand
 {
-    use CloudflareTrait;
+    use CfTrait;
     use DnsCommandTrait;
 
     // ----
@@ -60,7 +60,7 @@ class DnsListCommand extends ProCommand
 
         try {
             $zones = $this->io->promptSpin(
-                fn () => $this->cloudflare->zone->getZones(),
+                fn () => $this->cf->zone->getZones(),
                 'Fetching zones...'
             );
 
@@ -108,7 +108,7 @@ class DnsListCommand extends ProCommand
 
             /** @var array<int, array{id: string, type: string, name: string, content: string, ttl: int, proxied: bool}> $records */
             $records = $this->io->promptSpin(
-                fn () => $this->cloudflare->dns->listRecords($zoneId, $typeFilter),
+                fn () => $this->cf->dns->listRecords($zoneId, $typeFilter),
                 'Fetching DNS records...'
             );
         } catch (\RuntimeException $e) {

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Pro\Cloudflare;
+namespace DeployerPHP\Console\Pro\Cf;
 
 use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Exceptions\ValidationException;
-use DeployerPHP\Services\Cloudflare\CloudflareDnsService;
-use DeployerPHP\Traits\CloudflareTrait;
+use DeployerPHP\Services\Cf\CfDnsService;
+use DeployerPHP\Traits\CfTrait;
 use DeployerPHP\Traits\DnsCommandTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -21,7 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class DnsSetCommand extends ProCommand
 {
-    use CloudflareTrait;
+    use CfTrait;
     use DnsCommandTrait;
 
     // ----
@@ -78,7 +78,7 @@ class DnsSetCommand extends ProCommand
 
             // Get zone name for record normalization
             $zoneName = $this->io->promptSpin(
-                fn () => $this->cloudflare->zone->getZoneName($zoneId),
+                fn () => $this->cf->zone->getZoneName($zoneId),
                 'Fetching zone details...'
             );
 
@@ -86,7 +86,7 @@ class DnsSetCommand extends ProCommand
 
             /** @var array{action: 'created'|'updated', id: string} $result */
             $result = $this->io->promptSpin(
-                fn () => $this->cloudflare->dns->setRecord(
+                fn () => $this->cf->dns->setRecord(
                     $zoneId,
                     $deets['type'],
                     $fullName,
@@ -134,7 +134,7 @@ class DnsSetCommand extends ProCommand
     {
         try {
             $zones = $this->io->promptSpin(
-                fn () => $this->cloudflare->zone->getZones(),
+                fn () => $this->cf->zone->getZones(),
                 'Fetching zones...'
             );
 
@@ -156,8 +156,8 @@ class DnsSetCommand extends ProCommand
             );
 
             $typeOptions = array_combine(
-                CloudflareDnsService::RECORD_TYPES,
-                CloudflareDnsService::RECORD_TYPES
+                CfDnsService::RECORD_TYPES,
+                CfDnsService::RECORD_TYPES
             );
 
             /** @var string $type */

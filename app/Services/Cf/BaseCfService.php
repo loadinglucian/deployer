@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Services\Cloudflare;
+namespace DeployerPHP\Services\Cf;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
@@ -12,7 +12,7 @@ use GuzzleHttp\Exception\GuzzleException;
  *
  * Provides common HTTP client management for all Cloudflare services.
  */
-abstract class BaseCloudflareService
+abstract class BaseCfService
 {
     private const API_BASE = 'https://api.cloudflare.com/client/v4';
 

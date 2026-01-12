@@ -8,7 +8,7 @@ use DeployerPHP\Container;
 use DeployerPHP\Repositories\ServerRepository;
 use DeployerPHP\Repositories\SiteRepository;
 use DeployerPHP\Services\AwsService;
-use DeployerPHP\Services\CloudflareService;
+use DeployerPHP\Services\CfService;
 use DeployerPHP\Services\DoService;
 use DeployerPHP\Services\EnvService;
 use DeployerPHP\Services\FilesystemService;
@@ -58,7 +58,7 @@ abstract class BaseCommand extends Command
 
         // Hosting providers
         protected readonly AwsService $aws,
-        protected readonly CloudflareService $cloudflare,
+        protected readonly CfService $cf,
         protected readonly DoService $do,
     ) {
         parent::__construct();
