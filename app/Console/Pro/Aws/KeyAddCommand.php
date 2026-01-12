@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Pro\Aws;
 
-use DeployerPHP\Contracts\BaseCommand;
+use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\AwsTrait;
 use DeployerPHP\Traits\KeysTrait;
@@ -18,7 +18,7 @@ use Symfony\Component\Console\Output\OutputInterface;
     name: 'pro:aws:key:add|aws:key:add',
     description: 'Add a local SSH public key to AWS'
 )]
-class KeyAddCommand extends BaseCommand
+class KeyAddCommand extends ProCommand
 {
     use AwsTrait;
     use KeysTrait;

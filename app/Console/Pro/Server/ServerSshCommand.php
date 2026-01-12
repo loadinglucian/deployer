@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Pro\Server;
 
-use DeployerPHP\Contracts\BaseCommand;
+use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Traits\PlaybooksTrait;
 use DeployerPHP\Traits\ServersTrait;
 use DeployerPHP\Traits\SshTrait;
@@ -18,7 +18,7 @@ use Symfony\Component\Console\Output\OutputInterface;
     name: 'pro:server:ssh|server:ssh',
     description: 'SSH into a server'
 )]
-class ServerSshCommand extends BaseCommand
+class ServerSshCommand extends ProCommand
 {
     use PlaybooksTrait;
     use ServersTrait;

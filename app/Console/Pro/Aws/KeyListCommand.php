@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Pro\Aws;
 
-use DeployerPHP\Contracts\BaseCommand;
+use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Traits\AwsTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -15,7 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
     name: 'pro:aws:key:list|aws:key:list',
     description: 'List EC2 key pairs in AWS'
 )]
-class KeyListCommand extends BaseCommand
+class KeyListCommand extends ProCommand
 {
     use AwsTrait;
 

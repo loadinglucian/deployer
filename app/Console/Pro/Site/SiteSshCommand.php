@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Pro\Site;
 
-use DeployerPHP\Contracts\BaseCommand;
+use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Traits\PlaybooksTrait;
 use DeployerPHP\Traits\ServersTrait;
 use DeployerPHP\Traits\SitesTrait;
@@ -19,7 +19,7 @@ use Symfony\Component\Console\Output\OutputInterface;
     name: 'pro:site:ssh|site:ssh',
     description: 'SSH into a site directory'
 )]
-class SiteSshCommand extends BaseCommand
+class SiteSshCommand extends ProCommand
 {
     use PlaybooksTrait;
     use ServersTrait;

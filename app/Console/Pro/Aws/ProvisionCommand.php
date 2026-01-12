@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Pro\Aws;
 
-use DeployerPHP\Contracts\BaseCommand;
+use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\DTOs\ServerDTO;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\AwsTrait;
@@ -21,7 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
     name: 'pro:aws:provision|aws:provision',
     description: 'Provision a new AWS EC2 instance and add it to inventory'
 )]
-class ProvisionCommand extends BaseCommand
+class ProvisionCommand extends ProCommand
 {
     use AwsTrait;
     use KeysTrait;
