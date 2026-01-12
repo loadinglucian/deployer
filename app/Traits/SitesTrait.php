@@ -361,6 +361,11 @@ trait SitesTrait
             return 'Domain must be a string';
         }
 
+        // Check for www-only domain before normalization
+        if ('www.' === strtolower(trim($domain))) {
+            return "Domain cannot be just 'www.'";
+        }
+
         $domain = $this->normalizeDomain($domain);
 
         // Check format using centralized validation

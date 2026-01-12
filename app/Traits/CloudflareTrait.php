@@ -196,6 +196,10 @@ trait CloudflareTrait
             return 'TTL must be a number';
         }
 
+        if (is_string($ttl) && !is_numeric($ttl)) {
+            return 'TTL must be a number';
+        }
+
         $ttlInt = is_string($ttl) ? (int) $ttl : $ttl;
 
         if (1 !== $ttlInt && (60 > $ttlInt || 86400 < $ttlInt)) {

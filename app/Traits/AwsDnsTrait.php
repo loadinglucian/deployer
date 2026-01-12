@@ -155,6 +155,10 @@ trait AwsDnsTrait
             return 'TTL must be a number';
         }
 
+        if (is_string($ttl) && !is_numeric($ttl)) {
+            return 'TTL must be a number';
+        }
+
         $ttlInt = is_int($ttl) ? $ttl : (int) $ttl;
 
         // Route53 minimum TTL is 1 second
