@@ -118,4 +118,22 @@ trait DomainValidationTrait
 
         return null;
     }
+
+    /**
+     * Validate DNS record value format.
+     *
+     * @return string|null Error message if invalid, null if valid
+     */
+    protected function validateRecordValueFormat(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return 'Record value must be a string';
+        }
+
+        if ('' === trim($value)) {
+            return 'Record value cannot be empty';
+        }
+
+        return null;
+    }
 }

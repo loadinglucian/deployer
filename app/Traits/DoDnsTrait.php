@@ -119,15 +119,7 @@ trait DoDnsTrait
      */
     protected function validateDoRecordValueInput(mixed $value): ?string
     {
-        if (!is_string($value)) {
-            return 'Record value must be a string';
-        }
-
-        if ('' === trim($value)) {
-            return 'Record value cannot be empty';
-        }
-
-        return null;
+        return $this->validateRecordValueFormat($value);
     }
 
     /**
