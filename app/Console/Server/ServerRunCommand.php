@@ -121,7 +121,7 @@ class ServerRunCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('server:run', [
+        $this->commandReplay([
             'server' => $server->name,
             'command' => $command,
         ]);

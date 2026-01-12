@@ -78,7 +78,7 @@ class NginxRestartCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('nginx:restart', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

@@ -78,7 +78,7 @@ class MariadbStopCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('mariadb:stop', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

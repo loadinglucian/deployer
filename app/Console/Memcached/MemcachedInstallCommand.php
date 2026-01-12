@@ -81,7 +81,7 @@ class MemcachedInstallCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('memcached:install', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

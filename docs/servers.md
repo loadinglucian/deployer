@@ -186,107 +186,13 @@ This is useful for quick administrative tasks without opening a full SSH session
 
 ## SSH Access
 
-The `server:ssh` command opens an interactive SSH session:
-
-```bash
-deployer server:ssh
-```
-
-Before connecting, DeployerPHP displays the server's connection details and any sites configured on that server. You're then dropped into a terminal session on the remote server. Use `exit` to return to your local machine.
-
-Options:
-
-| Option     | Description |
-| ---------- | ----------- |
-| `--server` | Server name |
-
-For automation:
-
-```bash
-deployer server:ssh --server=production
-```
+The `server:ssh` command opens an interactive SSH session to a server. For full documentation, see [SSH Access](/docs/pro#server-ssh) in the Pro documentation.
 
 <a name="viewing-logs"></a>
 
 ## Viewing Logs
 
-The `server:logs` command is the unified interface for viewing all logs on a server. It consolidates what were previously separate commands (`nginx:logs`, `php:logs`, `mysql:logs`, etc.) into a single, powerful command:
-
-```bash
-deployer server:logs --server=production
-```
-
-When run interactively, you'll see a multiselect prompt with all available log sources. You can select multiple sources at once to view logs from different services in a single command.
-
-### Available Log Sources
-
-DeployerPHP detects which services are running on your server and presents the relevant log sources:
-
-- **System logs** - General system logs via journalctl
-- **Service logs** - Nginx, SSH, PHP-FPM (per version), MySQL, MariaDB, PostgreSQL, Redis, Valkey, Memcached
-- **Site access logs** - Per-site Nginx access logs (shown by domain name)
-- **Cron script logs** - Output from individual cron scripts (shown as `cron:domain/script`)
-- **Supervisor program logs** - Output from supervisor programs (shown as `supervisor:domain/program`)
-
-### Group Shortcuts
-
-For convenience, you can select all logs of a certain type at once:
-
-- **all-sites** - All site access logs
-- **all-crons** - Cron service log plus all cron script logs
-- **all-supervisors** - Supervisor service log plus all program logs
-
-### Options
-
-| Option          | Description                            | Default    |
-| --------------- | -------------------------------------- | ---------- |
-| `--server`      | Server name                            | (prompted) |
-| `--site`        | Filter logs to a specific site         | (none)     |
-| `--service, -s` | Service(s) to view (comma-separated)   | (prompted) |
-| `--lines, -n`   | Number of lines to retrieve per source | 50         |
-
-### Filtering by Site
-
-The `--site` option focuses the log sources on a single site. When specified, only that site's logs are available:
-
-- The site's Nginx access log
-- The site's cron script logs
-- The site's supervisor program logs
-
-```bash
-deployer server:logs \
-    --server=production \
-    --site=example.com
-```
-
-### Examples
-
-View multiple service logs at once:
-
-```bash
-deployer server:logs \
-    --server=production \
-    --service=nginx,php8.3-fpm,mysql \
-    --lines=100
-```
-
-View all site access logs:
-
-```bash
-deployer server:logs \
-    --server=production \
-    --service=all-sites \
-    --lines=50
-```
-
-View logs for a specific site and its cron scripts:
-
-```bash
-deployer server:logs \
-    --server=production \
-    --site=example.com \
-    --service=example.com,cron:example.com/scheduler.sh
-```
+The `server:logs` command provides a unified interface for viewing all logs on a server, including system logs, service logs, site access logs, cron logs, and supervisor logs. For full documentation, see [Viewing Logs](/docs/pro#server-logs) in the Pro documentation.
 
 <a name="deleting-a-server"></a>
 

@@ -126,7 +126,7 @@ class CronDeleteCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('cron:delete', [
+        $this->commandReplay([
             'domain' => $site->domain,
             'script' => $cron->script,
             'force' => true,

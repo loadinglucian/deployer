@@ -113,7 +113,7 @@ class SiteSharedPushCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('site:shared:push', [
+        $this->commandReplay([
             'domain' => $site->domain,
             'local' => $localPath,
             'remote' => $remoteRelative,

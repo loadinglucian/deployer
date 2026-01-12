@@ -120,7 +120,7 @@ class PhpStopCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('php:stop', [
+        $this->commandReplay([
             'server' => $server->name,
             'version' => $version,
         ]);

@@ -78,7 +78,7 @@ class ValkeyRestartCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('valkey:restart', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

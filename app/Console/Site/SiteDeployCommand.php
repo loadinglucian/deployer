@@ -201,7 +201,7 @@ class SiteDeployCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('site:deploy', [
+        $this->commandReplay([
             'domain' => $site->domain,
             'repo' => $repo,
             'branch' => $branch,

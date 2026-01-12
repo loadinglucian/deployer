@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Pro\Do;
 
-use DeployerPHP\Contracts\BaseCommand;
+use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\DTOs\ServerDTO;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\DoTrait;
@@ -18,10 +18,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:do:provision',
+    name: 'pro:do:provision|do:provision',
     description: 'Provision a new DigitalOcean droplet and add it to inventory'
 )]
-class ProvisionCommand extends BaseCommand
+class ProvisionCommand extends ProCommand
 {
     use DoTrait;
     use KeysTrait;
@@ -93,7 +93,7 @@ class ProvisionCommand extends BaseCommand
             return Command::FAILURE;
         }
 
-        $this->commandReplay('pro:do:provision', [
+        $this->commandReplay([
             'name' => $deets['name'],
             'region' => $deets['region'],
             'size' => $deets['size'],

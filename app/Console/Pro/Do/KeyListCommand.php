@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Pro\Do;
 
-use DeployerPHP\Contracts\BaseCommand;
+use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Traits\DoTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -12,10 +12,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:do:key:list',
+    name: 'pro:do:key:list|do:key:list',
     description: 'List public SSH keys in DigitalOcean'
 )]
-class KeyListCommand extends BaseCommand
+class KeyListCommand extends ProCommand
 {
     use DoTrait;
 
@@ -49,7 +49,7 @@ class KeyListCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('pro:do:key:list', []);
+        $this->commandReplay([]);
 
         return Command::SUCCESS;
     }

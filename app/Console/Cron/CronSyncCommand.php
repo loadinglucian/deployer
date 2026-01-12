@@ -78,7 +78,7 @@ class CronSyncCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('cron:sync', [
+        $this->commandReplay([
             'domain' => $siteServer->site->domain,
         ]);
 

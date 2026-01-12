@@ -78,7 +78,7 @@ class RedisStopCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('redis:stop', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

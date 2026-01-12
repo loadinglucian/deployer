@@ -78,7 +78,7 @@ class SupervisorSyncCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('supervisor:sync', [
+        $this->commandReplay([
             'domain' => $siteServer->site->domain,
         ]);
 

@@ -78,7 +78,7 @@ class MemcachedRestartCommand extends BaseCommand
         // Show command replay
         // ----
 
-        $this->commandReplay('memcached:restart', [
+        $this->commandReplay([
             'server' => $server->name,
         ]);
 

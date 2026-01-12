@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Pro\Do;
 
-use DeployerPHP\Contracts\BaseCommand;
+use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Traits\DoTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -13,10 +13,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:do:key:delete',
+    name: 'pro:do:key:delete|do:key:delete',
     description: 'Delete a public SSH key from DigitalOcean'
 )]
-class KeyDeleteCommand extends BaseCommand
+class KeyDeleteCommand extends ProCommand
 {
     use DoTrait;
 
@@ -92,7 +92,7 @@ class KeyDeleteCommand extends BaseCommand
             return Command::FAILURE;
         }
 
-        $this->commandReplay('pro:do:key:delete', [
+        $this->commandReplay([
             'key' => (string) $keyId,
             'force' => true,
             'yes' => $confirmed,
