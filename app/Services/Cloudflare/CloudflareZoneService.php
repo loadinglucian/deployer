@@ -76,8 +76,12 @@ class CloudflareZoneService extends BaseCloudflareService
         // Query API for specific zone
         $response = $this->request('GET', "/zones/{$zoneId}");
 
-        /** @var array{name: string} $zone */
-        $zone = $response['result'];
+        /** @var array{name: string}|null $zone */
+        $zone = $response['result'] ?? null;
+
+        if (null === $zone) {
+            throw new \RuntimeException("Zone not found: {$zoneId}");
+        }
 
         $this->zoneCache[$zone['name']] = $zoneId;
 

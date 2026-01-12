@@ -126,7 +126,8 @@ trait CloudflareTrait
         }
 
         // Valid: zone ID (32-char hex) or domain name
-        if (1 !== preg_match('/^[a-f0-9]{32}$/i', $zone) && 1 !== preg_match('/^[a-z0-9][a-z0-9\-\.]+\.[a-z]{2,}$/i', $zone)) {
+        // Domain pattern validates proper label boundaries (no consecutive dots, no leading/trailing hyphens)
+        if (1 !== preg_match('/^[a-f0-9]{32}$/i', $zone) && 1 !== preg_match('/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}$/i', $zone)) {
             return "Invalid zone format: '{$zone}'. Use a domain name (example.com) or zone ID (32-char hex)";
         }
 

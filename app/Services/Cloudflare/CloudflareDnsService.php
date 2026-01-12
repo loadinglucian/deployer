@@ -13,8 +13,11 @@ class CloudflareDnsService extends BaseCloudflareService
 {
     /**
      * Supported DNS record types.
+     *
+     * Note: SRV records require a nested `data` object structure with additional
+     * fields (weight, port, target) which this implementation doesn't support.
      */
-    public const RECORD_TYPES = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA'];
+    public const RECORD_TYPES = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'CAA'];
 
     /**
      * Record types that support proxying (orange cloud).
@@ -118,10 +121,14 @@ class CloudflareDnsService extends BaseCloudflareService
             'name' => $name,
             'content' => $content,
             'ttl' => $ttl,
-            'proxied' => $proxied,
         ];
 
-        if (null !== $priority && in_array(strtoupper($type), ['MX', 'SRV'], true)) {
+        // Only include proxied for types that support it (API returns error 9004 otherwise)
+        if (in_array(strtoupper($type), self::PROXIABLE_TYPES, true)) {
+            $data['proxied'] = $proxied;
+        }
+
+        if (null !== $priority && 'MX' === strtoupper($type)) {
             $data['priority'] = $priority;
         }
 
@@ -164,10 +171,14 @@ class CloudflareDnsService extends BaseCloudflareService
             'name' => $name,
             'content' => $content,
             'ttl' => $ttl,
-            'proxied' => $proxied,
         ];
 
-        if (null !== $priority && in_array(strtoupper($type), ['MX', 'SRV'], true)) {
+        // Only include proxied for types that support it (API returns error 9004 otherwise)
+        if (in_array(strtoupper($type), self::PROXIABLE_TYPES, true)) {
+            $data['proxied'] = $proxied;
+        }
+
+        if (null !== $priority && 'MX' === strtoupper($type)) {
             $data['priority'] = $priority;
         }
 

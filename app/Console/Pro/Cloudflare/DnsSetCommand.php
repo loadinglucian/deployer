@@ -109,15 +109,25 @@ final class DnsSetCommand extends ProCommand
         // Show command replay
         // ----
 
-        $this->commandReplay([
+        $replayOptions = [
             'zone' => $deets['zone'],
             'type' => $deets['type'],
             'name' => $deets['name'],
             'value' => $deets['value'],
             'ttl' => $deets['ttl'],
-            'proxied' => $deets['proxied'],
-            'priority' => $deets['priority'],
-        ]);
+        ];
+
+        // Only include proxied for types that support it
+        if (in_array($deets['type'], CloudflareDnsService::PROXIABLE_TYPES, true)) {
+            $replayOptions['proxied'] = $deets['proxied'];
+        }
+
+        // Only include priority for MX records
+        if (null !== $deets['priority']) {
+            $replayOptions['priority'] = $deets['priority'];
+        }
+
+        $this->commandReplay($replayOptions);
 
         return Command::SUCCESS;
     }
