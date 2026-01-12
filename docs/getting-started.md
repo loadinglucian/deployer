@@ -183,6 +183,9 @@ Once completed, DeployerPHP displays the next steps:
 - Run `site:https` to enable HTTPS once DNS propagates
 - Run `site:deploy` to deploy your application
 
+> [!NOTE]
+> If your DNS is managed by AWS Route53, Cloudflare, or DigitalOcean, you can use DeployerPHP's DNS commands to point your domain to your server. For example, `pro:cf:dns:set --zone=example.com --type=A --name=@ --value=YOUR_SERVER_IP` creates the A record for your root domain. See [Managing DNS Records](/docs/pro#aws-dns) in the Pro documentation.
+
 ### Delete a Site
 
 To delete a site from a server, run the `site:delete` command:

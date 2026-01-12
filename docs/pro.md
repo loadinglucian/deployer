@@ -360,9 +360,9 @@ deployer pro:aws:dns:delete
 
 The `pro:aws:dns:list` command displays DNS records for a hosted zone. You can filter by record type to show only A, AAAA, or CNAME records.
 
-| Option   | Description                        |
-| -------- | ---------------------------------- |
-| `--zone` | Hosted zone ID or domain name      |
+| Option   | Description                            |
+| -------- | -------------------------------------- |
+| `--zone` | Hosted zone ID or domain name          |
 | `--type` | Filter by record type (A, AAAA, CNAME) |
 
 Example:
@@ -377,13 +377,13 @@ deployer pro:aws:dns:list \
 
 The `pro:aws:dns:set` command creates a new DNS record or updates an existing one (upsert). When prompted for a record name, use `@` for the root domain.
 
-| Option    | Description                          | Default |
-| --------- | ------------------------------------ | ------- |
-| `--zone`  | Hosted zone ID or domain name        |         |
-| `--type`  | Record type (A, AAAA, CNAME)         |         |
-| `--name`  | Record name (use "@" for root)       |         |
-| `--value` | Record value (IP address or hostname)|         |
-| `--ttl`   | TTL in seconds                       | 300     |
+| Option    | Description                           | Default |
+| --------- | ------------------------------------- | ------- |
+| `--zone`  | Hosted zone ID or domain name         |         |
+| `--type`  | Record type (A, AAAA, CNAME)          |         |
+| `--name`  | Record name (use "@" for root)        |         |
+| `--value` | Record value (IP address or hostname) |         |
+| `--ttl`   | TTL in seconds                        | 300     |
 
 Example:
 
@@ -400,13 +400,13 @@ deployer pro:aws:dns:set \
 
 The `pro:aws:dns:delete` command removes a DNS record from a hosted zone. DeployerPHP shows the record details and requires confirmation before deletion.
 
-| Option           | Description                         |
-| ---------------- | ----------------------------------- |
-| `--zone`         | Hosted zone ID or domain name       |
-| `--type`         | Record type (A, AAAA, CNAME)        |
-| `--name`         | Record name (use "@" for root)      |
+| Option           | Description                            |
+| ---------------- | -------------------------------------- |
+| `--zone`         | Hosted zone ID or domain name          |
+| `--type`         | Record type (A, AAAA, CNAME)           |
+| `--name`         | Record name (use "@" for root)         |
 | `--force` / `-f` | Skip typing the record name to confirm |
-| `--yes` / `-y`   | Skip Yes/No confirmation prompt     |
+| `--yes` / `-y`   | Skip Yes/No confirmation prompt        |
 
 Example:
 
@@ -482,14 +482,14 @@ deployer pro:cf:dns:list \
 
 The `pro:cf:dns:set` command creates a new DNS record or updates an existing one (upsert). Cloudflare supports proxying traffic through their CDN and DDoS protection network.
 
-| Option      | Description                           | Default |
-| ----------- | ------------------------------------- | ------- |
-| `--zone`    | Zone (domain name)                    |         |
-| `--type`    | Record type (A, AAAA, CNAME)          |         |
-| `--name`    | Record name (use "@" for root)        |         |
-| `--value`   | Record value (IP address or hostname) |         |
-| `--ttl`     | TTL in seconds (1 for auto)           | 300     |
-| `--proxied` | Enable Cloudflare proxy (orange cloud)|         |
+| Option      | Description                            | Default |
+| ----------- | -------------------------------------- | ------- |
+| `--zone`    | Zone (domain name)                     |         |
+| `--type`    | Record type (A, AAAA, CNAME)           |         |
+| `--name`    | Record name (use "@" for root)         |         |
+| `--value`   | Record value (IP address or hostname)  |         |
+| `--ttl`     | TTL in seconds (1 for auto)            | 300     |
+| `--proxied` | Enable Cloudflare proxy (orange cloud) |         |
 
 When proxy is enabled, Cloudflare hides your origin IP address and routes traffic through their global network, providing CDN caching and DDoS protection.
 
