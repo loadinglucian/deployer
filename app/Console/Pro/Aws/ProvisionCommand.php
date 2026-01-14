@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Pro\Aws;
 
+use DeployerPHP\Builders\ServerBuilder;
 use DeployerPHP\Contracts\ProCommand;
-use DeployerPHP\DTOs\ServerDTO;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\AwsTrait;
 use DeployerPHP\Traits\KeysTrait;
@@ -240,15 +240,17 @@ class ProvisionCommand extends ProCommand
             $ipAddress = $elasticIp['publicIp'];
             $username = $this->aws->instance->getDefaultUsername($deets['amiName']);
 
-            $server = $this->getServerInfo(new ServerDTO(
-                name: $deets['name'],
-                host: $ipAddress,
-                port: 22,
-                username: $username,
-                privateKeyPath: $deets['privateKeyPath'],
-                provider: 'aws',
-                instanceId: $instanceId
-            ));
+            $server = $this->getServerInfo(
+                ServerBuilder::new()
+                    ->name($deets['name'])
+                    ->host($ipAddress)
+                    ->port(22)
+                    ->username($username)
+                    ->privateKeyPath($deets['privateKeyPath'])
+                    ->provider('aws')
+                    ->instanceId($instanceId)
+                    ->build()
+            );
 
             if (!is_int($server)) {
                 $this->servers->create($server);

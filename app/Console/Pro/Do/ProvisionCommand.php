@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Pro\Do;
 
+use DeployerPHP\Builders\ServerBuilder;
 use DeployerPHP\Contracts\ProCommand;
-use DeployerPHP\DTOs\ServerDTO;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\DoTrait;
 use DeployerPHP\Traits\KeysTrait;
@@ -188,15 +188,17 @@ class ProvisionCommand extends ProCommand
 
             $ipAddress = $this->do->droplet->getDropletIp($dropletId);
 
-            $server = $this->getServerInfo(new ServerDTO(
-                name: $deets['name'],
-                host: $ipAddress,
-                port: 22,
-                username: 'root',
-                privateKeyPath: $deets['privateKeyPath'],
-                provider: 'digitalocean',
-                dropletId: $dropletId
-            ));
+            $server = $this->getServerInfo(
+                ServerBuilder::new()
+                    ->name($deets['name'])
+                    ->host($ipAddress)
+                    ->port(22)
+                    ->username('root')
+                    ->privateKeyPath($deets['privateKeyPath'])
+                    ->provider('digitalocean')
+                    ->dropletId($dropletId)
+                    ->build()
+            );
 
             if (!is_int($server)) {
                 $this->servers->create($server);

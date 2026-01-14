@@ -44,23 +44,4 @@ readonly class ServerDTO
         return $this->isDo() || $this->isAws();
     }
 
-    /**
-     * Return a new instance with the provided info.
-     *
-     * @param array<string, mixed> $info
-     */
-    public function withInfo(array $info): self
-    {
-        return new self(
-            name: $this->name,
-            host: $this->host,
-            port: $this->port,
-            username: $this->username,
-            privateKeyPath: $this->privateKeyPath,
-            provider: $this->provider,
-            dropletId: $this->dropletId,
-            instanceId: $this->instanceId,
-            info: $info,
-        );
-    }
 }

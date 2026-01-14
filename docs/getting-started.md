@@ -54,8 +54,8 @@ DeployerPHP has some pretty basic minimum requirements:
 
 Your target servers should be running a supported Linux distribution:
 
-- Debian 11 or newer
-- Ubuntu 22.04 LTS or newer
+- Debian 12 or newer
+- Ubuntu 24.04 LTS or 26.04 LTS (interim releases like 25.04 are not supported)
 
 <a name="how-commands-are-organized"></a>
 

@@ -12,7 +12,7 @@ load 'lib/inventory'
 # ----
 
 setup() {
-    reset_inventory
+	reset_inventory
 }
 
 # ----
@@ -20,50 +20,50 @@ setup() {
 # ----
 
 @test "server:add creates server in inventory with valid options" {
-    run_deployer server:add \
-        --name="$TEST_SERVER_NAME" \
-        --host="$TEST_SERVER_HOST" \
-        --port="$TEST_SERVER_PORT" \
-        --username="$TEST_SERVER_USER" \
-        --private-key-path="$TEST_KEY"
+	run_deployer server:add \
+		--name="$TEST_SERVER_NAME" \
+		--host="$TEST_SERVER_HOST" \
+		--port="$TEST_SERVER_PORT" \
+		--username="$TEST_SERVER_USER" \
+		--private-key-path="$TEST_KEY"
 
-    debug_output
+	debug_output
 
-    [ "$status" -eq 0 ]
-    assert_success_output
-    assert_output_contains "added to inventory"
-    assert_command_replay "server:add"
-    inventory_has_server "$TEST_SERVER_NAME"
+	[ "$status" -eq 0 ]
+	assert_success_output
+	assert_output_contains "added to inventory"
+	assert_command_replay "server:add"
+	inventory_has_server "$TEST_SERVER_NAME"
 }
 
 @test "server:add accepts IP address as host" {
-    run_deployer server:add \
-        --name="ip-server" \
-        --host="$TEST_SERVER_HOST" \
-        --port="$TEST_SERVER_PORT" \
-        --username="$TEST_SERVER_USER" \
-        --private-key-path="$TEST_KEY"
+	run_deployer server:add \
+		--name="ip-server" \
+		--host="$TEST_SERVER_HOST" \
+		--port="$TEST_SERVER_PORT" \
+		--username="$TEST_SERVER_USER" \
+		--private-key-path="$TEST_KEY"
 
-    debug_output
+	debug_output
 
-    [ "$status" -eq 0 ]
-    assert_success_output
-    inventory_has_server "ip-server"
+	[ "$status" -eq 0 ]
+	assert_success_output
+	inventory_has_server "ip-server"
 }
 
 @test "server:add accepts hostname as host" {
-    run_deployer server:add \
-        --name="hostname-server" \
-        --host="localhost" \
-        --port="$TEST_SERVER_PORT" \
-        --username="$TEST_SERVER_USER" \
-        --private-key-path="$TEST_KEY"
+	run_deployer server:add \
+		--name="hostname-server" \
+		--host="localhost" \
+		--port="$TEST_SERVER_PORT" \
+		--username="$TEST_SERVER_USER" \
+		--private-key-path="$TEST_KEY"
 
-    debug_output
+	debug_output
 
-    [ "$status" -eq 0 ]
-    assert_success_output
-    inventory_has_server "hostname-server"
+	[ "$status" -eq 0 ]
+	assert_success_output
+	inventory_has_server "hostname-server"
 }
 
 # ----
@@ -71,37 +71,37 @@ setup() {
 # ----
 
 @test "server:info displays server information" {
-    add_test_server
+	add_test_server
 
-    run_deployer server:info --server="$TEST_SERVER_NAME"
+	run_deployer server:info --server="$TEST_SERVER_NAME"
 
-    debug_output
+	debug_output
 
-    [ "$status" -eq 0 ]
-    assert_output_contains "Distro"
-    assert_command_replay "server:info"
+	[ "$status" -eq 0 ]
+	assert_output_contains "Distro"
+	assert_command_replay "server:info"
 }
 
 @test "server:info shows info when no servers in inventory" {
-    reset_inventory
+	reset_inventory
 
-    run_deployer server:info --server="nonexistent"
+	run_deployer server:info --server="nonexistent"
 
-    debug_output
+	debug_output
 
-    assert_info_output
-    assert_output_contains "No servers found"
+	assert_info_output
+	assert_output_contains "No servers found"
 }
 
 @test "server:info shows correct server details" {
-    add_test_server
+	add_test_server
 
-    run_deployer server:info --server="$TEST_SERVER_NAME"
+	run_deployer server:info --server="$TEST_SERVER_NAME"
 
-    debug_output
+	debug_output
 
-    [ "$status" -eq 0 ]
-    assert_output_contains "$TEST_SERVER_HOST"
+	[ "$status" -eq 0 ]
+	assert_output_contains "$TEST_SERVER_HOST"
 }
 
 # ----
@@ -109,53 +109,53 @@ setup() {
 # ----
 
 @test "server:delete removes server from inventory" {
-    add_test_server
-    inventory_has_server "$TEST_SERVER_NAME"
+	add_test_server
+	inventory_has_server "$TEST_SERVER_NAME"
 
-    run_deployer server:delete \
-        --server="$TEST_SERVER_NAME" \
-        --force \
-        --yes \
-        --inventory-only
+	run_deployer server:delete \
+		--server="$TEST_SERVER_NAME" \
+		--force \
+		--yes \
+		--inventory-only
 
-    debug_output
+	debug_output
 
-    [ "$status" -eq 0 ]
-    assert_success_output
-    assert_output_contains "removed"
-    ! inventory_has_server "$TEST_SERVER_NAME"
+	[ "$status" -eq 0 ]
+	assert_success_output
+	assert_output_contains "removed"
+	! inventory_has_server "$TEST_SERVER_NAME"
 }
 
 @test "server:delete shows info when no servers in inventory" {
-    reset_inventory
+	reset_inventory
 
-    run_deployer server:delete \
-        --server="nonexistent" \
-        --force \
-        --yes \
-        --inventory-only
+	run_deployer server:delete \
+		--server="nonexistent" \
+		--force \
+		--yes \
+		--inventory-only
 
-    debug_output
+	debug_output
 
-    assert_info_output
-    assert_output_contains "No servers found"
+	assert_info_output
+	assert_output_contains "No servers found"
 }
 
 @test "server:delete with --inventory-only removes from inventory" {
-    add_test_server "inventory-only-server"
-    inventory_has_server "inventory-only-server"
+	add_test_server "inventory-only-server"
+	inventory_has_server "inventory-only-server"
 
-    run_deployer server:delete \
-        --server="inventory-only-server" \
-        --force \
-        --yes \
-        --inventory-only
+	run_deployer server:delete \
+		--server="inventory-only-server" \
+		--force \
+		--yes \
+		--inventory-only
 
-    debug_output
+	debug_output
 
-    [ "$status" -eq 0 ]
-    assert_success_output
-    ! inventory_has_server "inventory-only-server"
+	[ "$status" -eq 0 ]
+	assert_success_output
+	! inventory_has_server "inventory-only-server"
 }
 
 # NOTE: "server:delete fails when typed name doesn't match" cannot be tested
@@ -167,105 +167,105 @@ setup() {
 # ----
 
 @test "server:install shows info when no servers in inventory" {
-    reset_inventory
+	reset_inventory
 
-    run_deployer server:install --server="nonexistent"
+	run_deployer server:install --server="nonexistent"
 
-    debug_output
+	debug_output
 
-    assert_info_output
-    assert_output_contains "No servers found"
+	assert_info_output
+	assert_output_contains "No servers found"
 }
 
 @test "server:install completes successfully with generated deploy key" {
-    add_test_server
+	add_test_server
 
-    # Full install takes time - use longer timeout
-    run timeout 300 "$DEPLOYER_BIN" --inventory="$TEST_INVENTORY" server:install \
-        --server="$TEST_SERVER_NAME" \
-        --generate-deploy-key \
-        --php-version="8.4" \
-        --php-extensions="cli,fpm,curl,mbstring"
+	# Full install takes time - use longer timeout
+	run timeout 300 "$DEPLOYER_BIN" --inventory="$TEST_INVENTORY" server:install \
+		--server="$TEST_SERVER_NAME" \
+		--generate-deploy-key \
+		--php-version="8.4" \
+		--php-extensions="cli,fpm,curl,mbstring"
 
-    debug_output
+	debug_output
 
-    [ "$status" -eq 0 ]
-    assert_success_output
-    assert_output_contains "Server installation completed"
-    assert_output_contains "public key"
-    assert_command_replay "server:install"
+	[ "$status" -eq 0 ]
+	assert_success_output
+	assert_output_contains "Server installation completed"
+	assert_output_contains "public key"
+	assert_command_replay "server:install"
 }
 
 @test "server:install creates deployer user on remote" {
-    # Relies on previous install test or assumes server is already installed
-    add_test_server
+	# Relies on previous install test or assumes server is already installed
+	add_test_server
 
-    # Check deployer user exists - command failure fails the test
-    ssh_exec "id deployer"
+	# Check deployer user exists - command failure fails the test
+	ssh_exec "id deployer"
 }
 
 @test "server:install creates deployer home directory" {
-    add_test_server
+	add_test_server
 
-    assert_remote_dir_exists "/home/deployer"
+	assert_remote_dir_exists "/home/deployer"
 }
 
 @test "server:install creates deployer sites directory" {
-    add_test_server
+	add_test_server
 
-    assert_remote_dir_exists "/home/deployer/sites"
+	assert_remote_dir_exists "/home/deployer/sites"
 }
 
 @test "server:install installs Nginx web server" {
-    add_test_server
+	add_test_server
 
-    # Command failure fails the test
-    ssh_exec "command -v nginx"
+	# Command failure fails the test
+	ssh_exec "command -v nginx"
 }
 
 @test "server:install creates Nginx config structure" {
-    add_test_server
+	add_test_server
 
-    assert_remote_dir_exists "/etc/nginx/sites-enabled"
+	assert_remote_dir_exists "/etc/nginx/sites-enabled"
 }
 
 @test "server:install installs PHP-FPM" {
-    add_test_server
+	add_test_server
 
-    # Check for any PHP-FPM version - command failure fails the test
-    ssh_exec "ls /etc/php/*/fpm/php-fpm.conf 2>/dev/null | head -1"
+	# Check for any PHP-FPM version - command failure fails the test
+	ssh_exec "ls /etc/php/*/fpm/php-fpm.conf 2>/dev/null | head -1"
 }
 
 @test "server:install creates deploy key" {
-    add_test_server
+	add_test_server
 
-    assert_remote_file_exists "/home/deployer/.ssh/id_ed25519"
-    assert_remote_file_exists "/home/deployer/.ssh/id_ed25519.pub"
+	assert_remote_file_exists "/home/deployer/.ssh/id_ed25519"
+	assert_remote_file_exists "/home/deployer/.ssh/id_ed25519.pub"
 }
 
 @test "server:install with custom deploy key uses provided key" {
-    add_test_server
+	add_test_server
 
-    # Get the public key content from our test key
-    local expected_key
-    expected_key=$(cat "${TEST_KEY}.pub")
+	# Get the public key content from our test key
+	local expected_key
+	expected_key=$(cat "${TEST_KEY}.pub")
 
-    # Run install with custom key
-    run timeout 300 "$DEPLOYER_BIN" --inventory="$TEST_INVENTORY" server:install \
-        --server="$TEST_SERVER_NAME" \
-        --custom-deploy-key="$TEST_KEY" \
-        --php-version="8.4" \
-        --php-extensions="cli,fpm"
+	# Run install with custom key (cli,fpm are always installed, must include optional extension)
+	run timeout 300 "$DEPLOYER_BIN" --inventory="$TEST_INVENTORY" server:install \
+		--server="$TEST_SERVER_NAME" \
+		--custom-deploy-key="$TEST_KEY" \
+		--php-version="8.4" \
+		--php-extensions="cli,fpm,curl,mbstring"
 
-    debug_output
+	debug_output
 
-    [ "$status" -eq 0 ]
-    assert_success_output
+	[ "$status" -eq 0 ]
+	assert_success_output
 
-    # Verify the remote key matches our test key
-    local remote_key
-    remote_key=$(ssh_exec "cat /home/deployer/.ssh/id_ed25519.pub")
-    [[ "$remote_key" == "$expected_key" ]]
+	# Verify the remote key matches our test key
+	local remote_key
+	remote_key=$(ssh_exec "cat /home/deployer/.ssh/id_ed25519.pub")
+	[[ "$remote_key" == "$expected_key" ]]
 }
 
 # ----
@@ -273,40 +273,41 @@ setup() {
 # ----
 
 @test "server:firewall shows info when no servers in inventory" {
-    reset_inventory
+	reset_inventory
 
-    run_deployer server:firewall --server="nonexistent" --allow="80" --yes
+	run_deployer server:firewall --server="nonexistent" --allow="80" --yes
 
-    debug_output
+	debug_output
 
-    assert_info_output
-    assert_output_contains "No servers found"
+	assert_info_output
+	assert_output_contains "No servers found"
 }
 
-@test "server:firewall configures UFW with HTTP port" {
-    add_test_server
+@test "server:firewall configures UFW with listening port" {
+	add_test_server
 
-    # After server:install, Nginx listens on port 80
-    run_deployer server:firewall \
-        --server="$TEST_SERVER_NAME" \
-        --allow="80" \
-        --yes
+	# After server:install, Nginx stub_status listens on port 8080
+	# Port 80 only listens after site:create creates a vhost
+	run_deployer server:firewall \
+		--server="$TEST_SERVER_NAME" \
+		--allow="8080" \
+		--yes
 
-    debug_output
+	debug_output
 
-    [ "$status" -eq 0 ]
-    assert_success_output
-    assert_output_contains "Firewall configured successfully"
-    assert_command_replay "server:firewall"
+	[ "$status" -eq 0 ]
+	assert_success_output
+	assert_output_contains "Firewall configured successfully"
+	assert_command_replay "server:firewall"
 }
 
 @test "server:firewall verifies UFW is enabled on server" {
-    add_test_server
+	add_test_server
 
-    # UFW should be enabled by server:install (base-install.sh)
-    local ufw_status
-    ufw_status=$(ssh_exec "ufw status")
-    [[ "$ufw_status" =~ "Status: active" ]]
+	# UFW should be enabled by server:install (base-install.sh)
+	local ufw_status
+	ufw_status=$(ssh_exec "ufw status")
+	[[ "$ufw_status" =~ "Status: active" ]]
 }
 
 # ----
@@ -314,44 +315,44 @@ setup() {
 # ----
 
 @test "server:logs shows info when no servers in inventory" {
-    reset_inventory
+	reset_inventory
 
-    run_deployer server:logs --server="nonexistent" --service="system" --lines=10
+	run_deployer server:logs --server="nonexistent" --service="system" --lines=10
 
-    debug_output
+	debug_output
 
-    assert_info_output
-    assert_output_contains "No servers found"
+	assert_info_output
+	assert_output_contains "No servers found"
 }
 
 @test "server:logs retrieves system logs" {
-    add_test_server
+	add_test_server
 
-    run_deployer server:logs \
-        --server="$TEST_SERVER_NAME" \
-        --service="system" \
-        --lines=10
+	run_deployer server:logs \
+		--server="$TEST_SERVER_NAME" \
+		--service="system" \
+		--lines=10
 
-    debug_output
+	debug_output
 
-    [ "$status" -eq 0 ]
-    assert_output_contains "System logs"
-    assert_command_replay "server:logs"
+	[ "$status" -eq 0 ]
+	assert_output_contains "System logs"
+	assert_command_replay "pro:server:logs"
 }
 
 @test "server:logs retrieves multiple service logs" {
-    add_test_server
+	add_test_server
 
-    run_deployer server:logs \
-        --server="$TEST_SERVER_NAME" \
-        --service="system,cron" \
-        --lines=5
+	run_deployer server:logs \
+		--server="$TEST_SERVER_NAME" \
+		--service="system,cron" \
+		--lines=5
 
-    debug_output
+	debug_output
 
-    [ "$status" -eq 0 ]
-    assert_output_contains "System logs"
-    assert_output_contains "Cron"
+	[ "$status" -eq 0 ]
+	assert_output_contains "System logs"
+	assert_output_contains "Cron"
 }
 
 # ----
@@ -359,41 +360,41 @@ setup() {
 # ----
 
 @test "server:run shows info when no servers in inventory" {
-    reset_inventory
+	reset_inventory
 
-    run_deployer server:run --server="nonexistent" --command="whoami"
+	run_deployer server:run --server="nonexistent" --command="whoami"
 
-    debug_output
+	debug_output
 
-    assert_info_output
-    assert_output_contains "No servers found"
+	assert_info_output
+	assert_output_contains "No servers found"
 }
 
 @test "server:run executes command on server" {
-    add_test_server
+	add_test_server
 
-    run_deployer server:run \
-        --server="$TEST_SERVER_NAME" \
-        --command="whoami"
+	run_deployer server:run \
+		--server="$TEST_SERVER_NAME" \
+		--command="whoami"
 
-    debug_output
+	debug_output
 
-    [ "$status" -eq 0 ]
-    assert_output_contains "root"
-    assert_command_replay "server:run"
+	[ "$status" -eq 0 ]
+	assert_output_contains "root"
+	assert_command_replay "pro:server:run"
 }
 
 @test "server:run shows command output" {
-    add_test_server
+	add_test_server
 
-    run_deployer server:run \
-        --server="$TEST_SERVER_NAME" \
-        --command="echo hello-deployer-test"
+	run_deployer server:run \
+		--server="$TEST_SERVER_NAME" \
+		--command="echo hello-deployer-test"
 
-    debug_output
+	debug_output
 
-    [ "$status" -eq 0 ]
-    assert_output_contains "hello-deployer-test"
+	[ "$status" -eq 0 ]
+	assert_output_contains "hello-deployer-test"
 }
 
 # ----

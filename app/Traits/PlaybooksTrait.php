@@ -47,6 +47,7 @@ trait PlaybooksTrait
      *   - DEPLOYER_PERMS: User permissions (root|sudo|none) - from server->info
      *   - DEPLOYER_SITE_DOMAIN: Site domain - from site (when SiteServerDTO context)
      *   - DEPLOYER_PHP_VERSION: PHP version - from site (when SiteServerDTO context)
+     *   - DEPLOYER_WEB_ROOT: Public web directory relative to current/ - from site (when SiteServerDTO context)
      *   - DEPLOYER_SITE_REPO: Git repository URL - from site (when SiteServerDTO context and not null)
      *   - DEPLOYER_SITE_BRANCH: Git branch - from site (when SiteServerDTO context and not null)
      *   - DEPLOYER_CRONS: Cron jobs as JSON array - from site (when SiteServerDTO context)
@@ -95,6 +96,7 @@ trait PlaybooksTrait
 
             $baseVars['DEPLOYER_SITE_DOMAIN'] = $site->domain;
             $baseVars['DEPLOYER_PHP_VERSION'] = $site->phpVersion;
+            $baseVars['DEPLOYER_WEB_ROOT'] = $site->webRoot;
 
             if (null !== $site->repo && '' !== $site->repo) {
                 $baseVars['DEPLOYER_SITE_REPO'] = $site->repo;

@@ -43,7 +43,7 @@ class CfDnsService extends BaseCfService
             $query['name'] = $name;
         }
 
-        $response = $this->request('GET', "/zones/{$zoneId}/dns_records", [
+        $response = $this->request('GET', "zones/{$zoneId}/dns_records", [
             'query' => $query,
         ]);
 
@@ -114,7 +114,7 @@ class CfDnsService extends BaseCfService
             'proxied' => $proxied,
         ];
 
-        $response = $this->request('POST', "/zones/{$zoneId}/dns_records", [
+        $response = $this->request('POST', "zones/{$zoneId}/dns_records", [
             'json' => $data,
         ]);
 
@@ -154,7 +154,7 @@ class CfDnsService extends BaseCfService
             'proxied' => $proxied,
         ];
 
-        $this->request('PUT', "/zones/{$zoneId}/dns_records/{$recordId}", [
+        $this->request('PUT', "zones/{$zoneId}/dns_records/{$recordId}", [
             'json' => $data,
         ]);
     }
@@ -169,7 +169,7 @@ class CfDnsService extends BaseCfService
      */
     public function deleteRecord(string $zoneId, string $recordId): void
     {
-        $this->request('DELETE', "/zones/{$zoneId}/dns_records/{$recordId}");
+        $this->request('DELETE', "zones/{$zoneId}/dns_records/{$recordId}");
     }
 
     /**
