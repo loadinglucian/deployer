@@ -94,6 +94,7 @@ class SiteDeployCommand extends BaseCommand
             branch: $branch,
             server: $site->server,
             phpVersion: $site->phpVersion,
+            webRoot: $site->webRoot,
             crons: $site->crons,
             supervisors: $site->supervisors,
         );

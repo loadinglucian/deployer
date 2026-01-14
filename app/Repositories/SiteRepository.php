@@ -211,6 +211,7 @@ final class SiteRepository
             branch: $site->branch,
             server: $site->server,
             phpVersion: $site->phpVersion,
+            webRoot: $site->webRoot,
             crons: $crons,
             supervisors: $site->supervisors,
         );
@@ -248,6 +249,7 @@ final class SiteRepository
             branch: $site->branch,
             server: $site->server,
             phpVersion: $site->phpVersion,
+            webRoot: $site->webRoot,
             crons: $crons,
             supervisors: $site->supervisors,
         );
@@ -292,6 +294,7 @@ final class SiteRepository
             branch: $site->branch,
             server: $site->server,
             phpVersion: $site->phpVersion,
+            webRoot: $site->webRoot,
             crons: $site->crons,
             supervisors: $supervisors,
         );
@@ -329,6 +332,7 @@ final class SiteRepository
             branch: $site->branch,
             server: $site->server,
             phpVersion: $site->phpVersion,
+            webRoot: $site->webRoot,
             crons: $site->crons,
             supervisors: $supervisors,
         );
@@ -378,6 +382,10 @@ final class SiteRepository
 
         $data['php_version'] = $site->phpVersion;
 
+        if ('public' !== $site->webRoot) {
+            $data['web_root'] = $site->webRoot;
+        }
+
         if ([] !== $site->crons) {
             $data['crons'] = array_map(
                 $this->dehydrateCronDTO(...),
@@ -422,6 +430,7 @@ final class SiteRepository
         $branch = $data['branch'] ?? null;
         $server = $data['server'] ?? '';
         $phpVersion = $data['php_version'] ?? null;
+        $webRoot = $data['web_root'] ?? 'public';
         $cronsData = $data['crons'] ?? [];
         $supervisorsData = $data['supervisors'] ?? [];
 
@@ -458,6 +467,7 @@ final class SiteRepository
             branch: is_string($branch) ? $branch : null,
             server: is_string($server) ? $server : '',
             phpVersion: $phpVersion,
+            webRoot: is_string($webRoot) ? $webRoot : 'public',
             crons: $crons,
             supervisors: $supervisors,
         );

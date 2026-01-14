@@ -245,13 +245,13 @@ detect_php_extensions() {
 get_nginx_metrics() {
 	# Check if Nginx is available
 	if ! command -v nginx > /dev/null 2>&1; then
-		echo "false"  # Not installed
+		echo "false" # Not installed
 		return
 	fi
 
 	# Check if Nginx is running
 	if ! systemctl is-active --quiet nginx 2> /dev/null; then
-		echo "true\tunknown\t0\t0\t0\t0"  # Installed but not running
+		echo "true\tunknown\t0\t0\t0\t0" # Installed but not running
 		return
 	fi
 
