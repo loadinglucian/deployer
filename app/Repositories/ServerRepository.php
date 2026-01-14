@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Repositories;
 
+use DeployerPHP\Builders\ServerBuilder;
 use DeployerPHP\DTOs\ServerDTO;
 use DeployerPHP\Services\InventoryService;
 
@@ -175,24 +176,6 @@ final class ServerRepository
      */
     private function hydrateServerDTO(array $data): ServerDTO
     {
-        $name = $data['name'] ?? '';
-        $host = $data['host'] ?? '';
-        $port = $data['port'] ?? 22;
-        $username = $data['username'] ?? 'root';
-        $privateKeyPath = $data['privateKeyPath'] ?? null;
-        $provider = $data['provider'] ?? null;
-        $dropletId = $data['dropletId'] ?? null;
-        $instanceId = $data['instanceId'] ?? null;
-
-        return new ServerDTO(
-            name: is_string($name) ? $name : '',
-            host: is_string($host) ? $host : '',
-            port: is_int($port) ? $port : 22,
-            username: is_string($username) ? $username : 'root',
-            privateKeyPath: is_string($privateKeyPath) ? $privateKeyPath : null,
-            provider: is_string($provider) ? $provider : null,
-            dropletId: is_int($dropletId) ? $dropletId : null,
-            instanceId: is_string($instanceId) ? $instanceId : null,
-        );
+        return ServerBuilder::fromStorage($data)->build();
     }
 }

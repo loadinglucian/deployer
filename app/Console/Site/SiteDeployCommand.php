@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Site;
 
+use DeployerPHP\Builders\SiteBuilder;
+use DeployerPHP\Builders\SiteServerBuilder;
 use DeployerPHP\Contracts\BaseCommand;
 use DeployerPHP\DTOs\SiteDTO;
-use DeployerPHP\DTOs\SiteServerDTO;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\PlaybooksTrait;
 use DeployerPHP\Traits\ServersTrait;
@@ -88,19 +89,16 @@ class SiteDeployCommand extends BaseCommand
         [$repo, $branch, $needsUpdate] = $resolvedGit;
 
         // Create updated site DTO with resolved repo/branch
-        $site = new SiteDTO(
-            domain: $site->domain,
-            repo: $repo,
-            branch: $branch,
-            server: $site->server,
-            phpVersion: $site->phpVersion,
-            webRoot: $site->webRoot,
-            crons: $site->crons,
-            supervisors: $site->supervisors,
-        );
+        $site = SiteBuilder::from($site)
+            ->repo($repo)
+            ->branch($branch)
+            ->build();
 
         // Update siteServer with the resolved site
-        $siteServer = new SiteServerDTO($site, $server);
+        $siteServer = SiteServerBuilder::new()
+            ->site($site)
+            ->server($server)
+            ->build();
 
         if ($needsUpdate) {
             try {

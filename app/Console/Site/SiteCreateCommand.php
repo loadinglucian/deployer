@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Site;
 
+use DeployerPHP\Builders\SiteBuilder;
+use DeployerPHP\Builders\SiteServerBuilder;
 use DeployerPHP\Contracts\BaseCommand;
-use DeployerPHP\DTOs\SiteDTO;
-use DeployerPHP\DTOs\SiteServerDTO;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\PlaybooksTrait;
 use DeployerPHP\Traits\ServersTrait;
@@ -86,16 +86,17 @@ class SiteCreateCommand extends BaseCommand
             'webRoot' => $webRoot,
         ] = $siteInfo;
 
-        $site = new SiteDTO(
-            domain: $domain,
-            repo: null,
-            branch: null,
-            server: $server->name,
-            phpVersion: $phpVersion,
-            webRoot: $webRoot,
-        );
+        $site = SiteBuilder::new()
+            ->domain($domain)
+            ->server($server->name)
+            ->phpVersion($phpVersion)
+            ->webRoot($webRoot)
+            ->build();
 
-        $siteServer = new SiteServerDTO($site, $server);
+        $siteServer = SiteServerBuilder::new()
+            ->site($site)
+            ->server($server)
+            ->build();
 
         $this->displaySiteDeets($site);
 
