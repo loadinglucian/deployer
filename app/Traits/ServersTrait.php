@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Traits;
 
+use DeployerPHP\Builders\ServerBuilder;
 use DeployerPHP\DTOs\ServerDTO;
 use DeployerPHP\DTOs\SiteDTO;
 use DeployerPHP\Enums\Distribution;
@@ -262,7 +263,7 @@ trait ServersTrait
             return Command::FAILURE;
         }
 
-        return $server->withInfo($info);
+        return ServerBuilder::from($server)->info($info)->build();
     }
 
     /**

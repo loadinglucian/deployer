@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Site;
 
+use DeployerPHP\Builders\SiteServerBuilder;
 use DeployerPHP\Contracts\BaseCommand;
-use DeployerPHP\DTOs\SiteServerDTO;
 use DeployerPHP\Traits\PlaybooksTrait;
 use DeployerPHP\Traits\ServersTrait;
 use DeployerPHP\Traits\SitesTrait;
@@ -136,7 +136,10 @@ class SiteDeleteCommand extends BaseCommand
                     $this->warn('Could not connect to server');
                 } else {
                     // Execute site deletion playbook
-                    $siteServer = new SiteServerDTO($site, $server);
+                    $siteServer = SiteServerBuilder::new()
+                        ->site($site)
+                        ->server($server)
+                        ->build();
 
                     $result = $this->executePlaybookSilently(
                         $siteServer,

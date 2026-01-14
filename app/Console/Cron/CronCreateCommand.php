@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Cron;
 
+use DeployerPHP\Builders\CronBuilder;
 use DeployerPHP\Contracts\BaseCommand;
-use DeployerPHP\DTOs\CronDTO;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\CronsTrait;
 use DeployerPHP\Traits\PlaybooksTrait;
@@ -91,10 +91,10 @@ class CronCreateCommand extends BaseCommand
             return $cronDeets;
         }
 
-        $cron = new CronDTO(
-            script: $cronDeets['script'],
-            schedule: $cronDeets['schedule'],
-        );
+        $cron = CronBuilder::new()
+            ->script($cronDeets['script'])
+            ->schedule($cronDeets['schedule'])
+            ->build();
 
         $this->displayCronDeets($cron);
 

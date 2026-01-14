@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Server;
 
+use DeployerPHP\Builders\ServerBuilder;
 use DeployerPHP\Contracts\BaseCommand;
-use DeployerPHP\DTOs\ServerDTO;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\KeysTrait;
 use DeployerPHP\Traits\PlaybooksTrait;
@@ -71,13 +71,15 @@ class ServerAddCommand extends BaseCommand
         ] = $deets;
 
         // Create server DTO with info
-        $server = $this->getServerInfo(new ServerDTO(
-            name: $name,
-            host: $host,
-            port: $port,
-            username: $username,
-            privateKeyPath: $privateKeyPath
-        ));
+        $server = $this->getServerInfo(
+            ServerBuilder::new()
+                ->name($name)
+                ->host($host)
+                ->port($port)
+                ->username($username)
+                ->privateKeyPath($privateKeyPath)
+                ->build()
+        );
 
         if (is_int($server)) {
             return Command::FAILURE;
