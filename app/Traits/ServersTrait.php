@@ -248,6 +248,24 @@ trait ServersTrait
         }
 
         //
+        // Validate version (Ubuntu requires LTS)
+
+        /** @var string $version */
+        $version = $info['version'] ?? 'unknown';
+
+        if (! $distribution->isValidVersion($version)) {
+            $this->info("DeployerPHP supports {$distribution->displayName()} {$distribution->supportedVersions()}.");
+
+            if ('unknown' === $version) {
+                $this->out("Could not detect the {$distribution->displayName()} version.");
+            } else {
+                $this->out("{$distribution->displayName()} {$version} is not supported.");
+            }
+
+            return Command::FAILURE;
+        }
+
+        //
         // Validate permissions
 
         $permissions = $info['permissions'] ?? null;
