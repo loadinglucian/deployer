@@ -254,12 +254,12 @@ trait ServersTrait
 
         if (! $distribution->isValidVersion($version)) {
             $supported = implode(', ', $distribution->supportedVersions());
-            $this->info("DeployerPHP only supports Ubuntu LTS releases ({$supported}).");
+            $this->info("DeployerPHP only supports {$distribution->displayName()} {$supported}.");
 
             if ('unknown' === $version) {
-                $this->out('Could not detect the Ubuntu version.');
+                $this->out("Could not detect the {$distribution->displayName()} version.");
             } else {
-                $this->out("Ubuntu {$version} is an interim release.");
+                $this->out("{$distribution->displayName()} {$version} is not supported.");
             }
 
             return Command::FAILURE;

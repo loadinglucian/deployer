@@ -169,7 +169,6 @@ DeployerPHP will prompt you for:
 - **Server** - Select the server to host your site
 - **Domain name** - Your site's domain (e.g., "example.com")
 - **WWW handling** - Whether to redirect www to non-www (or vice versa)
-- **Web root** - The public directory relative to your project (e.g., "public" for Laravel, "/" for WordPress)
 - **PHP version** - The PHP version to use for this site
 
 The creation process will:
