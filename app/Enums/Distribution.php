@@ -15,19 +15,29 @@ enum Distribution: string
     case DEBIAN = 'debian';
 
     // ----
+    // Version Support
+    // ----
+
+    /**
+     * Supported Ubuntu LTS versions.
+     *
+     * Ubuntu interim releases (e.g., 25.04) are not supported because
+     * the Ondřej PHP PPA only publishes packages for LTS releases.
+     *
+     * @var array<string>
+     */
+    private const UBUNTU_LTS_VERSIONS = ['24.04', '26.04'];
+
+    // ----
     // Codename Mappings
     // ----
 
     private const UBUNTU_CODENAMES = [
-        '20.04' => 'Focal Fossa',
-        '22.04' => 'Jammy Jellyfish',
         '24.04' => 'Noble Numbat',
         '26.04' => 'TBD',
     ];
 
     private const DEBIAN_CODENAMES = [
-        '10' => 'Buster',
-        '11' => 'Bullseye',
         '12' => 'Bookworm',
         '13' => 'Trixie',
         '14' => 'Forky',
@@ -85,6 +95,40 @@ enum Distribution: string
             self::UBUNTU => 'ubuntu',
             self::DEBIAN => 'admin',
         };
+    }
+
+    // ----
+    // Version Validation
+    // ----
+
+    /**
+     * Check if a version is supported for this distribution.
+     *
+     * Ubuntu only supports LTS versions (24.04, 26.04).
+     * Debian supports all stable versions.
+     */
+    public function isValidVersion(string $version): bool
+    {
+        return match ($this) {
+            self::UBUNTU => in_array($version, self::UBUNTU_LTS_VERSIONS, true),
+            self::DEBIAN => true,
+        };
+    }
+
+    /**
+     * Get supported versions for this distribution.
+     *
+     * @return array<string>
+     */
+    public function supportedVersions(): array
+    {
+        /** @var array<string> $versions */
+        $versions = match ($this) {
+            self::UBUNTU => self::UBUNTU_LTS_VERSIONS,
+            self::DEBIAN => array_keys(self::DEBIAN_CODENAMES),
+        };
+
+        return $versions;
     }
 
     // ----

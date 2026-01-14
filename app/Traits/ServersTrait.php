@@ -247,6 +247,25 @@ trait ServersTrait
         }
 
         //
+        // Validate version (Ubuntu requires LTS)
+
+        /** @var string $version */
+        $version = $info['version'] ?? 'unknown';
+
+        if (! $distribution->isValidVersion($version)) {
+            $supported = implode(', ', $distribution->supportedVersions());
+            $this->info("DeployerPHP only supports Ubuntu LTS releases ({$supported}).");
+
+            if ('unknown' === $version) {
+                $this->out('Could not detect the Ubuntu version.');
+            } else {
+                $this->out("Ubuntu {$version} is an interim release.");
+            }
+
+            return Command::FAILURE;
+        }
+
+        //
         // Validate permissions
 
         $permissions = $info['permissions'] ?? null;

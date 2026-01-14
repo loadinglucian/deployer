@@ -54,8 +54,8 @@ DeployerPHP has some pretty basic minimum requirements:
 
 Your target servers should be running a supported Linux distribution:
 
-- Debian 11 or newer
-- Ubuntu 22.04 LTS or newer
+- Debian 12 or newer
+- Ubuntu 24.04 LTS or 26.04 LTS (interim releases like 25.04 are not supported)
 
 <a name="how-commands-are-organized"></a>
 
@@ -169,6 +169,7 @@ DeployerPHP will prompt you for:
 - **Server** - Select the server to host your site
 - **Domain name** - Your site's domain (e.g., "example.com")
 - **WWW handling** - Whether to redirect www to non-www (or vice versa)
+- **Web root** - The public directory relative to your project (e.g., "public" for Laravel, "/" for WordPress)
 - **PHP version** - The PHP version to use for this site
 
 The creation process will:
