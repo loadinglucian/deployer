@@ -23,8 +23,26 @@ export DEBIAN_FRONTEND=noninteractive
 [[ -z $DEPLOYER_WWW_MODE ]] && echo "Error: DEPLOYER_WWW_MODE required" && exit 1
 export DEPLOYER_PERMS
 
+# DEPLOYER_WEB_ROOT can be empty (valid for WordPress/root-serving apps)
+
 # Shared helpers are automatically inlined when executing playbooks remotely
 # source "$(dirname "$0")/helpers.sh"
+
+# ----
+# Helpers
+# ----
+
+#
+# Returns the web root path (handles empty DEPLOYER_WEB_ROOT)
+
+get_web_root_path() {
+	local site_path=$1
+	if [[ -z $DEPLOYER_WEB_ROOT ]]; then
+		echo "${site_path}/current"
+	else
+		echo "${site_path}/current/${DEPLOYER_WEB_ROOT}"
+	fi
+}
 
 # ----
 # Setup Functions
@@ -40,6 +58,8 @@ export DEPLOYER_PERMS
 setup_site_directories() {
 	local domain=$1
 	local site_path="/home/deployer/sites/${domain}"
+	local web_root
+	web_root=$(get_web_root_path "$site_path")
 
 	echo "→ Creating directory structure..."
 
@@ -56,7 +76,7 @@ setup_site_directories() {
 		"${site_path}/releases"
 		"${site_path}/shared"
 		"${site_path}/repo"
-		"${site_path}/current/public"
+		"${web_root}"
 	)
 
 	for dir in "${dirs[@]}"; do
@@ -91,7 +111,10 @@ setup_site_directories() {
 
 setup_default_page() {
 	local domain=$1
-	local index_file="/home/deployer/sites/${domain}/current/public/index.php"
+	local site_path="/home/deployer/sites/${domain}"
+	local web_root
+	web_root=$(get_web_root_path "$site_path")
+	local index_file="${web_root}/index.php"
 
 	echo "→ Creating default page..."
 
@@ -131,6 +154,8 @@ setup_default_page() {
 configure_nginx_vhost() {
 	local domain=$1
 	local site_path="/home/deployer/sites/${domain}"
+	local web_root
+	web_root=$(get_web_root_path "$site_path")
 	local www_mode=$DEPLOYER_WWW_MODE
 	local php_version=$DEPLOYER_PHP_VERSION
 	local php_fpm_socket="/run/php/php${php_version}-fpm.sock"
@@ -139,6 +164,7 @@ configure_nginx_vhost() {
 	echo "→ Creating Nginx configuration for ${domain}..."
 	echo "→ Using PHP ${php_version} (socket: ${php_fpm_socket})"
 	echo "→ WWW mode: ${www_mode}"
+	echo "→ Web root: ${web_root}"
 
 	# Ensure log directory exists with correct ownership
 	if [[ ! -d /var/log/nginx ]]; then
@@ -151,7 +177,7 @@ configure_nginx_vhost() {
 
 	# Common server block configuration (shared between www/non-www)
 	local server_block="
-    root ${site_path}/current/public;
+    root ${web_root};
     index index.php index.html index.htm;
 
     # Logging
