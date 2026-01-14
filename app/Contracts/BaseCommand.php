@@ -324,19 +324,14 @@ abstract class BaseCommand extends Command
     }
 
     /**
-     * Get the command name as it was invoked by the user.
+     * Get the canonical command name.
      *
-     * Returns the actual alias used (e.g., 'do:key:add' vs 'pro:do:key:add')
-     * by checking $_SERVER['argv'], falling back to the primary name.
+     * Returns the primary command name for consistent replay output,
+     * regardless of which alias was used to invoke the command.
      */
     protected function getInvokedCommandName(): string
     {
-        /** @var array<int, string> $argv */
-        $argv = $_SERVER['argv'] ?? [];
-        $argv1 = $argv[1] ?? '';
-        $allNames = [$this->getName(), ...$this->getAliases()];
-
-        return in_array($argv1, $allNames, true) ? $argv1 : (string) $this->getName();
+        return (string) $this->getName();
     }
 
     /**
