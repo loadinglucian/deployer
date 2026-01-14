@@ -2,10 +2,8 @@
 
 - [Introduction](#introduction)
 - [Server Access](#server-access)
-    - [SSH Access](#server-ssh)
+    - [Running Commands](#server-run)
     - [Viewing Logs](#server-logs)
-- [Site Access](#site-access)
-    - [SSH Access](#site-ssh)
 - [AWS](#aws)
     - [Configuration](#aws-configuration)
     - [Managing SSH Keys](#aws-ssh-keys)
@@ -41,30 +39,35 @@ Currently supported providers:
 
 Pro commands for accessing and monitoring your servers.
 
-<a name="server-ssh"></a>
+<a name="server-run"></a>
 
-### SSH Access
+### Running Commands
 
-The `pro:server:ssh` command opens an interactive SSH session to a server:
+The `pro:server:run` command executes arbitrary shell commands on a server:
 
 ```bash
-deployer pro:server:ssh
+deployer pro:server:run
 ```
 
-You'll be prompted to select a server from your inventory, then dropped into a terminal session on the remote server. Use `exit` to return to your local machine.
+You'll be prompted for the server and command. Output is streamed in real-time as the command executes on the remote server.
 
-| Option     | Description |
-| ---------- | ----------- |
-| `--server` | Server name |
+| Option      | Description        |
+| ----------- | ------------------ |
+| `--server`  | Server name        |
+| `--command` | Command to execute |
 
 For automation:
 
 ```bash
-deployer pro:server:ssh --server=production
+deployer pro:server:run \
+    --server=production \
+    --command="systemctl status nginx"
 ```
 
+This is useful for quick administrative tasks without opening a full SSH session.
+
 > [!NOTE]
-> This command is also available as `server:ssh` for convenience.
+> This command is also available as `server:run` for convenience.
 
 <a name="server-logs"></a>
 
@@ -104,37 +107,6 @@ deployer pro:server:logs \
 
 > [!NOTE]
 > This command is also available as `server:logs` for convenience. For detailed documentation, see the [Viewing Logs](/docs/servers#viewing-logs) section in server management.
-
-<a name="site-access"></a>
-
-## Site Access
-
-Pro commands for accessing your sites.
-
-<a name="site-ssh"></a>
-
-### SSH Access
-
-The `pro:site:ssh` command opens an SSH session directly in a site's directory:
-
-```bash
-deployer pro:site:ssh
-```
-
-You'll be prompted to select a site from your inventory. The session opens in the site's current release directory (`/home/deployer/sites/{domain}/current/`) as the `deployer` user.
-
-| Option     | Description |
-| ---------- | ----------- |
-| `--domain` | Site domain |
-
-For automation:
-
-```bash
-deployer pro:site:ssh --domain=example.com
-```
-
-> [!NOTE]
-> This command is also available as `site:ssh` for convenience.
 
 <a name="aws"></a>
 

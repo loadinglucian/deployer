@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Server;
+namespace DeployerPHP\Console\Pro\Server;
 
-use DeployerPHP\Contracts\BaseCommand;
+use DeployerPHP\Contracts\ProCommand;
 use DeployerPHP\Exceptions\SshTimeoutException;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\PlaybooksTrait;
@@ -16,10 +16,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'server:run',
+    name: 'pro:server:run|server:run',
     description: 'Run arbitrary command on a server'
 )]
-class ServerRunCommand extends BaseCommand
+class ServerRunCommand extends ProCommand
 {
     use PlaybooksTrait;
     use ServersTrait;
