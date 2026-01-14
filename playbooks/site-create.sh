@@ -131,8 +131,8 @@ setup_default_page() {
 		fi
 	fi
 
-	# Set file permissions (640 - owner+group read)
-	if ! run_cmd chmod 640 "$index_file"; then
+	# Set file permissions (644 - owner read/write, group+others read)
+	if ! run_cmd chmod 644 "$index_file"; then
 		echo "Error: Failed to set permissions on index.php" >&2
 		exit 1
 	fi

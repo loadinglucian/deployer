@@ -211,6 +211,7 @@ final class SiteRepository
             branch: $site->branch,
             server: $site->server,
             phpVersion: $site->phpVersion,
+            webRoot: $site->webRoot,
             crons: $crons,
             supervisors: $site->supervisors,
         );
@@ -248,6 +249,7 @@ final class SiteRepository
             branch: $site->branch,
             server: $site->server,
             phpVersion: $site->phpVersion,
+            webRoot: $site->webRoot,
             crons: $crons,
             supervisors: $site->supervisors,
         );
@@ -292,6 +294,7 @@ final class SiteRepository
             branch: $site->branch,
             server: $site->server,
             phpVersion: $site->phpVersion,
+            webRoot: $site->webRoot,
             crons: $site->crons,
             supervisors: $supervisors,
         );
@@ -329,6 +332,7 @@ final class SiteRepository
             branch: $site->branch,
             server: $site->server,
             phpVersion: $site->phpVersion,
+            webRoot: $site->webRoot,
             crons: $site->crons,
             supervisors: $supervisors,
         );

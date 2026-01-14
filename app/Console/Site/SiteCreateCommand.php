@@ -398,6 +398,19 @@ class SiteCreateCommand extends BaseCommand
             return 'Web root can only contain letters, numbers, hyphens, underscores, dots, and forward slashes';
         }
 
+        // Validate problematic patterns after normalization
+        $normalized = trim($value, '/');
+        if ('' !== $normalized) {
+            // Reject consecutive slashes
+            if (str_contains($normalized, '//')) {
+                return 'Web root cannot contain consecutive slashes';
+            }
+            // Reject standalone or leading/trailing dot segments
+            if (preg_match('/^\.+$|\/\.+$|^\.+\/|\/\.+\//', $normalized)) {
+                return 'Web root cannot contain standalone dot segments';
+            }
+        }
+
         return null;
     }
 
