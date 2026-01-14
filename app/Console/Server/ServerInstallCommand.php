@@ -312,11 +312,14 @@ class ServerInstallCommand extends BaseCommand
         // ----
 
         $defaultExtensions = [
-            'bcmath', 'cli', 'common', 'curl', 'fpm', 'gd', 'gmp',
+            'bcmath', 'common', 'curl', 'gd', 'gmp',
             'igbinary', 'imagick', 'imap', 'intl', 'mbstring',
             'memcached', 'msgpack', 'mysql', 'opcache', 'pgsql',
             'readline', 'redis', 'soap', 'sqlite3', 'swoole', 'xml', 'zip',
         ];
+
+        // Required extensions - always installed, not user-selectable
+        $requiredExtensions = ['cli', 'fpm'];
 
         //
         // Extract available PHP versions
@@ -409,20 +412,33 @@ class ServerInstallCommand extends BaseCommand
             return Command::FAILURE;
         }
 
+        // Verify required extensions are available for this PHP version
+        $missingRequired = array_diff($requiredExtensions, $availableExtensions);
+        if ([] !== $missingRequired) {
+            $this->nay("Required extension(s) not available for PHP {$phpVersion}: " . implode(', ', $missingRequired));
+
+            return Command::FAILURE;
+        }
+
+        // Remove required extensions from selectable list (they're always installed)
+        $selectableExtensions = array_values(array_diff($availableExtensions, $requiredExtensions));
+
         // Filter defaults to only those available for this version
-        $preSelected = array_values(array_intersect($defaultExtensions, $availableExtensions));
+        $preSelected = array_values(array_intersect($defaultExtensions, $selectableExtensions));
+
+        $this->info('PHP cli and fpm extensions are always installed');
 
         try {
             $selectedExtensions = $this->io->getValidatedOptionOrPrompt(
                 'php-extensions',
                 fn ($validate) => $this->io->promptMultiselect(
                     label: 'Select PHP extensions:',
-                    options: $availableExtensions,
+                    options: $selectableExtensions,
                     default: $preSelected,
                     scroll: 15,
                     validate: $validate
                 ),
-                fn ($value) => $this->validatePhpExtensionsInput($value, $availableExtensions)
+                fn ($value) => $this->validatePhpExtensionsInput($value, $selectableExtensions, $requiredExtensions)
             );
         } catch (ValidationException $e) {
             $this->nay($e->getMessage());
@@ -431,14 +447,17 @@ class ServerInstallCommand extends BaseCommand
         }
 
         // Handle both array (from prompt) and string (from CLI option)
-        if (is_string($selectedExtensions)) {
-            $selectedExtensions = array_filter(
+        /** @var array<int, string> $normalizedExtensions */
+        $normalizedExtensions = is_string($selectedExtensions)
+            ? array_filter(
                 array_map(trim(...), explode(',', $selectedExtensions)),
                 static fn (string $ext): bool => $ext !== ''
-            );
-        }
+            )
+            : $selectedExtensions;
 
+        // Merge required extensions (always installed)
         /** @var array<int, string> $selectedExtensions */
+        $selectedExtensions = array_values(array_unique([...$requiredExtensions, ...$normalizedExtensions]));
 
         //
         // Determine if setting as default
@@ -527,11 +546,12 @@ class ServerInstallCommand extends BaseCommand
     /**
      * Validate PHP extensions selection.
      *
-     * @param array<int|string, string> $availableExtensions Available PHP extensions
+     * @param array<int|string, string> $selectableExtensions Selectable PHP extensions
+     * @param array<int, string> $requiredExtensions Required extensions to filter from input
      *
      * @return string|null Error message if invalid, null if valid
      */
-    private function validatePhpExtensionsInput(mixed $value, array $availableExtensions): ?string
+    private function validatePhpExtensionsInput(mixed $value, array $selectableExtensions, array $requiredExtensions = []): ?string
     {
         // CLI provides comma-separated string, prompt provides array
         $extensions = $value;
@@ -546,11 +566,14 @@ class ServerInstallCommand extends BaseCommand
             return 'Invalid PHP extensions selection';
         }
 
-        if ($extensions === []) {
-            return 'At least one extension must be selected';
+        // Filter out required extensions (they're always installed, so ignore if user specifies them)
+        $extensions = array_diff($extensions, $requiredExtensions);
+
+        if ([] === $extensions) {
+            return 'At least one optional extension must be selected';
         }
 
-        $unknownExtensions = array_diff($extensions, $availableExtensions);
+        $unknownExtensions = array_diff($extensions, $selectableExtensions);
         if ([] !== $unknownExtensions) {
             return 'Unknown extension(s): ' . implode(', ', $unknownExtensions);
         }
