@@ -308,10 +308,11 @@ trait SitesTrait
     protected function ensureSiteExists(ServerDTO $server, SiteDTO $site): ?int
     {
         try {
+            // Use sudo for directory check since /home/deployer may not be accessible to SSH user
             $result = $this->ssh->executeCommand(
                 $server,
                 sprintf(
-                    'test -d /home/deployer/sites/%s && test -f /etc/nginx/sites-available/%s',
+                    'sudo -n test -d /home/deployer/sites/%s && test -f /etc/nginx/sites-available/%s',
                     escapeshellarg($site->domain),
                     escapeshellarg($site->domain)
                 )
