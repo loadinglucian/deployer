@@ -15,9 +15,9 @@ export TEST_KEY="${BATS_TEST_ROOT}/fixtures/keys/id_test"
 export BATS_DISTRO="${BATS_DISTRO:-ubuntu24}"
 
 # Distro port mapping (must match run.sh and lima/*.yaml)
+# Note: Only Ubuntu LTS releases are supported
 declare -A DISTRO_PORTS=(
 	["ubuntu24"]="2222"
-	["ubuntu25"]="2224"
 	["debian12"]="2223"
 	["debian13"]="2225"
 )

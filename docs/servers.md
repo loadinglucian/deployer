@@ -157,36 +157,29 @@ deployer server:firewall \
 
 ## Running Commands
 
-The `server:run` command executes arbitrary shell commands on a server:
-
-```bash
-deployer server:run
-```
-
-You'll be prompted for the server and command. Output is streamed in real-time as the command executes on the remote server.
-
-Options:
-
-| Option      | Description        |
-| ----------- | ------------------ |
-| `--server`  | Server name        |
-| `--command` | Command to execute |
-
-For automation:
-
-```bash
-deployer server:run \
-    --server=production \
-    --command="systemctl status nginx"
-```
-
-This is useful for quick administrative tasks without opening a full SSH session.
+The `server:run` command executes arbitrary shell commands on a server with real-time output streaming. For full documentation, see [Running Commands](/docs/pro#server-run) in the Pro documentation.
 
 <a name="ssh-access"></a>
 
 ## SSH Access
 
-The `server:ssh` command opens an interactive SSH session to a server. For full documentation, see [SSH Access](/docs/pro#server-ssh) in the Pro documentation.
+The `server:ssh` command opens an interactive SSH session to a server:
+
+```bash
+deployer server:ssh
+```
+
+You'll be prompted to select a server from your inventory, then dropped into a terminal session on the remote server. Use `exit` to return to your local machine.
+
+| Option     | Description |
+| ---------- | ----------- |
+| `--server` | Server name |
+
+For automation:
+
+```bash
+deployer server:ssh --server=production
+```
 
 <a name="viewing-logs"></a>
 

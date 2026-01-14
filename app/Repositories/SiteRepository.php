@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Repositories;
 
+use DeployerPHP\Builders\SiteBuilder;
 use DeployerPHP\DTOs\CronDTO;
 use DeployerPHP\DTOs\SiteDTO;
 use DeployerPHP\DTOs\SupervisorDTO;
@@ -202,18 +203,9 @@ final class SiteRepository
         }
 
         // Add cron to site
-        $crons = $site->crons;
-        $crons[] = $cron;
-
-        $updatedSite = new SiteDTO(
-            domain: $site->domain,
-            repo: $site->repo,
-            branch: $site->branch,
-            server: $site->server,
-            phpVersion: $site->phpVersion,
-            crons: $crons,
-            supervisors: $site->supervisors,
-        );
+        $updatedSite = SiteBuilder::from($site)
+            ->addCron($cron)
+            ->build();
 
         $this->update($updatedSite);
     }
@@ -242,15 +234,9 @@ final class SiteRepository
             }
         }
 
-        $updatedSite = new SiteDTO(
-            domain: $site->domain,
-            repo: $site->repo,
-            branch: $site->branch,
-            server: $site->server,
-            phpVersion: $site->phpVersion,
-            crons: $crons,
-            supervisors: $site->supervisors,
-        );
+        $updatedSite = SiteBuilder::from($site)
+            ->crons($crons)
+            ->build();
 
         $this->update($updatedSite);
     }
@@ -283,18 +269,9 @@ final class SiteRepository
         }
 
         // Add supervisor to site
-        $supervisors = $site->supervisors;
-        $supervisors[] = $supervisor;
-
-        $updatedSite = new SiteDTO(
-            domain: $site->domain,
-            repo: $site->repo,
-            branch: $site->branch,
-            server: $site->server,
-            phpVersion: $site->phpVersion,
-            crons: $site->crons,
-            supervisors: $supervisors,
-        );
+        $updatedSite = SiteBuilder::from($site)
+            ->addSupervisor($supervisor)
+            ->build();
 
         $this->update($updatedSite);
     }
@@ -323,15 +300,9 @@ final class SiteRepository
             }
         }
 
-        $updatedSite = new SiteDTO(
-            domain: $site->domain,
-            repo: $site->repo,
-            branch: $site->branch,
-            server: $site->server,
-            phpVersion: $site->phpVersion,
-            crons: $site->crons,
-            supervisors: $supervisors,
-        );
+        $updatedSite = SiteBuilder::from($site)
+            ->supervisors($supervisors)
+            ->build();
 
         $this->update($updatedSite);
     }
@@ -378,6 +349,10 @@ final class SiteRepository
 
         $data['php_version'] = $site->phpVersion;
 
+        if ('public' !== $site->webRoot) {
+            $data['web_root'] = $site->webRoot;
+        }
+
         if ([] !== $site->crons) {
             $data['crons'] = array_map(
                 $this->dehydrateCronDTO(...),
@@ -413,71 +388,10 @@ final class SiteRepository
      * Create a SiteDTO from raw inventory data.
      *
      * @param array<string,mixed> $data Raw associative array from inventory.
-     * @return SiteDTO A SiteDTO where `domain` and `server` are strings, `repo` and `branch` are nullable.
      */
     private function hydrateSiteDTO(array $data): SiteDTO
     {
-        $domain = $data['domain'] ?? '';
-        $repo = $data['repo'] ?? null;
-        $branch = $data['branch'] ?? null;
-        $server = $data['server'] ?? '';
-        $phpVersion = $data['php_version'] ?? null;
-        $cronsData = $data['crons'] ?? [];
-        $supervisorsData = $data['supervisors'] ?? [];
-
-        if (! is_string($phpVersion) || '' === $phpVersion) {
-            $domainStr = is_string($domain) ? $domain : 'unknown';
-            throw new \RuntimeException("Site '{$domainStr}' is missing required 'php_version' in inventory");
-        }
-
-        // Hydrate crons
-        $crons = [];
-        if (is_array($cronsData)) {
-            foreach ($cronsData as $cronData) {
-                if (is_array($cronData)) {
-                    /** @var array<string, mixed> $cronData */
-                    $crons[] = $this->hydrateCronDTO($cronData);
-                }
-            }
-        }
-
-        // Hydrate supervisors
-        $supervisors = [];
-        if (is_array($supervisorsData)) {
-            foreach ($supervisorsData as $supervisorData) {
-                if (is_array($supervisorData)) {
-                    /** @var array<string, mixed> $supervisorData */
-                    $supervisors[] = $this->hydrateSupervisorDTO($supervisorData);
-                }
-            }
-        }
-
-        return new SiteDTO(
-            domain: is_string($domain) ? $domain : '',
-            repo: is_string($repo) ? $repo : null,
-            branch: is_string($branch) ? $branch : null,
-            server: is_string($server) ? $server : '',
-            phpVersion: $phpVersion,
-            crons: $crons,
-            supervisors: $supervisors,
-        );
-    }
-
-    /**
-     * Create a CronDTO from raw inventory data.
-     *
-     * @param array<string,mixed> $data Raw associative array from inventory.
-     * @return CronDTO A CronDTO with script and schedule.
-     */
-    private function hydrateCronDTO(array $data): CronDTO
-    {
-        $script = $data['script'] ?? '';
-        $schedule = $data['schedule'] ?? '';
-
-        return new CronDTO(
-            script: is_string($script) ? $script : '',
-            schedule: is_string($schedule) ? $schedule : '',
-        );
+        return SiteBuilder::fromStorage($data)->build();
     }
 
     /**
@@ -496,30 +410,5 @@ final class SiteRepository
             'stopwaitsecs' => $supervisor->stopwaitsecs,
             'numprocs' => $supervisor->numprocs,
         ];
-    }
-
-    /**
-     * Create a SupervisorDTO from raw inventory data.
-     *
-     * @param array<string,mixed> $data Raw associative array from inventory.
-     * @return SupervisorDTO A SupervisorDTO with program, script, and supervisor options.
-     */
-    private function hydrateSupervisorDTO(array $data): SupervisorDTO
-    {
-        $program = $data['program'] ?? '';
-        $script = $data['script'] ?? '';
-        $autostart = $data['autostart'] ?? true;
-        $autorestart = $data['autorestart'] ?? true;
-        $stopwaitsecs = $data['stopwaitsecs'] ?? 3600;
-        $numprocs = $data['numprocs'] ?? 1;
-
-        return new SupervisorDTO(
-            program: is_string($program) ? $program : '',
-            script: is_string($script) ? $script : '',
-            autostart: is_bool($autostart) ? $autostart : true,
-            autorestart: is_bool($autorestart) ? $autorestart : true,
-            stopwaitsecs: is_int($stopwaitsecs) ? $stopwaitsecs : 3600,
-            numprocs: is_int($numprocs) ? $numprocs : 1,
-        );
     }
 }

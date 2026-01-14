@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Site;
 
+use DeployerPHP\Builders\SiteBuilder;
+use DeployerPHP\Builders\SiteServerBuilder;
 use DeployerPHP\Contracts\BaseCommand;
-use DeployerPHP\DTOs\SiteDTO;
-use DeployerPHP\DTOs\SiteServerDTO;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\PlaybooksTrait;
 use DeployerPHP\Traits\ServersTrait;
@@ -39,7 +39,8 @@ class SiteCreateCommand extends BaseCommand
             ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name')
             ->addOption('server', null, InputOption::VALUE_REQUIRED, 'Server name')
             ->addOption('php-version', null, InputOption::VALUE_REQUIRED, 'PHP version to use')
-            ->addOption('www-mode', null, InputOption::VALUE_REQUIRED, 'WWW handling mode (redirect-to-root, redirect-to-www)');
+            ->addOption('www-mode', null, InputOption::VALUE_REQUIRED, 'WWW handling mode (redirect-to-root, redirect-to-www)')
+            ->addOption('web-root', null, InputOption::VALUE_REQUIRED, 'Public web directory (default: public)');
     }
 
     // ----
@@ -82,17 +83,20 @@ class SiteCreateCommand extends BaseCommand
             'domain' => $domain,
             'phpVersion' => $phpVersion,
             'wwwMode' => $wwwMode,
+            'webRoot' => $webRoot,
         ] = $siteInfo;
 
-        $site = new SiteDTO(
-            domain: $domain,
-            repo: null,
-            branch: null,
-            server: $server->name,
-            phpVersion: $phpVersion,
-        );
+        $site = SiteBuilder::new()
+            ->domain($domain)
+            ->server($server->name)
+            ->phpVersion($phpVersion)
+            ->webRoot($webRoot)
+            ->build();
 
-        $siteServer = new SiteServerDTO($site, $server);
+        $siteServer = SiteServerBuilder::new()
+            ->site($site)
+            ->server($server)
+            ->build();
 
         $this->displaySiteDeets($site);
 
@@ -102,7 +106,7 @@ class SiteCreateCommand extends BaseCommand
 
         $checkResult = $this->ssh->executeCommand(
             $server,
-            sprintf('test -d /home/deployer/sites/%s', escapeshellarg($domain))
+            sprintf('sudo -n test -d /home/deployer/sites/%s', escapeshellarg($domain))
         );
 
         if (0 === $checkResult['exit_code']) {
@@ -166,6 +170,7 @@ class SiteCreateCommand extends BaseCommand
             'server' => $server->name,
             'php-version' => $phpVersion,
             'www-mode' => $wwwMode,
+            'web-root' => $webRoot,
         ]);
 
         return Command::SUCCESS;
@@ -234,7 +239,7 @@ class SiteCreateCommand extends BaseCommand
      * Gather site details from user input or CLI options.
      *
      * @param array<string, mixed> $info Server information from serverInfo()
-     * @return array{domain: string, phpVersion: string, wwwMode: string}|int
+     * @return array{domain: string, phpVersion: string, wwwMode: string, webRoot: string}|int
      */
     protected function gatherSiteDeets(array $info): array|int
     {
@@ -276,6 +281,25 @@ class SiteCreateCommand extends BaseCommand
                     ? null
                     : sprintf("Invalid WWW mode '%s'. Allowed: %s", is_scalar($value) ? $value : gettype($value), implode(', ', array_keys($wwwModes)))
             );
+
+            //
+            // Web root directory
+            // ----
+
+            /** @var string $webRoot */
+            $webRoot = $this->io->getValidatedOptionOrPrompt(
+                'web-root',
+                fn ($validate) => $this->io->promptText(
+                    label: 'Public web directory (use "/" for root):',
+                    placeholder: 'public',
+                    default: 'public',
+                    validate: $validate
+                ),
+                fn ($value) => $this->validateWebRootInput($value)
+            );
+
+            // Normalize: strip leading/trailing slashes so "/" becomes "", "public/" becomes "public"
+            $webRoot = $this->normalizeWebRoot($webRoot);
         } catch (ValidationException $e) {
             $this->nay($e->getMessage());
 
@@ -296,6 +320,7 @@ class SiteCreateCommand extends BaseCommand
             'domain' => $domain,
             'phpVersion' => $phpVersion,
             'wwwMode' => $wwwMode,
+            'webRoot' => $webRoot,
         ];
     }
 
@@ -349,5 +374,54 @@ class SiteCreateCommand extends BaseCommand
         }
 
         return null;
+    }
+
+    /**
+     * Validate web root directory input.
+     *
+     * @return string|null Error message if invalid, null if valid
+     */
+    private function validateWebRootInput(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return 'Web root must be a string';
+        }
+
+        if ('' === trim($value)) {
+            return 'Web root is required (use "/" for root directory)';
+        }
+
+        if (str_contains($value, '..')) {
+            return 'Web root cannot contain ".."';
+        }
+
+        if (! preg_match('/^[a-zA-Z0-9_\-\.\/]+$/', $value)) {
+            return 'Web root can only contain letters, numbers, hyphens, underscores, dots, and forward slashes';
+        }
+
+        // Validate problematic patterns after normalization
+        $normalized = trim($value, '/');
+        if ('' !== $normalized) {
+            // Reject consecutive slashes
+            if (str_contains($normalized, '//')) {
+                return 'Web root cannot contain consecutive slashes';
+            }
+            // Reject standalone or leading/trailing dot segments
+            if (preg_match('/^\.+$|\/\.+$|^\.+\/|\/\.+\//', $normalized)) {
+                return 'Web root cannot contain standalone dot segments';
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Normalize web root by stripping leading/trailing slashes.
+     *
+     * Examples: "/" -> "", "/public/" -> "public", "public/" -> "public"
+     */
+    private function normalizeWebRoot(string $value): string
+    {
+        return trim($value, '/');
     }
 }

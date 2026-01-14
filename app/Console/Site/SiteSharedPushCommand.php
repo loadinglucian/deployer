@@ -91,17 +91,22 @@ class SiteSharedPushCommand extends BaseCommand
         // Upload file
         // ----
 
+        $tempPath = '/tmp/deployer-upload-' . bin2hex(random_bytes(8));
+
         try {
             $this->io->promptSpin(
-                function () use ($server, $localPath, $remotePath, $remoteDir): void {
+                function () use ($server, $localPath, $remotePath, $remoteDir, $tempPath): void {
                     $this->runRemoteCommand($server, sprintf('mkdir -p %s', escapeshellarg($remoteDir)));
-                    $this->ssh->uploadFile($server, $localPath, $remotePath);
+                    $this->ssh->uploadFile($server, $localPath, $tempPath);
+                    $this->runRemoteCommand($server, sprintf('mv %s %s', escapeshellarg($tempPath), escapeshellarg($remotePath)));
                     $this->runRemoteCommand($server, sprintf('chown deployer:deployer %s', escapeshellarg($remotePath)));
                     $this->runRemoteCommand($server, sprintf('chmod 640 %s', escapeshellarg($remotePath)));
                 },
                 'Uploading file...'
             );
         } catch (\RuntimeException $e) {
+            // Clean up temp file on error
+            $this->ssh->executeCommand($server, sprintf('rm -f %s', escapeshellarg($tempPath)));
             $this->nay($e->getMessage());
 
             return Command::FAILURE;

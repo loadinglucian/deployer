@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Console\Supervisor;
 
+use DeployerPHP\Builders\SupervisorBuilder;
 use DeployerPHP\Contracts\BaseCommand;
-use DeployerPHP\DTOs\SupervisorDTO;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\PlaybooksTrait;
 use DeployerPHP\Traits\ServersTrait;
@@ -95,14 +95,14 @@ class SupervisorCreateCommand extends BaseCommand
             return $deets;
         }
 
-        $supervisor = new SupervisorDTO(
-            program: $deets['program'],
-            script: $deets['script'],
-            autostart: $deets['autostart'],
-            autorestart: $deets['autorestart'],
-            stopwaitsecs: $deets['stopwaitsecs'],
-            numprocs: $deets['numprocs'],
-        );
+        $supervisor = SupervisorBuilder::new()
+            ->program($deets['program'])
+            ->script($deets['script'])
+            ->autostart($deets['autostart'])
+            ->autorestart($deets['autorestart'])
+            ->stopwaitsecs($deets['stopwaitsecs'])
+            ->numprocs($deets['numprocs'])
+            ->build();
 
         $this->displaySupervisorDeets($supervisor);
 

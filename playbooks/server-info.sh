@@ -7,6 +7,7 @@
 #
 # Output:
 #   distro: ubuntu
+#   version: "24.04"
 #   family: debian
 #   permissions: root
 #   hardware:
@@ -116,6 +117,22 @@ detect_family() {
 	esac
 
 	echo "$family"
+}
+
+#
+# Detect Distribution Version
+# Returns: version string (e.g., "24.04" for Ubuntu, "12" for Debian)
+
+detect_version() {
+	local version='unknown'
+
+	if [[ -f /etc/os-release ]]; then
+		if grep -q '^VERSION_ID=' /etc/os-release; then
+			version=$(grep '^VERSION_ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"' | tr -d "'")
+		fi
+	fi
+
+	echo "$version"
 }
 
 #
@@ -245,13 +262,13 @@ detect_php_extensions() {
 get_nginx_metrics() {
 	# Check if Nginx is available
 	if ! command -v nginx > /dev/null 2>&1; then
-		echo "false"  # Not installed
+		echo "false" # Not installed
 		return
 	fi
 
 	# Check if Nginx is running
 	if ! systemctl is-active --quiet nginx 2> /dev/null; then
-		echo "true\tunknown\t0\t0\t0\t0"  # Installed but not running
+		echo "true\tunknown\t0\t0\t0\t0" # Installed but not running
 		return
 	fi
 
@@ -473,7 +490,7 @@ get_sites_config() {
 # ----
 
 main() {
-	local distro family permissions
+	local distro version family permissions
 	local cpu_cores ram_mb disk_type
 	local php_versions php_default
 
@@ -482,6 +499,7 @@ main() {
 
 	echo "→ Detecting distribution..."
 	distro=$(detect_distro)
+	version=$(detect_version)
 	family=$(detect_family "$distro")
 
 	echo "→ Checking permissions..."
@@ -547,6 +565,7 @@ main() {
 
 	if ! cat > "$DEPLOYER_OUTPUT_FILE" <<- EOF; then
 		distro: $distro
+		version: "$version"
 		family: $family
 		permissions: $permissions
 		hardware:

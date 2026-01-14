@@ -15,19 +15,29 @@ enum Distribution: string
     case DEBIAN = 'debian';
 
     // ----
+    // Version Support
+    // ----
+
+    /**
+     * Minimum supported Ubuntu version.
+     */
+    private const MIN_UBUNTU_VERSION = '24.04';
+
+    /**
+     * Minimum supported Debian version.
+     */
+    private const MIN_DEBIAN_VERSION = '12';
+
+    // ----
     // Codename Mappings
     // ----
 
     private const UBUNTU_CODENAMES = [
-        '20.04' => 'Focal Fossa',
-        '22.04' => 'Jammy Jellyfish',
         '24.04' => 'Noble Numbat',
         '26.04' => 'TBD',
     ];
 
     private const DEBIAN_CODENAMES = [
-        '10' => 'Buster',
-        '11' => 'Bullseye',
         '12' => 'Bookworm',
         '13' => 'Trixie',
         '14' => 'Forky',
@@ -84,6 +94,57 @@ enum Distribution: string
         return match ($this) {
             self::UBUNTU => 'ubuntu',
             self::DEBIAN => 'admin',
+        };
+    }
+
+    // ----
+    // Version Validation
+    // ----
+
+    /**
+     * Check if a version is supported for this distribution.
+     *
+     * Ubuntu only supports LTS versions (24.04+). LTS releases follow a
+     * predictable pattern: even years with .04 suffix (24.04, 26.04, 28.04...).
+     * Ondřej PHP PPA only publishes packages for LTS releases.
+     *
+     * Debian supports all stable versions 12+.
+     */
+    public function isValidVersion(string $version): bool
+    {
+        return match ($this) {
+            self::UBUNTU => $this->isUbuntuLts($version)
+                && version_compare($version, self::MIN_UBUNTU_VERSION, '>='),
+            self::DEBIAN => version_compare($version, self::MIN_DEBIAN_VERSION, '>='),
+        };
+    }
+
+    /**
+     * Check if a version string matches the Ubuntu LTS pattern.
+     *
+     * Ubuntu LTS releases follow a predictable pattern: even years with .04 suffix.
+     * Examples: 24.04, 26.04, 28.04 are LTS; 25.04, 25.10 are not.
+     */
+    private function isUbuntuLts(string $version): bool
+    {
+        // Pattern: YY.04 where YY is even (04, 06, 08... 22, 24, 26...)
+        if (1 !== preg_match('/^(\d{2})\.04$/', $version, $matches)) {
+            return false;
+        }
+
+        $year = (int) $matches[1];
+
+        return 0 === $year % 2;
+    }
+
+    /**
+     * Get human-readable description of supported versions.
+     */
+    public function supportedVersions(): string
+    {
+        return match ($this) {
+            self::UBUNTU => self::MIN_UBUNTU_VERSION . ' LTS or newer LTS releases',
+            self::DEBIAN => self::MIN_DEBIAN_VERSION . ' or newer',
         };
     }
 
