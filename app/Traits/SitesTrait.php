@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DeployerPHP\Traits;
 
+use DeployerPHP\Builders\SiteServerBuilder;
 use DeployerPHP\DTOs\ServerDTO;
 use DeployerPHP\DTOs\SiteDTO;
 use DeployerPHP\DTOs\SiteServerDTO;
@@ -275,7 +276,10 @@ trait SitesTrait
             return Command::FAILURE;
         }
 
-        return new SiteServerDTO($site, $server);
+        return SiteServerBuilder::new()
+            ->site($site)
+            ->server($server)
+            ->build();
     }
 
     // ----

@@ -47,12 +47,13 @@ deployer site:create
 
 You'll be prompted for:
 
-| Option          | Description                     |
-| --------------- | ------------------------------- |
-| `--server`      | Server from your inventory      |
-| `--domain`      | Site domain (e.g., example.com) |
-| `--php-version` | PHP version for this site       |
-| `--www-mode`    | WWW handling mode               |
+| Option          | Description                                                         |
+| --------------- | ------------------------------------------------------------------- |
+| `--server`      | Server from your inventory                                          |
+| `--domain`      | Site domain (e.g., example.com)                                     |
+| `--php-version` | PHP version for this site                                           |
+| `--www-mode`    | WWW handling mode                                                   |
+| `--web-root`    | Public directory relative to project (e.g., "public", "/" for root) |
 
 WWW handling options:
 
@@ -66,8 +67,12 @@ deployer site:create \
     --server=production \
     --domain=example.com \
     --php-version=8.3 \
-    --www-mode=redirect-to-root
+    --www-mode=redirect-to-root \
+    --web-root=public
 ```
+
+> [!NOTE]
+> The `--web-root` option specifies where Nginx should serve files from. Use `public` for Laravel/Symfony, `web` for Craft CMS, or `/` for WordPress and other applications that serve from the project root.
 
 This creates the directory structure at `/home/deployer/sites/example.com/`:
 
@@ -248,7 +253,23 @@ To view logs for a specific site, use the `server:logs` command with the `--site
 
 ## SSH Access
 
-The `site:ssh` command opens an SSH session directly in a site's directory. For full documentation, see [Site SSH Access](/docs/pro#site-ssh) in the Pro documentation.
+The `site:ssh` command opens an SSH session directly in a site's directory:
+
+```bash
+deployer site:ssh
+```
+
+You'll be prompted to select a site from your inventory. The session opens in the site's root directory (`/home/deployer/sites/{domain}/`) as the `deployer` user.
+
+| Option     | Description |
+| ---------- | ----------- |
+| `--domain` | Site domain |
+
+For automation:
+
+```bash
+deployer site:ssh --domain=example.com
+```
 
 <a name="rollbacks"></a>
 

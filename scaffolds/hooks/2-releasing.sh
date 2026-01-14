@@ -24,6 +24,8 @@ echo "→ Preparing release..."
 # Framework Detection
 # ----
 
+framework=""
+
 if [[ -f artisan ]]; then
 	framework="laravel"
 elif [[ -f bin/console ]]; then

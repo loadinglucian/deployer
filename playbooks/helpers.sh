@@ -249,12 +249,12 @@ detect_sshd_port() {
 #
 
 link_shared_resources() {
-	if [[ ! -d $SHARED_PATH ]]; then
+	if ! run_cmd test -d "$SHARED_PATH"; then
 		return 0
 	fi
 
 	local shared_items=()
-	mapfile -t shared_items < <(find "$SHARED_PATH" -mindepth 1 -maxdepth 1 -printf '%f\n') || true
+	mapfile -t shared_items < <(run_cmd find "$SHARED_PATH" -mindepth 1 -maxdepth 1 -printf '%f\n') || true
 
 	if ((${#shared_items[@]} == 0)); then
 		return 0
@@ -267,7 +267,7 @@ link_shared_resources() {
 		local release_item="${RELEASE_PATH}/${item}"
 
 		# Remove conflicting item from release if it exists
-		if [[ -e $release_item ]]; then
+		if run_cmd test -e "$release_item"; then
 			run_cmd rm -rf "$release_item" || fail "Failed to remove ${item} from release"
 		fi
 

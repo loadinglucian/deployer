@@ -27,15 +27,15 @@ TEST_KEY="${BATS_DIR}/fixtures/keys/id_test"
 
 # Available distros and their SSH ports
 # Add new distros here - tests will run against all of them
+# Note: Only Ubuntu LTS releases are supported (interim releases like 25.04 are not)
 declare -A DISTRO_PORTS=(
 	["ubuntu24"]="2222"
-	["ubuntu25"]="2224"
 	["debian12"]="2223"
 	["debian13"]="2225"
 )
 
 # Get ordered list of distro names
-DISTROS=("ubuntu24" "ubuntu25" "debian12" "debian13")
+DISTROS=("ubuntu24" "debian12" "debian13")
 
 # Source shared Lima core functions (LIMA_PREFIX, lima_instance_name, lima_is_running, lima_exists)
 # shellcheck source=lib/lima-core.bash
@@ -329,6 +329,75 @@ is_api_only_test() {
 	return 1
 }
 
+# Pro test providers
+PRO_PROVIDERS=("aws" "do")
+
+is_pro_test() {
+	local test_filter="$1"
+	[[ "$test_filter" == "pro" ]]
+}
+
+select_provider() {
+	echo "" > /dev/tty
+	echo -e "${BLUE}Select provider to test:${NC}" > /dev/tty
+	echo "" > /dev/tty
+
+	local options=("${PRO_PROVIDERS[@]}" "all")
+	local i=1
+
+	for opt in "${options[@]}"; do
+		if [[ "$opt" == "all" ]]; then
+			echo -e "  ${i}) ${opt} (run all providers sequentially)" > /dev/tty
+		else
+			echo -e "  ${i}) ${opt}" > /dev/tty
+		fi
+		((i++))
+	done
+
+	echo "" > /dev/tty
+	read -rp "Enter choice [1-${#options[@]}]: " choice < /dev/tty > /dev/tty
+
+	if [[ ! "$choice" =~ ^[0-9]+$ ]] || [[ "$choice" -lt 1 ]] || [[ "$choice" -gt ${#options[@]} ]]; then
+		echo -e "${RED}Invalid choice${NC}" > /dev/tty
+		exit 1
+	fi
+
+	local selected="${options[$((choice - 1))]}"
+	echo "" > /dev/tty
+	echo -e "${GREEN}Selected: ${selected}${NC}" > /dev/tty
+
+	echo "$selected"
+}
+
+run_pro_tests() {
+	local exit_code=0
+	local bats_opts=("--print-output-on-failure")
+
+	# Interactive provider selection
+	local selected
+	selected=$(select_provider)
+
+	echo ""
+	echo -e "${BLUE}Running Pro provisioning tests${NC}"
+	echo -e "${BLUE}(No VM required - tests against real cloud providers)${NC}"
+	echo ""
+
+	if [[ "$selected" == "all" ]]; then
+		for provider in "${PRO_PROVIDERS[@]}"; do
+			echo ""
+			echo -e "${BLUE}──────────────────────────────────${NC}"
+			echo -e "${BLUE} Testing provider: ${provider}${NC}"
+			echo -e "${BLUE}──────────────────────────────────${NC}"
+			echo ""
+			bats "${bats_opts[@]}" "${BATS_DIR}/pro-${provider}.bats" || exit_code=$?
+		done
+	else
+		bats "${bats_opts[@]}" "${BATS_DIR}/pro-${selected}.bats" || exit_code=$?
+	fi
+
+	return $exit_code
+}
+
 run_api_tests() {
 	local test_filter="$1"
 	local exit_code=0
@@ -441,6 +510,12 @@ run_tests() {
 	local test_filter="${1:-}"
 	local exit_code=0
 
+	# Pro tests with provider selection
+	if [[ "$test_filter" == "pro" ]]; then
+		run_pro_tests
+		return $?
+	fi
+
 	# API-only tests don't need VMs
 	if [[ -n "$test_filter" ]] && is_api_only_test "$test_filter"; then
 		run_api_tests "$test_filter"
@@ -491,6 +566,7 @@ show_usage() {
 	echo "Examples:"
 	echo "  $0 run            # Run all tests (interactive distro selection)"
 	echo "  $0 run server     # Run only server.bats"
+	echo "  $0 run pro        # Run pro tests (interactive provider selection)"
 	echo "  $0 run pro-aws    # Run AWS API tests (no VM needed)"
 	echo "  $0 run pro-do     # Run DigitalOcean API tests (no VM needed)"
 	echo "  $0 start          # Start all VMs"

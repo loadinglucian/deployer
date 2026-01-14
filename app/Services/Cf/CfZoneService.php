@@ -38,7 +38,7 @@ class CfZoneService extends BaseCfService
         }
 
         // Query API
-        $response = $this->request('GET', '/zones', [
+        $response = $this->request('GET', 'zones', [
             'query' => ['name' => $zoneOrDomain],
         ]);
 
@@ -74,7 +74,7 @@ class CfZoneService extends BaseCfService
         }
 
         // Query API for specific zone
-        $response = $this->request('GET', "/zones/{$zoneId}");
+        $response = $this->request('GET', "zones/{$zoneId}");
 
         /** @var array{name: string}|null $zone */
         $zone = $response['result'] ?? null;
@@ -91,11 +91,11 @@ class CfZoneService extends BaseCfService
     /**
      * Get all zones in account.
      *
-     * @return array<string, string> Zone name => zone ID
+     * @return array<string, string> Zone name => zone name (for promptSelect display)
      */
     public function getZones(): array
     {
-        $response = $this->request('GET', '/zones', [
+        $response = $this->request('GET', 'zones', [
             'query' => ['per_page' => 50],
         ]);
 
@@ -105,7 +105,7 @@ class CfZoneService extends BaseCfService
         $results = $response['result'] ?? [];
 
         foreach ($results as $zone) {
-            $zones[$zone['name']] = $zone['id'];
+            $zones[$zone['name']] = $zone['name'];
             $this->zoneCache[$zone['name']] = $zone['id'];
         }
 

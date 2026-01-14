@@ -205,16 +205,16 @@ class SiteSharedPullCommand extends BaseCommand
             sprintf('test -f %s', escapeshellarg($remotePath))
         );
 
-        if ($result['exit_code'] === 0) {
+        if (0 === $result['exit_code']) {
             return true;
         }
 
-        if ($result['exit_code'] === 1) {
+        if (1 === $result['exit_code']) {
             return false;
         }
 
         $output = trim((string) $result['output']);
-        $message = $output === '' ? "Failed checking remote file: {$remotePath}" : $output;
+        $message = '' === $output ? "Failed checking remote file: {$remotePath}" : $output;
 
         throw new \RuntimeException($message);
     }
