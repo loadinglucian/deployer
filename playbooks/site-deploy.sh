@@ -75,20 +75,17 @@ run_hook() {
 	local hook_name=$1
 	local hook_path="${DEPLOYER_RELEASE_PATH}/.deployer/hooks/${hook_name}"
 
-	if [[ ! -f $hook_path ]]; then
+	if ! run_cmd test -f "$hook_path"; then
 		return 0
 	fi
 
-	if [[ ! -x $hook_path ]]; then
-		chmod +x "$hook_path" || fail "Failed to make ${hook_name} hook executable"
-		run_as_deployer chmod +x "$hook_path" > /dev/null 2>&1 || true
+	if ! run_cmd test -x "$hook_path"; then
+		run_cmd chmod +x "$hook_path" || fail "Failed to make ${hook_name} hook executable"
 	fi
 
 	echo "→ Running ${hook_name} hook..."
 
-	cd "$DEPLOYER_RELEASE_PATH" || fail "Failed to change directory to release path"
-
-	if ! run_as_deployer "$hook_path"; then
+	if ! run_as_deployer bash -c "cd $(printf '%q' "$DEPLOYER_RELEASE_PATH") && $(printf '%q' "$hook_path")"; then
 		fail "${hook_name} hook failed"
 	fi
 }
@@ -140,7 +137,7 @@ prepare_directories() {
 	# Ensure directories are owned by deployer
 	run_cmd chown deployer:deployer "$SITE_ROOT" "${SITE_ROOT}/releases" "$SHARED_PATH" "$REPO_PATH" || fail "Failed to set directory ownership"
 
-	if [[ -e $CURRENT_PATH && ! -L $CURRENT_PATH ]]; then
+	if run_cmd test -e "$CURRENT_PATH" && ! run_cmd test -L "$CURRENT_PATH"; then
 		run_cmd rm -rf "$CURRENT_PATH" || fail "Failed to clean existing current path"
 	fi
 }
@@ -168,13 +165,13 @@ ensure_git_host_known() {
 		return 0
 	fi
 
-	if [[ ! -d /home/deployer/.ssh ]]; then
+	if ! run_cmd test -d /home/deployer/.ssh; then
 		run_cmd mkdir -p /home/deployer/.ssh
 		run_cmd chown deployer:deployer /home/deployer/.ssh
 		run_cmd chmod 700 /home/deployer/.ssh
 	fi
 
-	if [[ ! -f /home/deployer/.ssh/known_hosts ]]; then
+	if ! run_cmd test -f /home/deployer/.ssh/known_hosts; then
 		run_as_deployer touch /home/deployer/.ssh/known_hosts
 		run_cmd chmod 600 /home/deployer/.ssh/known_hosts
 	fi
@@ -194,7 +191,7 @@ ensure_git_host_known() {
 clone_or_update_repo() {
 	ensure_git_host_known
 
-	if [[ ! -d "${REPO_PATH}/objects" ]]; then
+	if ! run_cmd test -d "${REPO_PATH}/objects"; then
 		echo "→ Cloning repository..."
 		run_cmd rm -rf "$REPO_PATH" || true
 		if ! run_as_deployer git clone --bare "$DEPLOYER_SITE_REPO" "$REPO_PATH"; then
@@ -262,7 +259,7 @@ cleanup_releases() {
 	local releases=()
 	local total=0
 
-	mapfile -t releases < <(find "${SITE_ROOT}/releases" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort) || true
+	mapfile -t releases < <(run_cmd find "${SITE_ROOT}/releases" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort) || true
 	total=${#releases[@]}
 
 	if ((total <= DEPLOYER_KEEP_RELEASES)); then
@@ -348,7 +345,7 @@ create_runner_script() {
 
 	echo "→ Creating runner script..."
 
-	if ! cat > "$runner_path" <<- 'RUNNER_EOF'; then
+	if ! run_cmd tee "$runner_path" > /dev/null <<- 'RUNNER_EOF'; then
 		#!/usr/bin/env bash
 		set -o pipefail
 
