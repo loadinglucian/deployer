@@ -19,14 +19,14 @@ enum Distribution: string
     // ----
 
     /**
-     * Supported Ubuntu LTS versions.
-     *
-     * Ubuntu interim releases (e.g., 25.04) are not supported because
-     * the Ondřej PHP PPA only publishes packages for LTS releases.
-     *
-     * @var array<string>
+     * Minimum supported Ubuntu version.
      */
-    private const UBUNTU_LTS_VERSIONS = ['24.04', '26.04'];
+    private const MIN_UBUNTU_VERSION = '24.04';
+
+    /**
+     * Minimum supported Debian version.
+     */
+    private const MIN_DEBIAN_VERSION = '12';
 
     // ----
     // Codename Mappings
@@ -104,31 +104,48 @@ enum Distribution: string
     /**
      * Check if a version is supported for this distribution.
      *
-     * Ubuntu only supports LTS versions (24.04, 26.04).
-     * Debian supports all stable versions.
+     * Ubuntu only supports LTS versions (24.04+). LTS releases follow a
+     * predictable pattern: even years with .04 suffix (24.04, 26.04, 28.04...).
+     * Ondřej PHP PPA only publishes packages for LTS releases.
+     *
+     * Debian supports all stable versions 12+.
      */
     public function isValidVersion(string $version): bool
     {
         return match ($this) {
-            self::UBUNTU => in_array($version, self::UBUNTU_LTS_VERSIONS, true),
-            self::DEBIAN => true,
+            self::UBUNTU => $this->isUbuntuLts($version)
+                && version_compare($version, self::MIN_UBUNTU_VERSION, '>='),
+            self::DEBIAN => version_compare($version, self::MIN_DEBIAN_VERSION, '>='),
         };
     }
 
     /**
-     * Get supported versions for this distribution.
+     * Check if a version string matches the Ubuntu LTS pattern.
      *
-     * @return array<string>
+     * Ubuntu LTS releases follow a predictable pattern: even years with .04 suffix.
+     * Examples: 24.04, 26.04, 28.04 are LTS; 25.04, 25.10 are not.
      */
-    public function supportedVersions(): array
+    private function isUbuntuLts(string $version): bool
     {
-        /** @var array<string> $versions */
-        $versions = match ($this) {
-            self::UBUNTU => self::UBUNTU_LTS_VERSIONS,
-            self::DEBIAN => array_keys(self::DEBIAN_CODENAMES),
-        };
+        // Pattern: YY.04 where YY is even (04, 06, 08... 22, 24, 26...)
+        if (1 !== preg_match('/^(\d{2})\.04$/', $version, $matches)) {
+            return false;
+        }
 
-        return $versions;
+        $year = (int) $matches[1];
+
+        return 0 === $year % 2;
+    }
+
+    /**
+     * Get human-readable description of supported versions.
+     */
+    public function supportedVersions(): string
+    {
+        return match ($this) {
+            self::UBUNTU => self::MIN_UBUNTU_VERSION . ' LTS or newer LTS releases',
+            self::DEBIAN => self::MIN_DEBIAN_VERSION . ' or newer',
+        };
     }
 
     // ----

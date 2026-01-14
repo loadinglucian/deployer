@@ -253,8 +253,7 @@ trait ServersTrait
         $version = $info['version'] ?? 'unknown';
 
         if (! $distribution->isValidVersion($version)) {
-            $supported = implode(', ', $distribution->supportedVersions());
-            $this->info("DeployerPHP only supports {$distribution->displayName()} {$supported}.");
+            $this->info("DeployerPHP supports {$distribution->displayName()} {$distribution->supportedVersions()}.");
 
             if ('unknown' === $version) {
                 $this->out("Could not detect the {$distribution->displayName()} version.");
