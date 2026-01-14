@@ -72,6 +72,12 @@ class SshService
         ?callable $outputCallback = null,
         int $timeout = 300
     ): array {
+        // Mirror run_cmd() from helpers.sh - wrap with sudo if needed
+        $permissions = $server->info['permissions'] ?? null;
+        if ('sudo' === $permissions) {
+            $command = 'sudo -n ' . $command;
+        }
+
         $ssh = $this->createConnection($server);
 
         try {

@@ -183,8 +183,7 @@ class SiteSharedPushCommand extends BaseCommand
 
     private function runRemoteCommand(ServerDTO $server, string $command): void
     {
-        // Use sudo since SSH user may not have access to deployer-owned paths
-        $result = $this->ssh->executeCommand($server, 'sudo -n ' . $command);
+        $result = $this->ssh->executeCommand($server, $command);
         if (0 !== $result['exit_code']) {
             $output = trim((string) $result['output']);
             $message = '' === $output ? "Remote command failed: {$command}" : $output;

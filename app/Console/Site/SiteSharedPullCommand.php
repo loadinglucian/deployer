@@ -202,7 +202,7 @@ class SiteSharedPullCommand extends BaseCommand
     {
         $result = $this->ssh->executeCommand(
             $server,
-            sprintf('sudo -n test -f %s', escapeshellarg($remotePath))
+            sprintf('test -f %s', escapeshellarg($remotePath))
         );
 
         if (0 === $result['exit_code']) {
