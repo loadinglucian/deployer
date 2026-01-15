@@ -525,16 +525,16 @@ main() {
 	local php_fpm_yaml="" has_fpm_metrics=false
 	if [[ -n $php_versions ]]; then
 		IFS=',' read -ra version_array <<< "$php_versions"
-		for version in "${version_array[@]}"; do
+		for php_ver in "${version_array[@]}"; do
 			local fpm_metrics
-			fpm_metrics=$(get_php_fpm_metrics "$version")
+			fpm_metrics=$(get_php_fpm_metrics "$php_ver")
 
 			if [[ -n $fpm_metrics ]]; then
 				has_fpm_metrics=true
 				local pool pm uptime accepted queue idle active total max_children slow
 				IFS=$'\t' read -r pool pm uptime accepted queue idle active total max_children slow <<< "$fpm_metrics"
 
-				php_fpm_yaml+="  \"${version}\":
+				php_fpm_yaml+="  \"${php_ver}\":
     pool: ${pool}
     process_manager: ${pm}
     uptime_seconds: ${uptime}
@@ -583,15 +583,15 @@ main() {
 	# Add PHP versions with extensions
 	if [[ -n $php_versions ]]; then
 		IFS=',' read -ra version_array <<< "$php_versions"
-		for version in "${version_array[@]}"; do
+		for php_ver in "${version_array[@]}"; do
 			local extensions
-			extensions=$(detect_php_extensions "$version")
+			extensions=$(detect_php_extensions "$php_ver")
 
 			if ! cat >> "$DEPLOYER_OUTPUT_FILE" <<- EOF; then
-				    - version: "${version}"
+				    - version: "${php_ver}"
 				      extensions: [${extensions}]
 			EOF
-				echo "Error: Failed to write PHP version $version to $DEPLOYER_OUTPUT_FILE" >&2
+				echo "Error: Failed to write PHP version $php_ver to $DEPLOYER_OUTPUT_FILE" >&2
 				exit 1
 			fi
 		done
