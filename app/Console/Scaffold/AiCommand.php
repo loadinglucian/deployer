@@ -13,7 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'scaffold:ai',
-    description: 'Scaffold AI agent rules for DeployerPHP'
+    description: 'Scaffold AI agent skill for DeployerPHP'
 )]
 class AiCommand extends BaseCommand
 {
@@ -70,7 +70,7 @@ class AiCommand extends BaseCommand
     }
 
     /**
-     * Build target path for AI agent rules directory.
+     * Build target path for AI agent skills directory.
      *
      * @param array{agent: string} $context
      */
@@ -78,7 +78,7 @@ class AiCommand extends BaseCommand
     {
         $agentDir = self::AGENT_DIRS[$context['agent']];
 
-        return $this->fs->joinPaths($destinationDir, $agentDir, 'rules');
+        return $this->fs->joinPaths($destinationDir, $agentDir, 'skills', 'deployer-php');
     }
 
     /**
