@@ -232,7 +232,7 @@ trait PlaybooksTrait
             $yamlResult = $this->io->promptSpin(
                 callback: fn () => $this->ssh->executeCommand(
                     $server,
-                    sprintf('cat %s 2>/dev/null && rm -f %s', escapeshellarg($outputFile), escapeshellarg($outputFile)),
+                    sprintf('cat %s 2>/dev/null; rm -f %s 2>/dev/null', escapeshellarg($outputFile), escapeshellarg($outputFile)),
                     null,
                     30
                 ),
