@@ -3,12 +3,12 @@
 # ============================================================================
 #
 # Automatically cleans up preview sites when pull requests are closed.
-# Deletes the site, DNS record, and optionally the provisioned server.
+# Deletes the site and DNS record. The shared preview server remains available
+# for future PRs.
 #
 # HOW TO USE:
-# 1. Ensure ROOT_DOMAIN matches your preview-deploy.yml configuration
+# 1. Ensure ROOT_DOMAIN and SERVER_NAME match your preview-deploy.yml settings
 # 2. Uncomment the DNS provider block matching your preview-deploy.yml choice
-# 3. If using per-PR provisioned servers, uncomment the server deletion block
 #
 # ============================================================================
 # REQUIRED GITHUB SECRETS
@@ -29,6 +29,7 @@ env:
   # CONFIGURATION - Must match preview-deploy.yml settings
   # ==========================================================================
   ROOT_DOMAIN: "previews.example.com"
+  SERVER_NAME: "preview"
 
 jobs:
   cleanup:
@@ -188,60 +189,6 @@ jobs:
       #       --yes || echo "DNS record may not exist, continuing..."
 
       # ========================================================================
-      # SERVER DELETION (Optional - only if using per-PR provisioned servers)
-      # ========================================================================
-      #
-      # Uncomment ONE of these blocks if you're provisioning servers per-PR
-      # and want them deleted when the PR closes.
-      #
-      # WARNING: This permanently destroys the server and all data on it.
-      #
-
-      # ------------------------------------------------------------------------
-      # OPTION A: Delete AWS EC2 instance
-      # ------------------------------------------------------------------------
-      # Required secrets: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-      #
-      # - name: Delete AWS server
-      #   continue-on-error: true
-      #   env:
-      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     AWS_DEFAULT_REGION: us-east-1
-      #   run: |
-      #     SERVER_NAME="preview-${{ github.event.pull_request.number }}"
-      #     if deployer server:info --server="${SERVER_NAME}" &>/dev/null; then
-      #       deployer server:delete \
-      #         --server="${SERVER_NAME}" \
-      #         --force \
-      #         --yes
-      #       echo "Server ${SERVER_NAME} deleted successfully"
-      #     else
-      #       echo "Server ${SERVER_NAME} does not exist, skipping"
-      #     fi
-
-      # ------------------------------------------------------------------------
-      # OPTION B: Delete DigitalOcean droplet
-      # ------------------------------------------------------------------------
-      # Required secrets: DIGITALOCEAN_TOKEN
-      #
-      # - name: Delete DigitalOcean server
-      #   continue-on-error: true
-      #   env:
-      #     DIGITALOCEAN_TOKEN: ${{ secrets.DIGITALOCEAN_TOKEN }}
-      #   run: |
-      #     SERVER_NAME="preview-${{ github.event.pull_request.number }}"
-      #     if deployer server:info --server="${SERVER_NAME}" &>/dev/null; then
-      #       deployer server:delete \
-      #         --server="${SERVER_NAME}" \
-      #         --force \
-      #         --yes
-      #       echo "Server ${SERVER_NAME} deleted successfully"
-      #     else
-      #       echo "Server ${SERVER_NAME} does not exist, skipping"
-      #     fi
-
-      # ========================================================================
       # STATUS UPDATE
       # ========================================================================
 
@@ -284,11 +231,3 @@ jobs:
                 body: body
               });
             }
-
-      - name: Save inventory
-        if: always()
-        run: |
-          # Export updated inventory back to secret (for server/site removals)
-          cat ~/.deployer/inventory.json | base64 > /tmp/inventory.b64
-          echo "Updated inventory saved to /tmp/inventory.b64"
-          echo "Update DEPLOYER_INVENTORY secret with this content if resources were deleted."
