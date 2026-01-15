@@ -353,9 +353,22 @@ jobs:
 
       - name: Write .env from secrets
         run: |
-          deployer site:ssh \
-            --domain="${{ steps.subdomain.outputs.fqdn }}" \
-            --command="mkdir -p /home/deployer/sites/${{ steps.subdomain.outputs.fqdn }}/shared && echo '${{ secrets.APP_ENV_CONTENT }}' > /home/deployer/sites/${{ steps.subdomain.outputs.fqdn }}/shared/.env"
+          FQDN="${{ steps.subdomain.outputs.fqdn }}"
+
+          # Write secret to local temp file (no shell interpretation)
+          cat > /tmp/.env.preview << 'ENVEOF'
+          ${{ secrets.APP_ENV_CONTENT }}
+          ENVEOF
+
+          # Upload via SFTP (binary-safe, no quoting issues)
+          deployer site:shared:push \
+            --domain="${FQDN}" \
+            --local=/tmp/.env.preview \
+            --remote=.env \
+            --yes
+
+          # Clean up local temp file
+          rm -f /tmp/.env.preview
 
       - name: Deploy application
         run: |
