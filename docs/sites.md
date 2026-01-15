@@ -47,13 +47,13 @@ deployer site:create
 
 You'll be prompted for:
 
-| Option          | Description                                                         |
-| --------------- | ------------------------------------------------------------------- |
-| `--server`      | Server from your inventory                                          |
-| `--domain`      | Site domain (e.g., example.com)                                     |
-| `--php-version` | PHP version for this site                                           |
-| `--www-mode`    | WWW handling mode                                                   |
-| `--web-root`    | Public directory relative to project (e.g., "public", "/" for root) |
+| Option          | Description                                            |
+| --------------- | ------------------------------------------------------ |
+| `--server`      | Server from your inventory                             |
+| `--domain`      | Site domain (e.g., example.com)                        |
+| `--php-version` | PHP version for this site                              |
+| `--www-mode`    | WWW handling mode                                      |
+| `--web-root`    | Public directory relative to project (default: public) |
 
 WWW handling options:
 
