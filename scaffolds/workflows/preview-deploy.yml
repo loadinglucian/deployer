@@ -1,0 +1,464 @@
+# ============================================================================
+# PREVIEW DEPLOY WORKFLOW
+# ============================================================================
+#
+# Automatically deploys preview sites when pull requests are opened or updated.
+# Each PR gets its own subdomain: pr-{number}-{title}.{ROOT_DOMAIN}
+#
+# HOW TO USE:
+# 1. Edit the CONFIGURATION section below with your domain and preferences
+# 2. Uncomment ONE server selection block (existing server OR provision new)
+# 3. Uncomment ONE DNS provider block matching your DNS host
+# 4. Add required secrets to your GitHub repository settings
+#
+# ============================================================================
+# REQUIRED GITHUB SECRETS
+# ============================================================================
+#
+# For all configurations:
+#   DEPLOYER_SSH_KEY        - SSH private key for server access (deployer user)
+#   DEPLOYER_INVENTORY      - Base64-encoded inventory JSON (servers + sites)
+#   APP_ENV_CONTENT         - Full .env file contents for the application
+#
+# For AWS Route53 DNS:
+#   AWS_ACCESS_KEY_ID       - AWS access key with Route53 permissions
+#   AWS_SECRET_ACCESS_KEY   - AWS secret key
+#   AWS_ROUTE53_ZONE_ID     - Hosted zone ID for your preview domain
+#
+# For DigitalOcean DNS:
+#   DIGITALOCEAN_TOKEN      - DigitalOcean API token with DNS permissions
+#
+# For Cloudflare DNS:
+#   CLOUDFLARE_API_TOKEN    - Cloudflare API token with DNS edit permissions
+#   CLOUDFLARE_ZONE_ID      - Zone ID for your preview domain
+#
+# For AWS EC2 provisioning (optional):
+#   AWS_KEY_PAIR_NAME       - EC2 key pair name for SSH access
+#   AWS_VPC_ID              - VPC ID for the instance
+#   AWS_SUBNET_ID           - Subnet ID for the instance
+#
+# For DigitalOcean provisioning (optional):
+#   DIGITALOCEAN_SSH_KEY_ID - SSH key ID registered in DigitalOcean
+#
+# ============================================================================
+
+name: Preview Deploy
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+# Cancel any in-progress deployment when a new commit is pushed
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  # ==========================================================================
+  # CONFIGURATION - Edit these values for your project
+  # ==========================================================================
+  ROOT_DOMAIN: "previews.example.com"   # Your preview domain (PR subdomains created under this)
+  PHP_VERSION: "8.3"                     # PHP version for the site
+  WEB_ROOT: "public"                     # Public directory relative to project root
+  KEEP_RELEASES: "3"                     # Number of old releases to keep
+
+jobs:
+  deploy:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    outputs:
+      subdomain: ${{ steps.subdomain.outputs.subdomain }}
+      fqdn: ${{ steps.subdomain.outputs.fqdn }}
+      server_ip: ${{ steps.server.outputs.ip }}
+      server_name: ${{ steps.server.outputs.name }}
+
+    steps:
+      # ========================================================================
+      # SETUP
+      # ========================================================================
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, curl, zip
+          coverage: none
+
+      - name: Install DeployerPHP
+        run: composer global require deployer-php/deployer-php
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOYER_SSH_KEY }}" > ~/.ssh/deployer
+          chmod 600 ~/.ssh/deployer
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+
+      - name: Restore inventory
+        run: |
+          mkdir -p ~/.deployer
+          echo "${{ secrets.DEPLOYER_INVENTORY }}" | base64 -d > ~/.deployer/inventory.json
+
+      - name: Generate subdomain
+        id: subdomain
+        run: |
+          # Sanitize PR title for DNS-safe subdomain
+          TITLE="${{ github.event.pull_request.title }}"
+          SANITIZED=$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | \
+            sed 's/[^a-z0-9-]/-/g' | \
+            sed 's/--*/-/g' | \
+            sed 's/^-//' | \
+            sed 's/-$//' | \
+            cut -c1-30)
+          SUBDOMAIN="pr-${{ github.event.pull_request.number }}-${SANITIZED}"
+          FQDN="${SUBDOMAIN}.${{ env.ROOT_DOMAIN }}"
+
+          echo "subdomain=${SUBDOMAIN}" >> $GITHUB_OUTPUT
+          echo "fqdn=${FQDN}" >> $GITHUB_OUTPUT
+          echo "Preview will be deployed to: https://${FQDN}"
+
+      - name: Post initial status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `## Preview Deployment
+
+            | Status | Details |
+            |--------|---------|
+            | :hourglass: | Deployment in progress... |
+
+            **Branch:** \`${{ github.head_ref }}\`
+            **Commit:** \`${{ github.sha }}\`
+            **Domain:** \`${{ steps.subdomain.outputs.fqdn }}\``;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const botComment = comments.find(c =>
+              c.user.login === 'github-actions[bot]' &&
+              c.body.includes('## Preview Deployment')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+      # ========================================================================
+      # SERVER SELECTION - Uncomment ONE option below
+      # ========================================================================
+
+      # ------------------------------------------------------------------------
+      # OPTION A: Use existing server from inventory
+      # ------------------------------------------------------------------------
+      # Use this if you have a pre-configured server for all preview deployments.
+      # Set SERVER_NAME to match a server in your inventory.
+      #
+      # - name: Use existing server
+      #   id: server
+      #   run: |
+      #     SERVER_NAME="preview-server"  # Change to your server name
+      #     SERVER_IP=$(deployer server:info --server="${SERVER_NAME}" --json | jq -r '.host')
+      #     echo "name=${SERVER_NAME}" >> $GITHUB_OUTPUT
+      #     echo "ip=${SERVER_IP}" >> $GITHUB_OUTPUT
+      #     echo "provisioned=false" >> $GITHUB_OUTPUT
+
+      # ------------------------------------------------------------------------
+      # OPTION B: Provision new AWS EC2 instance per PR
+      # ------------------------------------------------------------------------
+      # Creates a new t3.micro instance for each PR. Instance is deleted when
+      # the PR is closed (see preview-cleanup.yml).
+      #
+      # Required secrets: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
+      #                   AWS_KEY_PAIR_NAME, AWS_VPC_ID, AWS_SUBNET_ID
+      #
+      # - name: Provision AWS server
+      #   id: server
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     AWS_DEFAULT_REGION: us-east-1
+      #   run: |
+      #     SERVER_NAME="preview-${{ github.event.pull_request.number }}"
+      #
+      #     # Check if server already exists (reopened PR)
+      #     if deployer server:info --server="${SERVER_NAME}" &>/dev/null; then
+      #       echo "Server ${SERVER_NAME} already exists, reusing..."
+      #       SERVER_IP=$(deployer server:info --server="${SERVER_NAME}" --json | jq -r '.host')
+      #     else
+      #       # Provision new server
+      #       deployer pro:aws:provision \
+      #         --name="${SERVER_NAME}" \
+      #         --instance-type=t3.micro \
+      #         --key-pair="${{ secrets.AWS_KEY_PAIR_NAME }}" \
+      #         --vpc="${{ secrets.AWS_VPC_ID }}" \
+      #         --subnet="${{ secrets.AWS_SUBNET_ID }}" \
+      #         --disk-size=8 \
+      #         --yes
+      #
+      #       # Install base packages
+      #       deployer server:install \
+      #         --server="${SERVER_NAME}" \
+      #         --php-version="${{ env.PHP_VERSION }}" \
+      #         --extensions=bcmath,curl,gd,intl,mbstring,mysql,redis,xml,zip \
+      #         --generate-deploy-key \
+      #         --yes
+      #
+      #       SERVER_IP=$(deployer server:info --server="${SERVER_NAME}" --json | jq -r '.host')
+      #     fi
+      #
+      #     echo "name=${SERVER_NAME}" >> $GITHUB_OUTPUT
+      #     echo "ip=${SERVER_IP}" >> $GITHUB_OUTPUT
+      #     echo "provisioned=true" >> $GITHUB_OUTPUT
+
+      # ------------------------------------------------------------------------
+      # OPTION C: Provision new DigitalOcean droplet per PR
+      # ------------------------------------------------------------------------
+      # Creates a new s-1vcpu-1gb droplet for each PR. Droplet is deleted when
+      # the PR is closed (see preview-cleanup.yml).
+      #
+      # Required secrets: DIGITALOCEAN_TOKEN, DIGITALOCEAN_SSH_KEY_ID
+      #
+      # - name: Provision DigitalOcean server
+      #   id: server
+      #   env:
+      #     DIGITALOCEAN_TOKEN: ${{ secrets.DIGITALOCEAN_TOKEN }}
+      #   run: |
+      #     SERVER_NAME="preview-${{ github.event.pull_request.number }}"
+      #
+      #     # Check if server already exists (reopened PR)
+      #     if deployer server:info --server="${SERVER_NAME}" &>/dev/null; then
+      #       echo "Server ${SERVER_NAME} already exists, reusing..."
+      #       SERVER_IP=$(deployer server:info --server="${SERVER_NAME}" --json | jq -r '.host')
+      #     else
+      #       # Provision new droplet
+      #       deployer pro:do:provision \
+      #         --name="${SERVER_NAME}" \
+      #         --size=s-1vcpu-1gb \
+      #         --region=nyc1 \
+      #         --ssh-key="${{ secrets.DIGITALOCEAN_SSH_KEY_ID }}" \
+      #         --yes
+      #
+      #       # Install base packages
+      #       deployer server:install \
+      #         --server="${SERVER_NAME}" \
+      #         --php-version="${{ env.PHP_VERSION }}" \
+      #         --extensions=bcmath,curl,gd,intl,mbstring,mysql,redis,xml,zip \
+      #         --generate-deploy-key \
+      #         --yes
+      #
+      #       SERVER_IP=$(deployer server:info --server="${SERVER_NAME}" --json | jq -r '.host')
+      #     fi
+      #
+      #     echo "name=${SERVER_NAME}" >> $GITHUB_OUTPUT
+      #     echo "ip=${SERVER_IP}" >> $GITHUB_OUTPUT
+      #     echo "provisioned=true" >> $GITHUB_OUTPUT
+
+      # ========================================================================
+      # DNS RECORD - Uncomment ONE provider below
+      # ========================================================================
+
+      # ------------------------------------------------------------------------
+      # OPTION A: AWS Route53
+      # ------------------------------------------------------------------------
+      # Required secrets: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ROUTE53_ZONE_ID
+      #
+      # - name: Set DNS record (Route53)
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     AWS_DEFAULT_REGION: us-east-1
+      #   run: |
+      #     deployer pro:aws:dns:set \
+      #       --zone="${{ secrets.AWS_ROUTE53_ZONE_ID }}" \
+      #       --type=A \
+      #       --name="${{ steps.subdomain.outputs.subdomain }}" \
+      #       --value="${{ steps.server.outputs.ip }}" \
+      #       --ttl=300
+
+      # ------------------------------------------------------------------------
+      # OPTION B: DigitalOcean DNS
+      # ------------------------------------------------------------------------
+      # Required secrets: DIGITALOCEAN_TOKEN
+      #
+      # - name: Set DNS record (DigitalOcean)
+      #   env:
+      #     DIGITALOCEAN_TOKEN: ${{ secrets.DIGITALOCEAN_TOKEN }}
+      #   run: |
+      #     deployer pro:do:dns:set \
+      #       --zone="${{ env.ROOT_DOMAIN }}" \
+      #       --type=A \
+      #       --name="${{ steps.subdomain.outputs.subdomain }}" \
+      #       --value="${{ steps.server.outputs.ip }}" \
+      #       --ttl=300
+
+      # ------------------------------------------------------------------------
+      # OPTION C: Cloudflare
+      # ------------------------------------------------------------------------
+      # Required secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ZONE_ID
+      #
+      # - name: Set DNS record (Cloudflare)
+      #   env:
+      #     CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      #   run: |
+      #     deployer pro:cf:dns:set \
+      #       --zone="${{ secrets.CLOUDFLARE_ZONE_ID }}" \
+      #       --type=A \
+      #       --name="${{ steps.subdomain.outputs.subdomain }}" \
+      #       --value="${{ steps.server.outputs.ip }}" \
+      #       --ttl=1 \
+      #       --no-proxied
+
+      # ========================================================================
+      # SITE DEPLOYMENT
+      # ========================================================================
+
+      - name: Wait for DNS propagation
+        run: |
+          echo "Waiting 30 seconds for DNS propagation..."
+          sleep 30
+
+      - name: Create site
+        run: |
+          # Check if site already exists (redeployment)
+          if deployer site:info --domain="${{ steps.subdomain.outputs.fqdn }}" &>/dev/null; then
+            echo "Site already exists, skipping creation..."
+          else
+            deployer site:create \
+              --domain="${{ steps.subdomain.outputs.fqdn }}" \
+              --server="${{ steps.server.outputs.name }}" \
+              --php-version="${{ env.PHP_VERSION }}" \
+              --www-mode=redirect-to-root \
+              --web-root="${{ env.WEB_ROOT }}"
+          fi
+
+      - name: Write .env from secrets
+        run: |
+          deployer site:ssh \
+            --domain="${{ steps.subdomain.outputs.fqdn }}" \
+            --command="mkdir -p /home/deployer/sites/${{ steps.subdomain.outputs.fqdn }}/shared && echo '${{ secrets.APP_ENV_CONTENT }}' > /home/deployer/sites/${{ steps.subdomain.outputs.fqdn }}/shared/.env"
+
+      - name: Deploy application
+        run: |
+          deployer site:deploy \
+            --domain="${{ steps.subdomain.outputs.fqdn }}" \
+            --repo="${{ github.event.repository.ssh_url }}" \
+            --branch="${{ github.head_ref }}" \
+            --keep-releases="${{ env.KEEP_RELEASES }}" \
+            --yes
+
+      - name: Enable HTTPS
+        run: |
+          # Skip if already has HTTPS
+          if deployer site:info --domain="${{ steps.subdomain.outputs.fqdn }}" --json | jq -e '.https' &>/dev/null; then
+            echo "HTTPS already enabled, skipping..."
+          else
+            deployer site:https \
+              --domain="${{ steps.subdomain.outputs.fqdn }}" \
+              --yes
+          fi
+
+      # ========================================================================
+      # STATUS UPDATE
+      # ========================================================================
+
+      - name: Post success status
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `## Preview Deployment
+
+            | Status | URL |
+            |--------|-----|
+            | :white_check_mark: Deployed | https://${{ steps.subdomain.outputs.fqdn }} |
+
+            **Branch:** \`${{ github.head_ref }}\`
+            **Commit:** \`${{ github.sha }}\`
+            **Server:** \`${{ steps.server.outputs.name }}\` (\`${{ steps.server.outputs.ip }}\`)
+
+            ---
+            _Preview will be automatically cleaned up when this PR is closed._`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const botComment = comments.find(c =>
+              c.user.login === 'github-actions[bot]' &&
+              c.body.includes('## Preview Deployment')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            }
+
+      - name: Post failure status
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `## Preview Deployment
+
+            | Status | Details |
+            |--------|---------|
+            | :x: Failed | See [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
+
+            **Branch:** \`${{ github.head_ref }}\`
+            **Commit:** \`${{ github.sha }}\``;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const botComment = comments.find(c =>
+              c.user.login === 'github-actions[bot]' &&
+              c.body.includes('## Preview Deployment')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            }
+
+      - name: Save inventory
+        if: always()
+        run: |
+          # Export updated inventory back to secret (for server/site additions)
+          # Note: You'll need to manually update the DEPLOYER_INVENTORY secret
+          # with the new base64-encoded inventory if servers were provisioned.
+          cat ~/.deployer/inventory.json | base64 > /tmp/inventory.b64
+          echo "Updated inventory saved to /tmp/inventory.b64"
+          echo "If you provisioned a new server, update DEPLOYER_INVENTORY secret with this content."
