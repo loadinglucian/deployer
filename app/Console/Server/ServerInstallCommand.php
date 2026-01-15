@@ -40,6 +40,7 @@ class ServerInstallCommand extends BaseCommand
         $this->addOption('php-version', null, InputOption::VALUE_REQUIRED, 'PHP version to install');
         $this->addOption('php-default', null, InputOption::VALUE_NEGATABLE, 'Set as default PHP version');
         $this->addOption('php-extensions', null, InputOption::VALUE_REQUIRED, 'Comma-separated PHP extensions');
+        $this->addOption('timezone', null, InputOption::VALUE_REQUIRED, 'Server timezone (e.g., America/New_York)');
     }
 
     // ----
@@ -92,6 +93,19 @@ class ServerInstallCommand extends BaseCommand
         if (is_int($result)) {
             return $result;
         }
+
+        //
+        // Configure timezone
+        // ----
+
+        $timezoneResult = $this->configureTimezone($server);
+
+        if (is_int($timezoneResult)) {
+            return $timezoneResult;
+        }
+
+        /** @var array{timezone: string} $timezoneResult */
+        $timezone = $timezoneResult['timezone'];
 
         //
         // Install PHP
@@ -159,6 +173,7 @@ class ServerInstallCommand extends BaseCommand
 
         $replayOptions = [
             'server' => $server->name,
+            'timezone' => $timezone,
             'php-version' => $phpVersion,
             'php-extensions' => $phpExtensions,
         ];
@@ -288,6 +303,148 @@ class ServerInstallCommand extends BaseCommand
             'deploy_key_path' => $deployKeyPath,
             'deploy_public_key' => $deployPublicKey,
         ];
+    }
+
+    //
+    // Timezone Configuration
+    // ----
+
+    /**
+     * Common timezones shown in the initial prompt.
+     *
+     * @var array<string, string>
+     */
+    private const COMMON_TIMEZONES = [
+        'UTC' => 'UTC (Recommended)',
+        'America/New_York' => 'America/New_York (US Eastern)',
+        'America/Chicago' => 'America/Chicago (US Central)',
+        'America/Denver' => 'America/Denver (US Mountain)',
+        'America/Los_Angeles' => 'America/Los_Angeles (US Pacific)',
+        'Europe/London' => 'Europe/London',
+        'Europe/Paris' => 'Europe/Paris',
+        'Europe/Berlin' => 'Europe/Berlin',
+        'Asia/Tokyo' => 'Asia/Tokyo',
+        'Asia/Shanghai' => 'Asia/Shanghai',
+        'Australia/Sydney' => 'Australia/Sydney',
+        'other' => 'Other...',
+    ];
+
+    /**
+     * Configure server timezone.
+     *
+     * Prompts user to select from common timezones or enter a custom one.
+     * Executes timezone-configure playbook to apply the setting.
+     *
+     * @return array{timezone: string}|int Returns array with timezone, or int on failure
+     */
+    private function configureTimezone(ServerDTO $server): array|int
+    {
+        try {
+            $timezone = $this->io->getValidatedOptionOrPrompt(
+                'timezone',
+                fn ($validate) => $this->promptTimezoneSelection($server, $validate),
+                fn ($value) => $this->validateTimezoneInput($value)
+            );
+        } catch (ValidationException $e) {
+            $this->nay($e->getMessage());
+
+            return Command::FAILURE;
+        }
+
+        /** @var string $timezone */
+
+        //
+        // Execute playbook
+        // ----
+
+        $result = $this->executePlaybook(
+            $server,
+            'timezone-configure',
+            'Configuring timezone...',
+            [
+                'DEPLOYER_TIMEZONE' => $timezone,
+            ],
+        );
+
+        if (is_int($result)) {
+            return $result;
+        }
+
+        return [
+            'timezone' => $timezone,
+        ];
+    }
+
+    /**
+     * Prompt user to select a timezone.
+     *
+     * Shows common timezones first, with "Other" option to fetch full list from server.
+     *
+     * @param callable|null $validate Validation callback
+     * @return string Selected timezone
+     */
+    private function promptTimezoneSelection(ServerDTO $server, ?callable $validate): string
+    {
+        /** @var string $choice */
+        $choice = $this->io->promptSelect(
+            label: 'Server timezone:',
+            options: self::COMMON_TIMEZONES,
+            default: 'UTC',
+        );
+
+        if ('other' !== $choice) {
+            // Run validation on the selected common timezone
+            if (null !== $validate) {
+                /** @var string|null $error */
+                $error = $validate($choice);
+                if (null !== $error) {
+                    $this->nay($error);
+
+                    return $this->promptTimezoneSelection($server, $validate);
+                }
+            }
+
+            return $choice;
+        }
+
+        //
+        // Fetch full timezone list from server
+        // ----
+
+        $this->info('Fetching available timezones from server...');
+
+        /** @var array{timezones?: array<int, string>}|int $result */
+        $result = $this->executePlaybook(
+            $server,
+            'timezone-list',
+            'Listing timezones...',
+        );
+
+        if (is_int($result)) {
+            $this->warn('Could not fetch timezone list, using common timezones only');
+
+            return $this->promptTimezoneSelection($server, $validate);
+        }
+
+        /** @var array<int, string> $allTimezones */
+        $allTimezones = $result['timezones'] ?? [];
+
+        if ([] === $allTimezones) {
+            $this->warn('No timezones returned from server, using common timezones only');
+
+            return $this->promptTimezoneSelection($server, $validate);
+        }
+
+        $timezone = $this->io->promptSelect(
+            label: 'Select timezone:',
+            options: $allTimezones,
+            default: 'UTC',
+            scroll: 15,
+            validate: $validate
+        );
+
+        /** @var string $timezone */
+        return $timezone;
     }
 
     //
@@ -522,6 +679,35 @@ class ServerInstallCommand extends BaseCommand
     // ----
     // Validation
     // ----
+
+    /**
+     * Validate timezone input.
+     *
+     * Validates that the timezone is a valid IANA timezone identifier.
+     *
+     * @return string|null Error message if invalid, null if valid
+     */
+    private function validateTimezoneInput(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return 'Timezone must be a string';
+        }
+
+        $value = trim($value);
+
+        if ('' === $value) {
+            return 'Timezone cannot be empty';
+        }
+
+        // Check against PHP's timezone database (IANA timezones)
+        $validTimezones = \DateTimeZone::listIdentifiers();
+
+        if (! in_array($value, $validTimezones, true)) {
+            return "Invalid timezone '{$value}'. Use IANA format (e.g., America/New_York, UTC)";
+        }
+
+        return null;
+    }
 
     /**
      * Validate PHP version selection.

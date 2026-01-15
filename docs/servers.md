@@ -61,9 +61,10 @@ The `server:install` command prepares a fresh server for hosting PHP application
 deployer server:install
 ```
 
-This installs:
+This installs and configures:
 
 - **Base packages** - git, curl, unzip, and essential utilities
+- **System timezone** - Ensures consistent timestamps across services
 - **Nginx** - Web server with optimized configuration
 - **PHP** - Your selected version with extensions
 - **Bun** - JavaScript runtime for building assets
@@ -74,6 +75,7 @@ Options:
 | Option                  | Description                                                      |
 | ----------------------- | ---------------------------------------------------------------- |
 | `--server`              | Server name from inventory                                       |
+| `--timezone`            | System timezone (e.g., America/New_York, UTC)                    |
 | `--php-version`         | PHP version to install (e.g., 8.3)                               |
 | `--php-extensions`      | Comma-separated list of extensions                               |
 | `--php-default`         | Set as default PHP version (use `--no-php-default` to skip)      |
@@ -85,10 +87,13 @@ Example with options:
 ```bash
 deployer server:install \
     --server=production \
+    --timezone=America/New_York \
     --php-version=8.3 \
     --php-extensions=redis,imagick,gd \
     --generate-deploy-key
 ```
+
+When running interactively, you'll be prompted to select from common timezones (UTC, major US/EU/Asia cities) or choose "Other" to see the full list of available timezones on the server.
 
 > [!NOTE]
 > After installation, the command displays the server's public key. Add this key to your Git provider to enable access to your repositories.
