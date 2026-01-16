@@ -11,4 +11,7 @@ return RectorConfig::configure()
         __DIR__.'/tests',
     ])
     ->withCache(sys_get_temp_dir() . '/rector')
-    ->withPhpSets();
+    ->withPhpSets()
+    ->withSkip([
+        __DIR__.'/tests/CICanary.php',
+    ]);

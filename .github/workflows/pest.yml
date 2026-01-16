@@ -18,8 +18,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup PHP and install Composer dependencies
-        uses: ./.github/actions/php-setup-composer
+      - name: Setup PHP and Composer
+        uses: ./.github/actions/setup-php-composer
+        with:
+          coverage: "true"
 
       - name: Run tests with coverage
-        run: vendor/bin/pest --parallel --coverage
+        run: vendor/bin/pest --parallel --coverage --coverage-text

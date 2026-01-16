@@ -5,5 +5,6 @@
             "sort_algorithm": "alpha"
         },
         "no_unused_imports": true
-    }
+    },
+    "notName": ["CICanary.php"]
 }

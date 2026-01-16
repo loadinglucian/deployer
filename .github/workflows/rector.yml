@@ -18,8 +18,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup PHP and install Composer dependencies
-        uses: ./.github/actions/php-setup-composer
+      - name: Setup PHP and Composer
+        uses: ./.github/actions/setup-php-composer
 
       - run: mkdir -p /tmp/rector
 

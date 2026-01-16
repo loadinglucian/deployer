@@ -1,0 +1,27 @@
+name: 'Setup PHP and Composer'
+description: 'Sets up PHP with required extensions and installs Composer dependencies with caching'
+
+inputs:
+  php-version:
+    description: 'PHP version to setup'
+    required: false
+    default: '8.2'
+  coverage:
+    description: 'Enable xdebug for coverage collection'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.php-version }}
+        extensions: json, mbstring, yaml${{ inputs.coverage == 'true' && ', xdebug' || '' }}
+        coverage: ${{ inputs.coverage == 'true' && 'xdebug' || 'none' }}
+
+    - name: Install Composer dependencies (cached)
+      uses: ramsey/composer-install@v3
+      with:
+        composer-options: --no-interaction --no-progress --prefer-dist --no-ansi --no-scripts
