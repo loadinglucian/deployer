@@ -9,6 +9,10 @@ updates:
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
+    groups:
+      actions:
+        patterns:
+          - '*'
 
   - package-ecosystem: 'composer'
     directory: '/'
@@ -23,6 +27,10 @@ updates:
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
+    groups:
+      php-dependencies:
+        patterns:
+          - '*'
 
   - package-ecosystem: 'npm'
     directory: '/'
@@ -36,3 +44,7 @@ updates:
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
+    groups:
+      npm-dependencies:
+        patterns:
+          - '*'
