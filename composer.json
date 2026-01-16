@@ -53,7 +53,7 @@
             "composer pint && composer pstan && composer rect && composer pest"
         ],
         "pest": [
-            "vendor/bin/pest --parallel --coverage"
+            "vendor/bin/pest --parallel --coverage --coverage-text"
         ],
         "pint": [
             "vendor/bin/pint --parallel"
