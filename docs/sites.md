@@ -3,29 +3,31 @@
 - [Introduction](#introduction)
 - [Creating a Site](#creating-a-site)
 - [Deploying a Site](#deploying-a-site)
-  - [Deployment Hooks](#deployment-hooks)
-  - [Release Management](#release-management)
+    - [Deployment Hooks](#deployment-hooks)
+    - [Release Management](#release-management)
 - [Enabling HTTPS](#enabling-https)
 - [Shared Files](#shared-files)
-  - [Pushing Files](#pushing-files)
-  - [Pulling Files](#pulling-files)
+    - [Pushing Files](#pushing-files)
+    - [Pulling Files](#pulling-files)
 - [Viewing Logs](#viewing-logs)
 - [SSH Access](#ssh-access)
 - [Rollbacks](#rollbacks)
 - [Deleting a Site](#deleting-a-site)
 - [Cron Jobs](#cron-jobs)
-  - [Creating Cron Jobs](#creating-cron-jobs)
-  - [Syncing Cron Jobs](#syncing-cron-jobs)
-  - [Deleting Cron Jobs](#deleting-cron-jobs)
+    - [Creating Cron Jobs](#creating-cron-jobs)
+    - [Syncing Cron Jobs](#syncing-cron-jobs)
+    - [Deleting Cron Jobs](#deleting-cron-jobs)
 - [Supervisor Processes](#supervisor-processes)
-  - [Creating Processes](#creating-processes)
-  - [Managing Processes](#managing-processes)
-  - [Syncing Processes](#syncing-processes)
-  - [Deleting Processes](#deleting-processes)
+    - [Creating Processes](#creating-processes)
+    - [Managing Processes](#managing-processes)
+    - [Syncing Processes](#syncing-processes)
+    - [Deleting Processes](#deleting-processes)
 - [Scaffolding](#scaffolding)
-  - [Scaffolding Hooks](#scaffolding-hooks)
-  - [Scaffolding Crons](#scaffolding-crons)
-  - [Scaffolding Supervisors](#scaffolding-supervisors)
+    - [Scaffolding Hooks](#scaffolding-hooks)
+    - [Scaffolding Crons](#scaffolding-crons)
+    - [Scaffolding Supervisors](#scaffolding-supervisors)
+    - [Scaffolding AI Rules](#scaffolding-ai-rules)
+    - [Scaffolding Workflows](#scaffolding-workflows)
 
 <a name="introduction"></a>
 
@@ -477,7 +479,16 @@ Options:
 
 ## Scaffolding
 
-Scaffolding commands generate the `.deployer/` directory structure in your project. All scaffold commands accept a `--destination` option to specify the project root directory (defaults to current directory).
+Scaffolding commands generate the `.deployer/` directory structure in your project.
+
+All scaffold commands accept these common options:
+
+| Option          | Description                                  |
+| --------------- | -------------------------------------------- |
+| `--destination` | Project root directory (defaults to current) |
+| `--force`, `-f` | Overwrite existing files                     |
+
+Without `--force`, existing files are skipped. With `--force`, existing files are overwritten.
 
 <a name="scaffolding-hooks"></a>
 
@@ -541,4 +552,53 @@ For automation:
 
 ```bash
 deployer scaffold:supervisors --destination=/path/to/project
+```
+
+<a name="scaffolding-ai-rules"></a>
+
+### Scaffolding AI Rules
+
+```bash
+deployer scaffold:ai
+```
+
+This command scaffolds AI agent skills for DeployerPHP into your project. You'll be prompted for:
+
+- **Destination directory** - Project root (defaults to current directory)
+- **Agent** - Which AI agent to target (claude, cursor, or codex)
+
+The command auto-detects existing AI agent directories (`.claude/`, `.cursor/`, `.codex/`). If one exists, it uses that automatically. If multiple exist, you'll be prompted to choose.
+
+| Option          | Description                      |
+| --------------- | -------------------------------- |
+| `--destination` | Project root directory           |
+| `--agent`       | AI agent (claude, cursor, codex) |
+| `--force`, `-f` | Overwrite existing files         |
+
+For automation:
+
+```bash
+deployer scaffold:ai --agent=claude --destination=/path/to/project
+```
+
+<a name="scaffolding-workflows"></a>
+
+### Scaffolding Workflows
+
+```bash
+deployer scaffold:workflows
+```
+
+This command scaffolds GitHub workflow files for automated preview site deployments:
+
+```
+.github/
+└── workflows/
+    └── (workflow files)
+```
+
+For automation:
+
+```bash
+deployer scaffold:workflows --destination=/path/to/project --force
 ```
