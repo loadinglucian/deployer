@@ -41,6 +41,7 @@ trait ScaffoldsTrait
     protected function configureScaffoldOptions(): void
     {
         $this->addOption('destination', null, InputOption::VALUE_REQUIRED, 'Project root directory');
+        $this->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite existing files');
     }
 
     // ----
@@ -135,7 +136,13 @@ trait ScaffoldsTrait
      */
     protected function buildReplayOptions(string $destinationDir, array $context): array
     {
-        return ['destination' => $destinationDir];
+        /** @var bool $force */
+        $force = $this->io->getOptionValue('force');
+
+        return [
+            'destination' => $destinationDir,
+            'force' => $force,
+        ];
     }
 
     // ----
@@ -175,7 +182,7 @@ trait ScaffoldsTrait
      * Copy template files to destination.
      *
      * @param array<string, mixed> $context
-     * @return array<string, string> Status map (filename => 'created'|'skipped')
+     * @return array<string, string> Status map (filename => 'created'|'overwritten'|'skipped')
      * @throws \RuntimeException If templates not found or file operations fail
      */
     protected function copyTemplates(string $type, string $targetDir, array $context): array
@@ -192,6 +199,9 @@ trait ScaffoldsTrait
         $entries = $this->fs->scanDirectory($scaffoldsPath);
         $status = [];
 
+        /** @var bool $force */
+        $force = $this->io->getOptionValue('force');
+
         foreach ($entries as $entry) {
             $source = $this->fs->joinPaths($scaffoldsPath, $entry);
             $target = $this->fs->joinPaths($targetDir, $entry);
@@ -200,11 +210,13 @@ trait ScaffoldsTrait
                 continue;
             }
 
-            if ($this->fs->exists($target) || $this->fs->isLink($target)) {
+            $exists = $this->fs->exists($target) || $this->fs->isLink($target);
+
+            if ($exists && ! $force) {
                 $status[$entry] = 'skipped';
             } else {
                 $this->fs->dumpFile($target, $this->fs->readFile($source));
-                $status[$entry] = 'created';
+                $status[$entry] = $exists ? 'overwritten' : 'created';
             }
         }
 
