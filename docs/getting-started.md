@@ -18,14 +18,33 @@ This guide will walk you through setting up a new server and deploying your firs
 
 ## Installation
 
-You can install DeployerPHP via Composer as either a global dependency or a per-project dependency:
+You can install DeployerPHP via Composer as either a per-project dependency or a global dependency:
+
+### Per-Project Installation
 
 ```shell
-# Global installation (recommended)
-composer global require loadinglucian/deployer-php
-
-# Or as a project dependency
 composer require loadinglucian/deployer-php
+```
+
+Run DeployerPHP via the vendor bin:
+
+```shell
+./vendor/bin/deployer list
+```
+
+> [!TIP]
+> For convenience, create a shell alias:
+>
+> ```shell
+> alias deployer="./vendor/bin/deployer"
+> ```
+>
+> Add this to your shell profile (`~/.bashrc`, `~/.zshrc`) to make it permanent.
+
+### Global Installation
+
+```shell
+composer global require loadinglucian/deployer-php
 ```
 
 > [!NOTE]
@@ -35,12 +54,6 @@ If installed globally, you can run DeployerPHP from anywhere:
 
 ```shell
 deployer list
-```
-
-If installed as a project dependency, you can run DeployerPHP via the vendor bin inside your project:
-
-```shell
-./vendor/bin/deployer list
 ```
 
 <a name="requirements"></a>
