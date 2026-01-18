@@ -214,6 +214,29 @@ trait SitesTrait
      */
     protected function selectSiteDeets(): SiteDTO|int
     {
+        //
+        // If specific site requested via option, validate it exists first
+
+        /** @var string|null $requestedDomain */
+        $requestedDomain = $this->io->getOptionValue('domain');
+
+        if (null !== $requestedDomain) {
+            $site = $this->sites->findByDomain($requestedDomain);
+
+            if (null === $site) {
+                $this->nay("Site '{$requestedDomain}' not found in inventory");
+
+                return Command::FAILURE;
+            }
+
+            $this->displaySiteDeets($site);
+
+            return $site;
+        }
+
+        //
+        // No specific site requested - check if inventory is empty
+
         $allSites = $this->ensureSitesAvailable();
 
         if (is_int($allSites)) {

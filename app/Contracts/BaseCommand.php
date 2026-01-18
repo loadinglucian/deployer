@@ -222,10 +222,12 @@ abstract class BaseCommand extends Command
 
     /**
      * Display a message with an error symbol.
+     *
+     * Errors always display, even in quiet mode.
      */
     protected function nay(string $message): void
     {
-        $this->out("<|red>✗ {$message}</>");
+        $this->out("<|red>✗ {$message}</>", force: true);
     }
 
     /**
@@ -264,10 +266,11 @@ abstract class BaseCommand extends Command
      * This wrapper for Symfony's ConsoleOutput::out() method.
      *
      * @param string|iterable<string> $lines
+     * @param bool $force Force output even in quiet mode (e.g., for errors)
      */
-    protected function out(string|iterable $lines): void
+    protected function out(string|iterable $lines, bool $force = false): void
     {
-        $this->io->out($lines);
+        $this->io->out($lines, $force);
     }
 
     /**
