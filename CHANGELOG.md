@@ -1,6 +1,9 @@
 # Changelog
 
-All notable changes documented per [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+## [1.0.1] - 2026-01-18
+
+### Fixed
+- Improved error messages for missing items: when a CLI option specifies a resource that doesn't exist (e.g., `--server=foo`), users now get a specific, targeted error message instead of a generic inventory-based message
 
 ## [1.0.0] - 2026-01-17
 
