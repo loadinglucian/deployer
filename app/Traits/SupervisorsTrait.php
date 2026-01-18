@@ -76,6 +76,27 @@ trait SupervisorsTrait
      */
     protected function selectSupervisor(SiteDTO $site): SupervisorDTO|int
     {
+        //
+        // If specific supervisor requested via option, validate it exists first
+
+        /** @var string|null $requestedProgram */
+        $requestedProgram = $this->io->getOptionValue('program');
+
+        if (null !== $requestedProgram) {
+            foreach ($site->supervisors as $supervisor) {
+                if ($supervisor->program === $requestedProgram) {
+                    return $supervisor;
+                }
+            }
+
+            $this->nay("Supervisor program '{$requestedProgram}' not found for site '{$site->domain}'");
+
+            return Command::FAILURE;
+        }
+
+        //
+        // No specific supervisor requested - check if site has any supervisors
+
         $allSupervisors = $this->ensureSupervisorsAvailable($site);
 
         if (is_int($allSupervisors)) {

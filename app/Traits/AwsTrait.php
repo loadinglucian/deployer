@@ -116,9 +116,42 @@ trait AwsTrait
     protected function selectAwsKey(): array|int
     {
         //
-        // Get all keys
+        // Check if specific key requested via option
 
-        $availableKeys = $this->ensureAwsKeysAvailable();
+        /** @var string|null $requestedKey */
+        $requestedKey = $this->io->getOptionValue('key');
+
+        //
+        // Fetch available keys from AWS
+
+        try {
+            $availableKeys = $this->aws->account->getPublicKeys();
+        } catch (\RuntimeException $e) {
+            $this->nay('Failed to retrieve EC2 key pairs: ' . $e->getMessage());
+
+            return Command::FAILURE;
+        }
+
+        //
+        // If specific key requested, validate it exists
+
+        if (null !== $requestedKey) {
+            if (!isset($availableKeys[$requestedKey])) {
+                $this->nay("EC2 key pair '{$requestedKey}' not found in your AWS account for this region");
+
+                return Command::FAILURE;
+            }
+
+            return [
+                'name' => $requestedKey,
+                'description' => $availableKeys[$requestedKey],
+            ];
+        }
+
+        //
+        // No specific key requested - check if any keys available
+
+        $availableKeys = $this->ensureAwsKeysAvailable($availableKeys);
 
         if (is_int($availableKeys)) {
             return Command::FAILURE;

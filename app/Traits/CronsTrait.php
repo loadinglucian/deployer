@@ -103,6 +103,27 @@ trait CronsTrait
      */
     protected function selectCron(SiteDTO $site): CronDTO|int
     {
+        //
+        // If specific cron requested via option, validate it exists first
+
+        /** @var string|null $requestedScript */
+        $requestedScript = $this->io->getOptionValue('script');
+
+        if (null !== $requestedScript) {
+            foreach ($site->crons as $cron) {
+                if ($cron->script === $requestedScript) {
+                    return $cron;
+                }
+            }
+
+            $this->nay("Cron '{$requestedScript}' not found for site '{$site->domain}'");
+
+            return Command::FAILURE;
+        }
+
+        //
+        // No specific cron requested - check if site has any crons
+
         $allCrons = $this->ensureCronsAvailable($site);
 
         if (is_int($allCrons)) {

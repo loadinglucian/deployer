@@ -54,12 +54,25 @@ class IoService
      * Write-out multiple lines.
      *
      * @param string|iterable<string> $lines
+     * @param bool $force Force output even in quiet mode (e.g., for errors)
      */
-    public function out(string|iterable $lines): void
+    public function out(string|iterable $lines, bool $force = false): void
     {
+        $isQuiet = $this->io->isQuiet();
+
+        // Respect --quiet flag unless forced (e.g., for errors)
+        if (!$force && $isQuiet) {
+            return;
+        }
+
         $writeLines = is_string($lines) ? [$lines] : $lines;
         foreach ($writeLines as &$line) {
             $line = str_replace('<|', '<fg=', $line);
+
+            // Skip '▒' prefix in quiet mode (forced output like errors)
+            if ($isQuiet) {
+                continue;
+            }
 
             // Add '▒' character in front of each line, preserving color
             if (preg_match('/^(\s*<[^>]+>)(.*)$/', $line, $matches)) {
@@ -71,7 +84,8 @@ class IoService
         }
 
         unset($line);
-        $this->io->write($writeLines, true);
+        $verbosity = $force ? OutputInterface::VERBOSITY_QUIET : OutputInterface::VERBOSITY_NORMAL;
+        $this->io->write($writeLines, true, $verbosity);
     }
 
     /**
@@ -79,10 +93,17 @@ class IoService
      *
      * @param string|iterable<string> $messages
      * @param bool $newline Whether to add a newline after the messages
+     * @param bool $force Force output even in quiet mode (e.g., for errors)
      */
-    public function write(string|iterable $messages, bool $newline = false): void
+    public function write(string|iterable $messages, bool $newline = false, bool $force = false): void
     {
-        $this->io->write($messages, $newline);
+        // Respect --quiet flag unless forced (e.g., for errors)
+        if (!$force && $this->io->isQuiet()) {
+            return;
+        }
+
+        $verbosity = $force ? OutputInterface::VERBOSITY_QUIET : OutputInterface::VERBOSITY_NORMAL;
+        $this->io->write($messages, $newline, $verbosity);
     }
 
     // ----

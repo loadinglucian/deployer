@@ -292,7 +292,25 @@ trait ServersTrait
     protected function selectServerDeets(): ServerDTO|int
     {
         //
-        // Get all servers
+        // If specific server requested via option, validate it exists first
+
+        /** @var string|null $requestedServer */
+        $requestedServer = $this->io->getOptionValue('server');
+
+        if (null !== $requestedServer) {
+            $server = $this->servers->findByName($requestedServer);
+
+            if (null === $server) {
+                $this->nay("Server '{$requestedServer}' not found in inventory");
+
+                return Command::FAILURE;
+            }
+
+            return $this->getServerInfo($server);
+        }
+
+        //
+        // No specific server requested - check if inventory is empty
 
         $servers = $this->ensureServersAvailable();
 

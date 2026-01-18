@@ -123,6 +123,7 @@ final class SymfonyApp extends SymfonyApplication
         return new InputDefinition([
             new InputArgument('command', InputArgument::OPTIONAL, 'The command to execute'),
             new InputOption('--help', '-h', InputOption::VALUE_NONE, 'Display help for the given command. When no command is given display help for the list command'),
+            new InputOption('--quiet', '-q', InputOption::VALUE_NONE, 'Do not output any message (except errors)'),
             new InputOption('--version', '-V', InputOption::VALUE_NONE, 'Display this application version'),
             new InputOption('--ansi', '', InputOption::VALUE_NEGATABLE, 'Force (or disable --no-ansi) ANSI output', null),
         ]);
@@ -162,6 +163,11 @@ final class SymfonyApp extends SymfonyApplication
      */
     private function displayBanner(): void
     {
+        // Skip banner in quiet mode
+        if ($this->io->isQuiet()) {
+            return;
+        }
+
         $version = $this->getVersion();
 
         $this->io->writeln([

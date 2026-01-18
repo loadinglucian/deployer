@@ -112,9 +112,54 @@ trait DoTrait
     protected function selectDoKey(): array|int
     {
         //
-        // Get all keys
+        // Check if specific key requested via option
 
-        $availableKeys = $this->ensureDoKeysAvailable();
+        /** @var string|null $requestedKey */
+        $requestedKey = $this->io->getOptionValue('key');
+
+        //
+        // Fetch available keys from DigitalOcean
+
+        try {
+            $availableKeys = $this->do->account->getPublicKeys();
+        } catch (\RuntimeException $e) {
+            $this->nay('Failed to retrieve public SSH keys: ' . $e->getMessage());
+
+            return Command::FAILURE;
+        }
+
+        //
+        // If specific key requested, validate it exists
+
+        if (null !== $requestedKey) {
+            // Allow loose comparison for string/int key IDs
+            $keyIds = array_keys($availableKeys);
+            $foundKey = null;
+
+            foreach ($keyIds as $keyId) {
+                // phpcs:ignore SlevomatCodingStandard.Operators.DisallowEqualOperators.DisallowedEqualOperator
+                if ($keyId == $requestedKey) {
+                    $foundKey = $keyId;
+                    break;
+                }
+            }
+
+            if (null === $foundKey) {
+                $this->nay("SSH key '{$requestedKey}' not found in your DigitalOcean account");
+
+                return Command::FAILURE;
+            }
+
+            return [
+                'id' => $foundKey,
+                'description' => $availableKeys[$foundKey],
+            ];
+        }
+
+        //
+        // No specific key requested - check if any keys available
+
+        $availableKeys = $this->ensureDoKeysAvailable($availableKeys);
 
         if (is_int($availableKeys)) {
             return Command::FAILURE;
