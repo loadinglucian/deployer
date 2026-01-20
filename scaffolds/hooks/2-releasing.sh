@@ -62,7 +62,7 @@ if [[ $framework == "laravel" ]]; then
 	fi
 
 	echo "→ Ensuring app key exists..."
-	${DEPLOYER_PHP} artisan key:generate || true
+	"${DEPLOYER_PHP}" artisan key:generate || true
 
 	#
 	# Run migrations
