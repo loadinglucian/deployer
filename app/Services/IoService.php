@@ -155,6 +155,26 @@ class IoService
         Closure $promptCallback,
         Closure $validator
     ): mixed {
+        $cliValue = $this->input->getOption($optionName);
+
+        // In quiet mode: validate CLI value directly, never prompt
+        if ($this->io->isQuiet()) {
+            // If no value provided, throw a clear "required" error
+            if (null === $cliValue) {
+                throw new ValidationException(
+                    "Option --{$optionName} is required when using --quiet mode"
+                );
+            }
+
+            // Validate the provided value
+            $error = $validator($cliValue);
+            if (null !== $error) {
+                throw new ValidationException($error);
+            }
+
+            return $cliValue;
+        }
+
         // Pass validator to prompt callback
         $value = $this->getOptionOrPrompt(
             $optionName,
@@ -162,7 +182,7 @@ class IoService
         );
 
         // Validate if value came from CLI option (prompts already validated)
-        if ($this->input->getOption($optionName) !== null) {
+        if (null !== $cliValue) {
             $error = $validator($value);
             if (null !== $error) {
                 throw new ValidationException($error);
@@ -211,7 +231,8 @@ class IoService
             return (bool) $value;
         }
 
-        if ($this->input->isInteractive()) {
+        // In quiet mode or non-interactive mode, return false for unprovided flags
+        if (!$this->io->isQuiet() && $this->input->isInteractive()) {
             return $promptCallback();
         }
 
