@@ -76,14 +76,14 @@ Your target servers should be running a supported Linux distribution:
 
 DeployerPHP commands are grouped by what they manage:
 
-- **`server:*`** — Add, install, delete, and SSH into servers
-- **`site:*`** — Create, deploy, delete, and manage sites
-- **`scaffold:*`** — Generate cron, hook, supervisor, and AI rules config files
-- **`cron:*`** and **`supervisor:*`** — Scheduled tasks and background processes
-- **`nginx:*`** and **`php:*`** — Web server and PHP-FPM control
-- **`mariadb:*`**, **`mysql:*`**, **`postgresql:*`** — Database services
-- **`memcached:*`**, **`redis:*`**, **`valkey:*`** — Cache services
-- **`pro:*`** — Cloud provider integrations (AWS, DigitalOcean)
+- **`server:*`**: Add, install, delete, and SSH into servers
+- **`site:*`**: Create, deploy, delete, and manage sites
+- **`scaffold:*`**: Generate cron, hook, supervisor, and AI rules config files
+- **`cron:*`** and **`supervisor:*`**: Scheduled tasks and background processes
+- **`nginx:*`** and **`php:*`**: Web server and PHP-FPM control
+- **`mariadb:*`**, **`mysql:*`**, **`postgresql:*`**: Database services
+- **`memcached:*`**, **`redis:*`**, **`valkey:*`**: Cache services
+- **`pro:*`**: Cloud provider integrations (AWS, DigitalOcean)
 
 <a name="add-new-server"></a>
 
@@ -109,7 +109,7 @@ DeployerPHP will prompt you for:
 Once completed, DeployerPHP confirms the connection and adds the server to your inventory. You can then run `server:info` to view server details or `server:install` to set up the server.
 
 > [!NOTE]
-> After each command, DeployerPHP displays a non-interactive command replay that includes all the options you selected. You can copy this command to repeat or automate the operation.
+> DeployerPHP supports automation and CI/CD integration. After each command, a non-interactive replay is displayed with all selected options. See [Automation](/docs/automation) for details on command replay, quiet mode, and GitHub workflows.
 
 > [!NOTE]
 > You can use the `pro:aws:provision` or `pro:do:provision` commands to automatically provision and add a new EC2 instance or droplet to your inventory. It's super convenient if you want to spin up servers on the fly in your automation pipelines.
@@ -269,7 +269,7 @@ After your first deployment, you'll need to upload environment files and other s
 deployer site:shared:push
 ```
 
-This uploads files from your local `.deployer/shared/` directory to the server's `shared/` directory. The shared directory persists across deployments—place your `.env` file here.
+This uploads files from your local `.deployer/shared/` directory to the server's `shared/` directory. The shared directory persists across deployments. Place your `.env` file here.
 
 <a name="enable-https"></a>
 
@@ -310,18 +310,18 @@ deployer scaffold:ai
 
 DeployerPHP will prompt you to select your AI agent:
 
-- **Claude** — Creates rules in `.claude/rules/`
-- **Cursor** — Creates rules in `.cursor/rules/`
-- **Codex** — Creates rules in `.codex/rules/`
+- **Claude**: Creates rules in `.claude/rules/`
+- **Cursor**: Creates rules in `.cursor/rules/`
+- **Codex**: Creates rules in `.codex/rules/`
 
 > [!NOTE]
 > If an existing AI agent directory is detected in your project, DeployerPHP will automatically use it. If multiple are found, you'll be prompted to choose one.
 
 The generated rules file provides your AI assistant with:
 
-- **Inventory context** — Understanding of your `deployer.yml` structure
-- **Deployment layout** — Knowledge of the release directory structure
-- **Safe debugging commands** — Commands for viewing logs, checking status, and reading files
-- **Guardrails** — Explicit restrictions preventing destructive operations like deployments, service restarts, or configuration changes
+- **Inventory context**: Understanding of your `deployer.yml` structure
+- **Deployment layout**: Knowledge of the release directory structure
+- **Safe debugging commands**: Commands for viewing logs, checking status, and reading files
+- **Guardrails**: Explicit restrictions preventing destructive operations like deployments, service restarts, or configuration changes
 
 This ensures your AI assistant can help troubleshoot issues on your servers without accidentally running commands that could affect production stability.
