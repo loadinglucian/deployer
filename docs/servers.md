@@ -18,6 +18,9 @@ DeployerPHP maintains a local inventory of your servers. Before you can deploy s
 
 All server commands follow the pattern `server:<action>` and can be run interactively or with command-line options for automation.
 
+> [!NOTE]
+> Commands below run interactively. For automation, see [Command Replay](/docs/automation#command-replay).
+
 <a name="adding-a-server"></a>
 
 ## Adding a Server
@@ -37,17 +40,6 @@ You'll be prompted for connection details:
 | `--port`             | SSH port             | 22         |
 | `--private-key-path` | SSH private key path | (prompted) |
 | `--username`         | SSH username         | root       |
-
-For automation, provide all options on the command line:
-
-```bash
-deployer server:add \
-    --name=production \
-    --host=203.0.113.50 \
-    --port=22 \
-    --private-key-path=~/.ssh/id_rsa \
-    --username=root
-```
 
 When adding a server, DeployerPHP connects and gathers information about the server's distribution, hardware, and running services.
 
@@ -82,17 +74,6 @@ Options:
 | `--generate-deploy-key` | Generate deploy key on server                                    |
 | `--custom-deploy-key`   | Path to custom deploy key (expects `.pub` file at same location) |
 
-Example with options:
-
-```bash
-deployer server:install \
-    --server=production \
-    --timezone=America/New_York \
-    --php-version=8.3 \
-    --php-extensions=redis,imagick,gd \
-    --generate-deploy-key
-```
-
 When running interactively, you'll be prompted to select from common timezones (UTC, major US/EU/Asia cities) or choose "Other" to see the full list of available timezones on the server.
 
 > [!NOTE]
@@ -105,7 +86,7 @@ When running interactively, you'll be prompted to select from common timezones (
 The `server:info` command displays comprehensive information about a server:
 
 ```bash
-deployer server:info --server=production
+deployer server:info
 ```
 
 This shows:
@@ -146,15 +127,6 @@ Options:
 | `--allow`  | Comma-separated ports to allow (e.g., 80,443,3306) |
 | `--yes`    | Skip confirmation prompt                           |
 
-For automation:
-
-```bash
-deployer server:firewall \
-    --server=production \
-    --allow=80,443,3306 \
-    --yes
-```
-
 > [!NOTE]
 > SSH access is always preserved regardless of your selections. The `--allow` option only accepts ports that have services actively listening on them.
 
@@ -180,12 +152,6 @@ You'll be prompted to select a server from your inventory, then dropped into a t
 | ---------- | ----------- |
 | `--server` | Server name |
 
-For automation:
-
-```bash
-deployer server:ssh --server=production
-```
-
 <a name="viewing-logs"></a>
 
 ## Viewing Logs
@@ -199,7 +165,7 @@ The `server:logs` command provides a unified interface for viewing all logs on a
 The `server:delete` command removes a server from your inventory:
 
 ```bash
-deployer server:delete --server=production
+deployer server:delete
 ```
 
 This command includes safety features:
@@ -215,15 +181,6 @@ Options:
 | `--force`          | Skip type-to-confirm prompt      | false      |
 | `--yes`            | Skip Yes/No confirmation         | false      |
 | `--inventory-only` | Only remove from local inventory | false      |
-
-For automation, provide all options on the command line:
-
-```bash
-deployer server:delete \
-    --server=production \
-    --force \
-    --yes
-```
 
 > [!WARNING]
 > If the server was provisioned through DeployerPHP's AWS or DigitalOcean integration, this command will also destroy the cloud resources unless you use `--inventory-only`. For AWS servers, any associated Elastic IP is also released.

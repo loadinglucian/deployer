@@ -27,7 +27,6 @@
     - [Scaffolding Crons](#scaffolding-crons)
     - [Scaffolding Supervisors](#scaffolding-supervisors)
     - [Scaffolding AI Rules](#scaffolding-ai-rules)
-    - [Scaffolding Workflows](#scaffolding-workflows)
 
 <a name="introduction"></a>
 
@@ -36,6 +35,9 @@
 Sites are applications deployed to your servers. DeployerPHP manages the complete lifecycle from creation through deployment, including automation like cron jobs and background processes.
 
 Sites are stored in your local inventory and linked to a server. Each site has its own Nginx configuration, PHP-FPM pool, and directory structure.
+
+> [!NOTE]
+> Commands below run interactively. For automation, see [Command Replay](/docs/automation#command-replay).
 
 <a name="creating-a-site"></a>
 
@@ -61,17 +63,6 @@ WWW handling options:
 
 - **redirect-to-root** - Redirect www to non-www
 - **redirect-to-www** - Redirect non-www to www
-
-For automation:
-
-```bash
-deployer site:create \
-    --server=production \
-    --domain=example.com \
-    --php-version=8.3 \
-    --www-mode=redirect-to-root \
-    --web-root=public
-```
 
 > [!NOTE]
 > The `--web-root` option specifies where Nginx should serve files from. Use `public` for Laravel/Symfony, `web` for Craft CMS, or `/` for WordPress and other applications that serve from the project root.
@@ -107,15 +98,6 @@ Options:
 | `--branch`        | Branch to deploy                        |
 | `--keep-releases` | Number of releases to keep (default: 5) |
 | `--yes`, `-y`     | Skip confirmation prompt                |
-
-Example:
-
-```bash
-deployer site:deploy \
-    --domain=example.com \
-    --repo=git@github.com:user/app.git \
-    --branch=main
-```
 
 <a name="deployment-hooks"></a>
 
@@ -170,7 +152,7 @@ The `shared/` directory contains files that persist across releases (like `.env`
 The `site:https` command installs an SSL certificate using Certbot:
 
 ```bash
-deployer site:https --domain=example.com
+deployer site:https
 ```
 
 This:
@@ -196,7 +178,7 @@ Shared files persist across deployments. Common examples include `.env` files, u
 The `site:shared:push` command uploads files to the shared directory:
 
 ```bash
-deployer site:shared:push --domain=example.com
+deployer site:shared:push
 ```
 
 Options:
@@ -207,15 +189,6 @@ Options:
 | `--local`  | Local file path to upload             |
 | `--remote` | Remote filename (relative to shared/) |
 
-For automation:
-
-```bash
-deployer site:shared:push \
-    --domain=example.com \
-    --local=.env.production \
-    --remote=.env
-```
-
 <a name="pulling-files"></a>
 
 ### Pulling Files
@@ -223,7 +196,7 @@ deployer site:shared:push \
 The `site:shared:pull` command downloads files from the shared directory:
 
 ```bash
-deployer site:shared:pull --domain=example.com
+deployer site:shared:pull
 ```
 
 Options:
@@ -234,16 +207,6 @@ Options:
 | `--remote` | Remote filename (relative to shared/) |
 | `--local`  | Local destination file path           |
 | `--yes`    | Skip overwrite confirmation           |
-
-For automation:
-
-```bash
-deployer site:shared:pull \
-    --domain=example.com \
-    --remote=.env \
-    --local=.env.backup \
-    --yes
-```
 
 <a name="viewing-logs"></a>
 
@@ -266,12 +229,6 @@ You'll be prompted to select a site from your inventory. The session opens in th
 | Option     | Description |
 | ---------- | ----------- |
 | `--domain` | Site domain |
-
-For automation:
-
-```bash
-deployer site:ssh --domain=example.com
-```
 
 <a name="rollbacks"></a>
 
@@ -298,7 +255,7 @@ If you need to revert code, revert in Git and redeploy.
 The `site:delete` command removes a site:
 
 ```bash
-deployer site:delete --domain=example.com
+deployer site:delete
 ```
 
 Safety features:
@@ -331,7 +288,7 @@ Cron jobs run scheduled tasks for your site. DeployerPHP manages cron scripts in
 The `cron:create` command adds a cron job to a site:
 
 ```bash
-deployer cron:create --domain=example.com
+deployer cron:create
 ```
 
 Options:
@@ -344,15 +301,6 @@ Options:
 
 You'll be prompted to select a script from `.deployer/crons/` and provide a schedule.
 
-For automation:
-
-```bash
-deployer cron:create \
-    --domain=example.com \
-    --script=scheduler.sh \
-    --schedule="* * * * *"
-```
-
 > [!NOTE]
 > Run `scaffold:crons` to create example cron scripts in your repository.
 
@@ -363,7 +311,7 @@ deployer cron:create \
 The `cron:sync` command syncs cron definitions from inventory to the server:
 
 ```bash
-deployer cron:sync --domain=example.com
+deployer cron:sync
 ```
 
 To view cron logs, use `server:logs --server=production --service=all-crons` or select individual cron scripts from the log sources.
@@ -373,7 +321,7 @@ To view cron logs, use `server:logs --server=production --service=all-crons` or 
 ### Deleting Cron Jobs
 
 ```bash
-deployer cron:delete --domain=example.com --script=cleanup.sh
+deployer cron:delete
 ```
 
 Options:
@@ -398,7 +346,7 @@ Supervisor manages long-running processes like queue workers, WebSocket servers,
 The `supervisor:create` command adds a supervised process:
 
 ```bash
-deployer supervisor:create --domain=example.com
+deployer supervisor:create
 ```
 
 Options:
@@ -413,16 +361,6 @@ Options:
 | `--stopwaitsecs` | Seconds to wait for stop (default: 3600)   |
 | `--numprocs`     | Number of process instances (default: 1)   |
 
-For automation:
-
-```bash
-deployer supervisor:create \
-    --domain=example.com \
-    --program=queue-worker \
-    --script=queue.sh \
-    --numprocs=2
-```
-
 > [!NOTE]
 > Run `scaffold:supervisors` to create example supervisor scripts in your repository.
 
@@ -433,9 +371,9 @@ deployer supervisor:create \
 The supervisor service commands operate at the server level, controlling the supervisord daemon:
 
 ```bash
-deployer supervisor:start --server=production
-deployer supervisor:stop --server=production
-deployer supervisor:restart --server=production
+deployer supervisor:start
+deployer supervisor:stop
+deployer supervisor:restart
 ```
 
 Options:
@@ -453,7 +391,7 @@ These commands start, stop, or restart the supervisord service. Restarting is us
 The `supervisor:sync` command syncs process definitions from inventory to the server:
 
 ```bash
-deployer supervisor:sync --domain=example.com
+deployer supervisor:sync
 ```
 
 To view supervisor logs, use `server:logs --server=production --service=all-supervisors` or select individual programs from the log sources.
@@ -463,7 +401,7 @@ To view supervisor logs, use `server:logs --server=production --service=all-supe
 ### Deleting Processes
 
 ```bash
-deployer supervisor:delete --domain=example.com --program=queue-worker
+deployer supervisor:delete
 ```
 
 Options:
@@ -548,12 +486,6 @@ This creates `.deployer/supervisors/` with example supervisor scripts:
     └── queue-worker.sh
 ```
 
-For automation:
-
-```bash
-deployer scaffold:supervisors --destination=/path/to/project
-```
-
 <a name="scaffolding-ai-rules"></a>
 
 ### Scaffolding AI Rules
@@ -574,31 +506,3 @@ The command auto-detects existing AI agent directories (`.claude/`, `.cursor/`, 
 | `--destination` | Project root directory           |
 | `--agent`       | AI agent (claude, cursor, codex) |
 | `--force`, `-f` | Overwrite existing files         |
-
-For automation:
-
-```bash
-deployer scaffold:ai --agent=claude --destination=/path/to/project
-```
-
-<a name="scaffolding-workflows"></a>
-
-### Scaffolding Workflows
-
-```bash
-deployer scaffold:workflows
-```
-
-This command scaffolds GitHub workflow files for automated preview site deployments:
-
-```
-.github/
-└── workflows/
-    └── (workflow files)
-```
-
-For automation:
-
-```bash
-deployer scaffold:workflows --destination=/path/to/project --force
-```

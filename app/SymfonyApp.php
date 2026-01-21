@@ -56,7 +56,6 @@ use DeployerPHP\Console\Scaffold\AiCommand as ScaffoldAiCommand;
 use DeployerPHP\Console\Scaffold\CronsCommand as ScaffoldCronsCommand;
 use DeployerPHP\Console\Scaffold\HooksCommand as ScaffoldHooksCommand;
 use DeployerPHP\Console\Scaffold\SupervisorsCommand as ScaffoldSupervisorsCommand;
-use DeployerPHP\Console\Scaffold\WorkflowsCommand as ScaffoldWorkflowsCommand;
 use DeployerPHP\Console\Server\ServerAddCommand;
 use DeployerPHP\Console\Server\ServerDeleteCommand;
 use DeployerPHP\Console\Server\ServerFirewallCommand;
@@ -191,7 +190,6 @@ final class SymfonyApp extends SymfonyApplication
             ScaffoldCronsCommand::class,
             ScaffoldHooksCommand::class,
             ScaffoldSupervisorsCommand::class,
-            ScaffoldWorkflowsCommand::class,
 
             //
             // Server management

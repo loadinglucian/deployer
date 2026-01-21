@@ -33,6 +33,9 @@ Currently supported providers:
 > [!NOTE]
 > Pro features require API credentials from your cloud provider. These credentials are stored locally and never transmitted to third parties.
 
+> [!NOTE]
+> Commands below run interactively. For automation, see [Command Replay](/docs/automation#command-replay).
+
 <a name="server-access"></a>
 
 ## Server Access
@@ -56,14 +59,6 @@ You'll be prompted for the server and command. Output is streamed in real-time a
 | `--server`  | Server name        |
 | `--command` | Command to execute |
 
-For automation:
-
-```bash
-deployer pro:server:run \
-    --server=production \
-    --command="systemctl status nginx"
-```
-
 This is useful for quick administrative tasks without opening a full SSH session.
 
 > [!NOTE]
@@ -76,7 +71,7 @@ This is useful for quick administrative tasks without opening a full SSH session
 The `pro:server:logs` command provides a unified interface for viewing all logs on a server:
 
 ```bash
-deployer pro:server:logs --server=production
+deployer pro:server:logs
 ```
 
 When run interactively, you'll see a multiselect prompt with all available log sources. You can select multiple sources at once to view logs from different services in a single command.
@@ -95,15 +90,6 @@ Available log sources include:
 | `--site`        | Filter logs to a specific site         | (none)     |
 | `--service, -s` | Service(s) to view (comma-separated)   | (prompted) |
 | `--lines, -n`   | Number of lines to retrieve per source | 50         |
-
-For automation:
-
-```bash
-deployer pro:server:logs \
-    --server=production \
-    --service=nginx,php8.3-fpm,mysql \
-    --lines=100
-```
 
 > [!NOTE]
 > This command is also available as `server:logs` for convenience. For detailed documentation, see the [Viewing Logs](/docs/servers#viewing-logs) section in server management.
@@ -197,14 +183,6 @@ When adding a key, you'll be prompted for:
 | `--public-key-path` | SSH public key path  | Auto-detected  |
 | `--name`            | Key pair name in AWS | `deployer-key` |
 
-Example:
-
-```bash
-deployer pro:aws:key:add \
-    --public-key-path=~/.ssh/id_ed25519.pub \
-    --name=deployer-key
-```
-
 #### Deleting Keys
 
 When deleting a key, you'll be prompted for:
@@ -218,15 +196,6 @@ When deleting a key, you'll be prompted for:
 | `--key`          | AWS key pair name                   |
 | `--force` / `-f` | Skip typing the key name to confirm |
 | `--yes` / `-y`   | Skip Yes/No confirmation prompt     |
-
-Example:
-
-```bash
-deployer pro:aws:key:delete \
-    --key=deployer-key \
-    --force \
-    --yes
-```
 
 > [!NOTE]
 > These commands are also available as `aws:key:list`, `aws:key:add`, and `aws:key:delete` for convenience.
@@ -242,18 +211,6 @@ deployer pro:aws:provision
 ```
 
 You'll be prompted for server details, instance configuration, and network settings. The command supports two approaches for instance type selection:
-
-**Direct instance type:**
-
-```bash
-deployer pro:aws:provision --instance-type=t3.large
-```
-
-**Two-step selection (family + size):**
-
-```bash
-deployer pro:aws:provision --instance-family=t3 --instance-size=large
-```
 
 #### Options
 
@@ -272,21 +229,6 @@ deployer pro:aws:provision --instance-family=t3 --instance-size=large
 | `--monitoring`       | Enable detailed CloudWatch monitoring (extra cost)      |
 | `--no-monitoring`    | Disable detailed monitoring                             |
 
-#### Example
-
-```bash
-deployer pro:aws:provision \
-    --name=production \
-    --instance-type=t3.small \
-    --ami=ami-0123456789abcdef0 \
-    --key-pair=deployer-key \
-    --private-key-path=~/.ssh/id_rsa \
-    --vpc=vpc-12345678 \
-    --subnet=subnet-12345678 \
-    --disk-size=20 \
-    --monitoring
-```
-
 DeployerPHP will:
 
 1. Verify your instance type is available in the selected region
@@ -299,11 +241,7 @@ DeployerPHP will:
 
 If any step fails after the instance is created, DeployerPHP automatically rolls back by releasing the Elastic IP and terminating the instance.
 
-After provisioning, install the server:
-
-```bash
-deployer server:install --server=production
-```
+After provisioning, run `deployer server:install` to set up the server.
 
 > [!NOTE]
 > This command is also available as `aws:provision` for convenience.
@@ -337,14 +275,6 @@ The `pro:aws:dns:list` command displays DNS records for a hosted zone. You can f
 | `--zone` | Hosted zone ID or domain name          |
 | `--type` | Filter by record type (A, AAAA, CNAME) |
 
-Example:
-
-```bash
-deployer pro:aws:dns:list \
-    --zone=example.com \
-    --type=A
-```
-
 #### Setting Records
 
 The `pro:aws:dns:set` command creates a new DNS record or updates an existing one (upsert). When prompted for a record name, use `@` for the root domain.
@@ -357,17 +287,6 @@ The `pro:aws:dns:set` command creates a new DNS record or updates an existing on
 | `--value` | Record value (IP address or hostname) |         |
 | `--ttl`   | TTL in seconds                        | 300     |
 
-Example:
-
-```bash
-deployer pro:aws:dns:set \
-    --zone=example.com \
-    --type=A \
-    --name=@ \
-    --value=203.0.113.50 \
-    --ttl=300
-```
-
 #### Deleting Records
 
 The `pro:aws:dns:delete` command removes a DNS record from a hosted zone. DeployerPHP shows the record details and requires confirmation before deletion.
@@ -379,17 +298,6 @@ The `pro:aws:dns:delete` command removes a DNS record from a hosted zone. Deploy
 | `--name`         | Record name (use "@" for root)         |
 | `--force` / `-f` | Skip typing the record name to confirm |
 | `--yes` / `-y`   | Skip Yes/No confirmation prompt        |
-
-Example:
-
-```bash
-deployer pro:aws:dns:delete \
-    --zone=example.com \
-    --type=A \
-    --name=@ \
-    --force \
-    --yes
-```
 
 > [!NOTE]
 > These commands are also available as `aws:dns:list`, `aws:dns:set`, and `aws:dns:delete` for convenience.
@@ -442,14 +350,6 @@ The `pro:cf:dns:list` command displays DNS records for a zone. You can filter by
 | `--zone` | Zone (domain name)                     |
 | `--type` | Filter by record type (A, AAAA, CNAME) |
 
-Example:
-
-```bash
-deployer pro:cf:dns:list \
-    --zone=example.com \
-    --type=A
-```
-
 #### Setting Records
 
 The `pro:cf:dns:set` command creates a new DNS record or updates an existing one (upsert). Cloudflare supports proxying traffic through their CDN and DDoS protection network.
@@ -465,18 +365,6 @@ The `pro:cf:dns:set` command creates a new DNS record or updates an existing one
 
 When proxy is enabled, Cloudflare hides your origin IP address and routes traffic through their global network, providing CDN caching and DDoS protection.
 
-Example:
-
-```bash
-deployer pro:cf:dns:set \
-    --zone=example.com \
-    --type=A \
-    --name=@ \
-    --value=203.0.113.50 \
-    --ttl=1 \
-    --proxied
-```
-
 #### Deleting Records
 
 The `pro:cf:dns:delete` command removes a DNS record from a zone. DeployerPHP shows the record details and requires confirmation before deletion.
@@ -488,17 +376,6 @@ The `pro:cf:dns:delete` command removes a DNS record from a zone. DeployerPHP sh
 | `--name`         | Record name (use "@" for root)         |
 | `--force` / `-f` | Skip typing the record name to confirm |
 | `--yes` / `-y`   | Skip Yes/No confirmation prompt        |
-
-Example:
-
-```bash
-deployer pro:cf:dns:delete \
-    --zone=example.com \
-    --type=A \
-    --name=@ \
-    --force \
-    --yes
-```
 
 > [!NOTE]
 > These commands are also available as `cf:dns:list`, `cf:dns:set`, and `cf:dns:delete` for convenience. Cloudflare commands also support the full `cloudflare:` prefix (e.g., `cloudflare:dns:list`).
@@ -554,14 +431,6 @@ When adding a key, you'll be prompted for:
 | `--public-key-path` | SSH public key path              | Auto-detected  |
 | `--name`            | Key name in DigitalOcean account | `deployer-key` |
 
-Example:
-
-```bash
-deployer pro:do:key:add \
-    --public-key-path=~/.ssh/id_ed25519.pub \
-    --name=deployer-key
-```
-
 #### Deleting Keys
 
 When deleting a key, you'll be prompted for:
@@ -575,15 +444,6 @@ When deleting a key, you'll be prompted for:
 | `--key`          | DigitalOcean public SSH key ID    |
 | `--force` / `-f` | Skip typing the key ID to confirm |
 | `--yes` / `-y`   | Skip Yes/No confirmation prompt   |
-
-Example:
-
-```bash
-deployer pro:do:key:delete \
-    --key=12345678 \
-    --force \
-    --yes
-```
 
 > [!NOTE]
 > These commands are also available as `do:key:list`, `do:key:add`, and `do:key:delete` for convenience.
@@ -618,31 +478,13 @@ You'll be prompted for server details, droplet configuration, and optional featu
 | `--ipv6`             | Enable IPv6 address (free)             |
 | `--no-ipv6`          | Disable IPv6                           |
 
-#### Example
-
-```bash
-deployer pro:do:provision \
-    --name=production \
-    --region=nyc3 \
-    --size=s-1vcpu-2gb \
-    --image=ubuntu-24-04-x64 \
-    --ssh-key-id=12345678 \
-    --private-key-path=~/.ssh/id_rsa \
-    --monitoring \
-    --ipv6
-```
-
 DeployerPHP will:
 
 1. Create a Droplet with the selected OS
 2. Wait for the Droplet to become active
 3. Add the server to your local inventory
 
-After provisioning:
-
-```bash
-deployer server:install --server=production
-```
+After provisioning, run `deployer server:install` to set up the server.
 
 > [!NOTE]
 > This command is also available as `do:provision` for convenience.
@@ -708,14 +550,6 @@ The `pro:do:dns:list` command displays DNS records for a domain. You can filter 
 | `--zone` | Zone (domain name)                     |
 | `--type` | Filter by record type (A, AAAA, CNAME) |
 
-Example:
-
-```bash
-deployer pro:do:dns:list \
-    --zone=example.com \
-    --type=A
-```
-
 #### Setting Records
 
 The `pro:do:dns:set` command creates a new DNS record or updates an existing one (upsert). When prompted for a record name, use `@` for the root domain.
@@ -728,17 +562,6 @@ The `pro:do:dns:set` command creates a new DNS record or updates an existing one
 | `--value` | Record value (IP address or hostname) |         |
 | `--ttl`   | TTL in seconds                        | 300     |
 
-Example:
-
-```bash
-deployer pro:do:dns:set \
-    --zone=example.com \
-    --type=A \
-    --name=@ \
-    --value=203.0.113.50 \
-    --ttl=300
-```
-
 #### Deleting Records
 
 The `pro:do:dns:delete` command removes a DNS record from a domain. DeployerPHP shows the record details and requires confirmation before deletion.
@@ -750,17 +573,6 @@ The `pro:do:dns:delete` command removes a DNS record from a domain. DeployerPHP 
 | `--name`         | Record name (use "@" for root)         |
 | `--force` / `-f` | Skip typing the record name to confirm |
 | `--yes` / `-y`   | Skip Yes/No confirmation prompt        |
-
-Example:
-
-```bash
-deployer pro:do:dns:delete \
-    --zone=example.com \
-    --type=A \
-    --name=@ \
-    --force \
-    --yes
-```
 
 > [!NOTE]
 > These commands are also available as `do:dns:list`, `do:dns:set`, and `do:dns:delete` for convenience. DigitalOcean commands also support the full `digitalocean:` prefix (e.g., `digitalocean:dns:list`).

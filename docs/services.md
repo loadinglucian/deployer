@@ -23,6 +23,9 @@ DeployerPHP can install and manage various services on your servers. Each servic
 
 All commands accept a `--server` option to specify the target server, or will prompt you to select one interactively.
 
+> [!NOTE]
+> Commands below run interactively. For automation, see [Command Replay](/docs/automation#command-replay).
+
 To view logs for any service, use the unified `server:logs` command. See the [Viewing Logs](/docs/servers#viewing-logs) section for details.
 
 <a name="mysql"></a>
@@ -34,7 +37,7 @@ MySQL is a popular open-source relational database.
 ### Installing MySQL
 
 ```bash
-deployer mysql:install --server=production
+deployer mysql:install
 ```
 
 During installation, DeployerPHP will prompt you for:
@@ -63,17 +66,12 @@ If saving to a file fails, DeployerPHP will automatically fall back to displayin
 ### Managing MySQL
 
 ```bash
-# Start the service
-deployer mysql:start --server=production
-
-# Stop the service
-deployer mysql:stop --server=production
-
-# Restart the service
-deployer mysql:restart --server=production
+deployer mysql:start
+deployer mysql:stop
+deployer mysql:restart
 ```
 
-To view MySQL logs, use `server:logs --server=production --service=mysqld`.
+To view MySQL logs, use `server:logs` and select the mysqld service.
 
 <a name="mariadb"></a>
 
@@ -84,7 +82,7 @@ MariaDB is a community-developed fork of MySQL with enhanced features.
 ### Installing MariaDB
 
 ```bash
-deployer mariadb:install --server=production
+deployer mariadb:install
 ```
 
 During installation, DeployerPHP will prompt you for:
@@ -113,12 +111,12 @@ If saving to a file fails, DeployerPHP will automatically fall back to displayin
 ### Managing MariaDB
 
 ```bash
-deployer mariadb:start --server=production
-deployer mariadb:stop --server=production
-deployer mariadb:restart --server=production
+deployer mariadb:start
+deployer mariadb:stop
+deployer mariadb:restart
 ```
 
-To view MariaDB logs, use `server:logs --server=production --service=mariadb`.
+To view MariaDB logs, use `server:logs` and select the mariadb service.
 
 > [!NOTE]
 > MySQL and MariaDB are mutually exclusive. Install only one on each server.
@@ -132,7 +130,7 @@ PostgreSQL is a powerful, open-source object-relational database system.
 ### Installing PostgreSQL
 
 ```bash
-deployer postgresql:install --server=production
+deployer postgresql:install
 ```
 
 Like MySQL/MariaDB, this creates credentials for the `deployer` user and a `deployer` database.
@@ -149,12 +147,12 @@ Like MySQL/MariaDB, this creates credentials for the `deployer` user and a `depl
 ### Managing PostgreSQL
 
 ```bash
-deployer postgresql:start --server=production
-deployer postgresql:stop --server=production
-deployer postgresql:restart --server=production
+deployer postgresql:start
+deployer postgresql:stop
+deployer postgresql:restart
 ```
 
-To view PostgreSQL logs, use `server:logs --server=production --service=postgres`.
+To view PostgreSQL logs, use `server:logs` and select the postgres service.
 
 <a name="redis"></a>
 
@@ -165,7 +163,7 @@ Redis is an in-memory data structure store, commonly used for caching and queues
 ### Installing Redis
 
 ```bash
-deployer redis:install --server=production
+deployer redis:install
 ```
 
 During installation, DeployerPHP:
@@ -186,12 +184,12 @@ During installation, DeployerPHP:
 ### Managing Redis
 
 ```bash
-deployer redis:start --server=production
-deployer redis:stop --server=production
-deployer redis:restart --server=production
+deployer redis:start
+deployer redis:stop
+deployer redis:restart
 ```
 
-To view Redis logs, use `server:logs --server=production --service=redis-server`.
+To view Redis logs, use `server:logs` and select the redis-server service.
 
 <a name="memcached"></a>
 
@@ -202,18 +200,18 @@ Memcached is a distributed memory caching system.
 ### Installing Memcached
 
 ```bash
-deployer memcached:install --server=production
+deployer memcached:install
 ```
 
 ### Managing Memcached
 
 ```bash
-deployer memcached:start --server=production
-deployer memcached:stop --server=production
-deployer memcached:restart --server=production
+deployer memcached:start
+deployer memcached:stop
+deployer memcached:restart
 ```
 
-To view Memcached logs, use `server:logs --server=production --service=memcached`.
+To view Memcached logs, use `server:logs` and select the memcached service.
 
 <a name="valkey"></a>
 
@@ -224,7 +222,7 @@ Valkey is an open-source fork of Redis, fully compatible with Redis clients and 
 ### Installing Valkey
 
 ```bash
-deployer valkey:install --server=production
+deployer valkey:install
 ```
 
 During installation, DeployerPHP:
@@ -245,12 +243,12 @@ During installation, DeployerPHP:
 ### Managing Valkey
 
 ```bash
-deployer valkey:start --server=production
-deployer valkey:stop --server=production
-deployer valkey:restart --server=production
+deployer valkey:start
+deployer valkey:stop
+deployer valkey:restart
 ```
 
-To view Valkey logs, use `server:logs --server=production --service=valkey-server`.
+To view Valkey logs, use `server:logs` and select the valkey-server service.
 
 > [!NOTE]
 > Valkey and Redis are mutually exclusive. Install only one on each server.
@@ -264,17 +262,12 @@ Nginx is installed automatically during `server:install`. These commands control
 ### Managing Nginx
 
 ```bash
-# Start Nginx
-deployer nginx:start --server=production
-
-# Stop Nginx
-deployer nginx:stop --server=production
-
-# Restart Nginx (use after configuration changes)
-deployer nginx:restart --server=production
+deployer nginx:start
+deployer nginx:stop
+deployer nginx:restart
 ```
 
-To view Nginx service logs, use `server:logs --server=production --service=nginx`. For site-specific access logs, select the site domain from the log sources or use `--service=example.com`.
+To view Nginx service logs, use `server:logs` and select the nginx service. For site-specific access logs, select the site domain from the log sources.
 
 > [!NOTE]
 > Site-specific Nginx configurations are managed automatically by `site:create` and `site:delete`.
@@ -288,14 +281,9 @@ PHP-FPM is installed during `server:install` for each PHP version you select. Th
 ### Managing PHP-FPM
 
 ```bash
-# Start PHP-FPM (all versions)
-deployer php:start --server=production
-
-# Stop PHP-FPM (all versions)
-deployer php:stop --server=production
-
-# Restart PHP-FPM (use after php.ini changes)
-deployer php:restart --server=production
+deployer php:start
+deployer php:stop
+deployer php:restart
 ```
 
 | Option      | Description                                   |
@@ -303,25 +291,14 @@ deployer php:restart --server=production
 | `--server`  | Server name                                   |
 | `--version` | PHP version to target (omit for all versions) |
 
-You can target a specific PHP version with any of the service commands:
-
-```bash
-deployer php:start --server=production --version=8.3
-deployer php:stop --server=production --version=8.3
-deployer php:restart --server=production --version=8.3
-```
-
-To view PHP-FPM logs, use `server:logs --server=production --service=php8.3-fpm` (replace `8.3` with your installed version).
+To view PHP-FPM logs, use `server:logs` and select the PHP-FPM service for your version.
 
 ### Installing Additional PHP Versions
 
 To install additional PHP versions on an existing server, run `server:install` again:
 
 ```bash
-deployer server:install \
-    --server=production \
-    --php-version=8.4 \
-    --php-extensions=redis,imagick
+deployer server:install
 ```
 
 This adds the new PHP version alongside existing versions without affecting running sites.
