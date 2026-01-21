@@ -69,13 +69,14 @@ print_distro_header() {
 }
 
 check_dependencies() {
+	local require_lima="${1:-true}"
 	local missing=()
 
 	if ! command -v bats > /dev/null 2>&1; then
 		missing+=("bats")
 	fi
 
-	if ! command -v limactl > /dev/null 2>&1; then
+	if [[ "$require_lima" == "true" ]] && ! command -v limactl > /dev/null 2>&1; then
 		missing+=("lima")
 	fi
 
@@ -87,7 +88,11 @@ check_dependencies() {
 		echo -e "${RED}Missing dependencies: ${missing[*]}${NC}"
 		echo ""
 		echo "Install with:"
-		echo "  brew install bats-core lima jq"
+		if [[ "$require_lima" == "true" ]]; then
+			echo "  brew install bats-core lima jq"
+		else
+			echo "  brew install bats-core jq"
+		fi
 		exit 1
 	fi
 }
@@ -739,10 +744,10 @@ show_usage() {
 cd "$PROJECT_ROOT" || exit 1
 
 print_header
-check_dependencies
 
 case "${1:-run}" in
 	run)
+		check_dependencies true
 		setup_keys
 		setup_inventory
 		run_tests "${2:-}"
@@ -750,6 +755,7 @@ case "${1:-run}" in
 		exit $exit_code
 		;;
 	start)
+		check_dependencies true
 		setup_keys
 		setup_inventory
 		distro="${2:-}"
@@ -773,6 +779,7 @@ case "${1:-run}" in
 		echo "  Stop:       $0 stop [distro]"
 		;;
 	stop)
+		check_dependencies true
 		distro="${2:-}"
 		if [[ -n "$distro" && -z "${DISTRO_PORTS[$distro]:-}" ]]; then
 			echo -e "${RED}Unknown distro: ${distro}${NC}"
@@ -782,6 +789,7 @@ case "${1:-run}" in
 		stop_lima "$distro"
 		;;
 	reset)
+		check_dependencies true
 		setup_keys
 		setup_inventory
 		distro="${2:-}"
@@ -793,6 +801,7 @@ case "${1:-run}" in
 		reset_lima "$distro"
 		;;
 	clean)
+		check_dependencies true
 		distro="${2:-}"
 		if [[ -n "$distro" ]]; then
 			if [[ -z "${DISTRO_PORTS[$distro]:-}" ]]; then
@@ -808,6 +817,7 @@ case "${1:-run}" in
 		fi
 		;;
 	ssh)
+		check_dependencies true
 		distro="${2:-}"
 		if [[ -z "$distro" ]]; then
 			echo -e "${RED}Usage: $0 ssh <distro>${NC}"
@@ -831,8 +841,6 @@ case "${1:-run}" in
 			echo "Usage: CI=true $0 ci <cloud|vm> <target>"
 			exit 1
 		fi
-		setup_keys
-		setup_inventory
 		test_type="${2:-}"
 		target="${3:-}"
 		if [[ -z "$test_type" ]] || [[ -z "$target" ]]; then
@@ -841,6 +849,14 @@ case "${1:-run}" in
 			echo "  vm targets: ${DISTROS[*]}"
 			exit 1
 		fi
+		# Check dependencies - lima not required for cloud tests
+		if [[ "$test_type" == "cloud" ]]; then
+			check_dependencies false
+		else
+			check_dependencies true
+		fi
+		setup_keys
+		setup_inventory
 		run_ci_tests "$test_type" "$target"
 		exit_code=$?
 		exit $exit_code
