@@ -19,7 +19,7 @@ class CommandDiscoveryService
 
     private const NAMESPACE_PREFIX = 'DeployerPHP\\Console\\';
 
-    private string $resolvedBasePath;
+    private readonly string $resolvedBasePath;
 
     public function __construct(
         private readonly string $basePath = '',
