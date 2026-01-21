@@ -14,6 +14,9 @@ if [[ -f "${PROJECT_ROOT}/.env" ]]; then
 	set +a
 fi
 
+# CI mode detection - bypasses interactive menus
+CI_MODE="${CI:-false}"
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -646,11 +649,48 @@ run_tests() {
 	return $exit_code
 }
 
+run_ci_tests() {
+	local test_type="$1"
+	local target="$2"
+	local exit_code=0
+
+	case "$test_type" in
+		cloud)
+			if [[ "$target" == "all" ]]; then
+				run_cloud_tests "--all"
+			else
+				run_api_tests "cloud-${target}"
+			fi
+			exit_code=$?
+			;;
+		vm)
+			if [[ -z "${DISTRO_PORTS[$target]:-}" ]]; then
+				echo -e "${RED}Unknown distro: ${target}${NC}"
+				echo "Available distros: ${DISTROS[*]}"
+				exit 1
+			fi
+			RUNNER_DISTROS=("$target")
+			trap cleanup_runner_vms EXIT
+			start_lima_instance "$target"
+			wait_for_ssh "${DISTRO_PORTS[$target]}"
+			run_tests_for_distro "$target" "vm" || exit_code=$?
+			;;
+		*)
+			echo -e "${RED}Unknown test type: ${test_type}${NC}"
+			echo "Valid types: cloud, vm"
+			exit 1
+			;;
+	esac
+
+	return $exit_code
+}
+
 show_usage() {
 	echo "Usage: $0 [command] [options]"
 	echo ""
 	echo "Commands:"
 	echo "  run [category]    Run tests (shows interactive menu if no category)"
+	echo "  ci <type> <target> Run tests non-interactively (requires CI=true)"
 	echo "  start [distro]    Start VMs (all if no distro specified)"
 	echo "  stop [distro]     Stop VMs (all if no distro specified)"
 	echo "  reset [distro]    Factory reset VMs (all if no distro specified)"
@@ -673,10 +713,18 @@ show_usage() {
 	echo "  $0 stop debian12  # Stop only debian12 VM"
 	echo "  $0 ssh ubuntu24   # SSH into ubuntu24 VM"
 	echo ""
+	echo "CI mode (non-interactive):"
+	echo "  CI=true $0 ci cloud aws      # Run AWS cloud tests"
+	echo "  CI=true $0 ci cloud do       # Run DigitalOcean cloud tests"
+	echo "  CI=true $0 ci cloud all      # Run all cloud tests"
+	echo "  CI=true $0 ci vm ubuntu24    # Run VM tests on ubuntu24"
+	echo "  CI=true $0 ci vm debian12    # Run VM tests on debian12"
+	echo ""
 	echo "Available distros: ${DISTROS[*]}"
 	echo "Cloud providers: ${CLOUD_PROVIDERS[*]}"
 	echo ""
 	echo "Environment:"
+	echo "  CI=true           # Required for ci command"
 	echo "  BATS_DEBUG=1      # Enable verbose debug output in tests"
 	echo ""
 	echo "Parallel execution:"
@@ -776,6 +824,26 @@ case "${1:-run}" in
 			-o UserKnownHostsFile=/dev/null \
 			-p "${DISTRO_PORTS[$distro]}" \
 			"root@${TEST_SERVER_HOST}"
+		;;
+	ci)
+		if [[ "$CI_MODE" != "true" ]]; then
+			echo -e "${RED}CI mode requires CI=true environment variable${NC}"
+			echo "Usage: CI=true $0 ci <cloud|vm> <target>"
+			exit 1
+		fi
+		setup_keys
+		setup_inventory
+		test_type="${2:-}"
+		target="${3:-}"
+		if [[ -z "$test_type" ]] || [[ -z "$target" ]]; then
+			echo -e "${RED}Usage: $0 ci <cloud|vm> <target>${NC}"
+			echo "  cloud targets: aws, do, all"
+			echo "  vm targets: ${DISTROS[*]}"
+			exit 1
+		fi
+		run_ci_tests "$test_type" "$target"
+		exit_code=$?
+		exit $exit_code
 		;;
 	help | --help | -h)
 		show_usage
