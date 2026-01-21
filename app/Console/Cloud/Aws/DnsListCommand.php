@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Pro\Do;
+namespace DeployerPHP\Console\Cloud\Aws;
 
-use DeployerPHP\Contracts\ProCommand;
+use DeployerPHP\Contracts\BaseCommand;
 use DeployerPHP\Exceptions\ValidationException;
+use DeployerPHP\Traits\AwsDnsTrait;
+use DeployerPHP\Traits\AwsTrait;
 use DeployerPHP\Traits\DnsCommandTrait;
-use DeployerPHP\Traits\DoDnsTrait;
-use DeployerPHP\Traits\DoTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,14 +16,14 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:do:dns:list|do:dns:list|pro:digitalocean:dns:list|digitalocean:dns:list',
-    description: 'List DNS records for a DigitalOcean domain'
+    name: 'aws:dns:list',
+    description: 'List DNS records for an AWS Route53 hosted zone'
 )]
-class DnsListCommand extends ProCommand
+class DnsListCommand extends BaseCommand
 {
+    use AwsDnsTrait;
+    use AwsTrait;
     use DnsCommandTrait;
-    use DoDnsTrait;
-    use DoTrait;
 
     // ----
     // Configuration
@@ -34,7 +34,7 @@ class DnsListCommand extends ProCommand
         parent::configure();
 
         $this
-            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone (domain name)')
+            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Hosted zone ID or domain name')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Filter by record type (A, AAAA, CNAME)');
     }
 
@@ -49,10 +49,10 @@ class DnsListCommand extends ProCommand
         $this->h1('List DNS Records');
 
         //
-        // Initialize DigitalOcean API
+        // Initialize AWS API
         // ----
 
-        if (Command::FAILURE === $this->initializeDoAPI()) {
+        if (Command::FAILURE === $this->initializeAwsAPI()) {
             return Command::FAILURE;
         }
 
@@ -61,33 +61,33 @@ class DnsListCommand extends ProCommand
         // ----
 
         try {
-            $domains = $this->io->promptSpin(
-                fn () => $this->do->domain->getDomains(),
-                'Fetching domains...'
+            $zones = $this->io->promptSpin(
+                fn () => $this->aws->route53Zone->getHostedZones(),
+                'Fetching hosted zones...'
             );
 
-            if (0 === count($domains)) {
-                $this->info('No domains found in your DigitalOcean account');
+            if (0 === count($zones)) {
+                $this->info('No hosted zones found in your AWS account');
 
                 return Command::SUCCESS;
             }
 
-            /** @var string $zone */
-            $zone = $this->io->getValidatedOptionOrPrompt(
+            /** @var string $zoneInput */
+            $zoneInput = $this->io->getValidatedOptionOrPrompt(
                 'zone',
                 fn ($validate) => $this->io->promptSelect(
-                    label: 'Select zone:',
-                    options: $domains,
+                    label: 'Select hosted zone:',
+                    options: $zones,
                     validate: $validate
                 ),
-                fn ($value) => $this->validateDoDomainInput($value)
+                fn ($value) => $this->validateAwsHostedZoneInput($value)
             );
 
             /** @var string|null $typeFilter */
             $typeFilter = $input->getOption('type');
 
             if (null !== $typeFilter) {
-                $error = $this->validateDoRecordTypeInput($typeFilter);
+                $error = $this->validateAwsRecordTypeInput($typeFilter);
                 if (null !== $error) {
                     $this->nay($error);
 
@@ -102,12 +102,15 @@ class DnsListCommand extends ProCommand
         }
 
         //
-        // Fetch and display records
+        // Resolve zone and fetch records
         // ----
 
         try {
+            $zoneId = $this->resolveAwsHostedZoneId($zoneInput);
+            $zoneName = $this->aws->route53Zone->getHostedZoneName($zoneId);
+
             $records = $this->io->promptSpin(
-                fn () => $this->do->dns->listRecords($zone, $typeFilter),
+                fn () => $this->aws->route53Dns->listRecords($zoneId, $typeFilter),
                 'Fetching DNS records...'
             );
         } catch (\RuntimeException $e) {
@@ -118,19 +121,19 @@ class DnsListCommand extends ProCommand
 
         if (0 === count($records)) {
             $message = null === $typeFilter
-                ? "No DNS records found for '{$zone}'"
-                : "No {$typeFilter} records found for '{$zone}'";
+                ? "No DNS records found for '{$zoneName}'"
+                : "No {$typeFilter} records found for '{$zoneName}'";
             $this->info($message);
 
             return Command::SUCCESS;
         }
 
-        // Normalize records for display (DO uses 'data' instead of 'value')
+        // Normalize records for display (AWS uses is_alias flag)
         $normalizedRecords = array_map(fn ($r) => [
             'type' => $r['type'],
             'name' => $r['name'],
-            'value' => $r['data'] ?? '',
-            'ttl' => $r['ttl'],
+            'value' => $r['value'],
+            'ttl' => $r['is_alias'] ? 'ALIAS' : $r['ttl'],
         ], $records);
 
         $this->displayDnsRecords($normalizedRecords);
@@ -139,7 +142,7 @@ class DnsListCommand extends ProCommand
         // Show command replay
         // ----
 
-        $replayOptions = ['zone' => $zone];
+        $replayOptions = ['zone' => $zoneName];
         if (null !== $typeFilter) {
             $replayOptions['type'] = $typeFilter;
         }

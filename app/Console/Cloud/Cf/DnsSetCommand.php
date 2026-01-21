@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Pro\Cf;
+namespace DeployerPHP\Console\Cloud\Cf;
 
-use DeployerPHP\Contracts\ProCommand;
+use DeployerPHP\Contracts\BaseCommand;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Services\Cf\CfDnsService;
 use DeployerPHP\Traits\CfTrait;
@@ -16,10 +16,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:cf:dns:set|cf:dns:set|pro:cloudflare:dns:set|cloudflare:dns:set',
+    name: 'cf:dns:set|cloudflare:dns:set',
     description: 'Create or update a DNS record in Cloudflare (upsert)'
 )]
-class DnsSetCommand extends ProCommand
+class DnsSetCommand extends BaseCommand
 {
     use CfTrait;
     use DnsCommandTrait;

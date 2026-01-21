@@ -4,82 +4,7 @@ declare(strict_types=1);
 
 namespace DeployerPHP;
 
-use DeployerPHP\Console\Cron\CronCreateCommand;
-use DeployerPHP\Console\Cron\CronDeleteCommand;
-use DeployerPHP\Console\Cron\CronSyncCommand;
-use DeployerPHP\Console\Mariadb\MariadbInstallCommand;
-use DeployerPHP\Console\Mariadb\MariadbRestartCommand;
-use DeployerPHP\Console\Mariadb\MariadbStartCommand;
-use DeployerPHP\Console\Mariadb\MariadbStopCommand;
-use DeployerPHP\Console\Memcached\MemcachedInstallCommand;
-use DeployerPHP\Console\Memcached\MemcachedRestartCommand;
-use DeployerPHP\Console\Memcached\MemcachedStartCommand;
-use DeployerPHP\Console\Memcached\MemcachedStopCommand;
-use DeployerPHP\Console\Mysql\MysqlInstallCommand;
-use DeployerPHP\Console\Mysql\MysqlRestartCommand;
-use DeployerPHP\Console\Mysql\MysqlStartCommand;
-use DeployerPHP\Console\Mysql\MysqlStopCommand;
-use DeployerPHP\Console\Nginx\NginxRestartCommand;
-use DeployerPHP\Console\Nginx\NginxStartCommand;
-use DeployerPHP\Console\Nginx\NginxStopCommand;
-use DeployerPHP\Console\Php\PhpRestartCommand;
-use DeployerPHP\Console\Php\PhpStartCommand;
-use DeployerPHP\Console\Php\PhpStopCommand;
-use DeployerPHP\Console\Postgresql\PostgresqlInstallCommand;
-use DeployerPHP\Console\Postgresql\PostgresqlRestartCommand;
-use DeployerPHP\Console\Postgresql\PostgresqlStartCommand;
-use DeployerPHP\Console\Postgresql\PostgresqlStopCommand;
-use DeployerPHP\Console\Pro\Aws\DnsDeleteCommand as AwsDnsDeleteCommand;
-use DeployerPHP\Console\Pro\Aws\DnsListCommand as AwsDnsListCommand;
-use DeployerPHP\Console\Pro\Aws\DnsSetCommand as AwsDnsSetCommand;
-use DeployerPHP\Console\Pro\Aws\KeyAddCommand as AwsKeyAddCommand;
-use DeployerPHP\Console\Pro\Aws\KeyDeleteCommand as AwsKeyDeleteCommand;
-use DeployerPHP\Console\Pro\Aws\KeyListCommand as AwsKeyListCommand;
-use DeployerPHP\Console\Pro\Aws\ProvisionCommand as AwsProvisionCommand;
-use DeployerPHP\Console\Pro\Cf\DnsDeleteCommand as CfDnsDeleteCommand;
-use DeployerPHP\Console\Pro\Cf\DnsListCommand as CfDnsListCommand;
-use DeployerPHP\Console\Pro\Cf\DnsSetCommand as CfDnsSetCommand;
-use DeployerPHP\Console\Pro\Do\DnsDeleteCommand as DoDnsDeleteCommand;
-use DeployerPHP\Console\Pro\Do\DnsListCommand as DoDnsListCommand;
-use DeployerPHP\Console\Pro\Do\DnsSetCommand as DoDnsSetCommand;
-use DeployerPHP\Console\Pro\Do\KeyAddCommand as DoKeyAddCommand;
-use DeployerPHP\Console\Pro\Do\KeyDeleteCommand as DoKeyDeleteCommand;
-use DeployerPHP\Console\Pro\Do\KeyListCommand as DoKeyListCommand;
-use DeployerPHP\Console\Pro\Do\ProvisionCommand as DoProvisionCommand;
-use DeployerPHP\Console\Pro\Server\ServerLogsCommand as ProServerLogsCommand;
-use DeployerPHP\Console\Pro\Server\ServerRunCommand as ProServerRunCommand;
-use DeployerPHP\Console\Redis\RedisInstallCommand;
-use DeployerPHP\Console\Redis\RedisRestartCommand;
-use DeployerPHP\Console\Redis\RedisStartCommand;
-use DeployerPHP\Console\Redis\RedisStopCommand;
-use DeployerPHP\Console\Scaffold\AiCommand as ScaffoldAiCommand;
-use DeployerPHP\Console\Scaffold\CronsCommand as ScaffoldCronsCommand;
-use DeployerPHP\Console\Scaffold\HooksCommand as ScaffoldHooksCommand;
-use DeployerPHP\Console\Scaffold\SupervisorsCommand as ScaffoldSupervisorsCommand;
-use DeployerPHP\Console\Server\ServerAddCommand;
-use DeployerPHP\Console\Server\ServerDeleteCommand;
-use DeployerPHP\Console\Server\ServerFirewallCommand;
-use DeployerPHP\Console\Server\ServerInfoCommand;
-use DeployerPHP\Console\Server\ServerInstallCommand;
-use DeployerPHP\Console\Server\ServerSshCommand;
-use DeployerPHP\Console\Site\SiteCreateCommand;
-use DeployerPHP\Console\Site\SiteDeleteCommand;
-use DeployerPHP\Console\Site\SiteDeployCommand;
-use DeployerPHP\Console\Site\SiteHttpsCommand;
-use DeployerPHP\Console\Site\SiteRollbackCommand;
-use DeployerPHP\Console\Site\SiteSharedPullCommand;
-use DeployerPHP\Console\Site\SiteSharedPushCommand;
-use DeployerPHP\Console\Site\SiteSshCommand;
-use DeployerPHP\Console\Supervisor\SupervisorCreateCommand;
-use DeployerPHP\Console\Supervisor\SupervisorDeleteCommand;
-use DeployerPHP\Console\Supervisor\SupervisorRestartCommand;
-use DeployerPHP\Console\Supervisor\SupervisorStartCommand;
-use DeployerPHP\Console\Supervisor\SupervisorStopCommand;
-use DeployerPHP\Console\Supervisor\SupervisorSyncCommand;
-use DeployerPHP\Console\Valkey\ValkeyInstallCommand;
-use DeployerPHP\Console\Valkey\ValkeyRestartCommand;
-use DeployerPHP\Console\Valkey\ValkeyStartCommand;
-use DeployerPHP\Console\Valkey\ValkeyStopCommand;
+use DeployerPHP\Services\CommandDiscoveryService;
 use DeployerPHP\Services\VersionService;
 use Symfony\Component\Console\Application as SymfonyApplication;
 use Symfony\Component\Console\Command\Command;
@@ -100,6 +25,7 @@ final class SymfonyApp extends SymfonyApplication
     public function __construct(
         private readonly Container $container,
         private readonly VersionService $versionService,
+        private readonly CommandDiscoveryService $commandDiscovery,
     ) {
         $name = 'DeployerPHP';
         $version = $this->versionService->getVersion();
@@ -182,143 +108,11 @@ final class SymfonyApp extends SymfonyApplication
      */
     private function registerCommands(): void
     {
-        $commands = [
-            //
-            // Scaffolding
+        $commandClasses = $this->commandDiscovery->discover();
 
-            ScaffoldAiCommand::class,
-            ScaffoldCronsCommand::class,
-            ScaffoldHooksCommand::class,
-            ScaffoldSupervisorsCommand::class,
-
-            //
-            // Server management
-
-            ServerAddCommand::class,
-            ServerDeleteCommand::class,
-            ServerFirewallCommand::class,
-            ServerInfoCommand::class,
-            ServerInstallCommand::class,
-            ServerSshCommand::class,
-
-            //
-            // Provider integrations (keys + provisioning)
-
-            AwsDnsDeleteCommand::class,
-            AwsDnsListCommand::class,
-            AwsDnsSetCommand::class,
-            AwsKeyAddCommand::class,
-            AwsKeyDeleteCommand::class,
-            AwsKeyListCommand::class,
-            AwsProvisionCommand::class,
-            CfDnsDeleteCommand::class,
-            CfDnsListCommand::class,
-            CfDnsSetCommand::class,
-            DoDnsDeleteCommand::class,
-            DoDnsListCommand::class,
-            DoDnsSetCommand::class,
-            DoKeyAddCommand::class,
-            DoKeyDeleteCommand::class,
-            DoKeyListCommand::class,
-            DoProvisionCommand::class,
-            ProServerLogsCommand::class,
-            ProServerRunCommand::class,
-
-            //
-            // Site management
-
-            SiteCreateCommand::class,
-            SiteDeleteCommand::class,
-            SiteDeployCommand::class,
-            SiteHttpsCommand::class,
-            SiteRollbackCommand::class,
-            SiteSharedPullCommand::class,
-            SiteSharedPushCommand::class,
-            SiteSshCommand::class,
-
-            //
-            // Cron management
-
-            CronCreateCommand::class,
-            CronDeleteCommand::class,
-            CronSyncCommand::class,
-
-            //
-            // Supervisor management
-
-            SupervisorCreateCommand::class,
-            SupervisorDeleteCommand::class,
-            SupervisorRestartCommand::class,
-            SupervisorStartCommand::class,
-            SupervisorStopCommand::class,
-            SupervisorSyncCommand::class,
-
-            //
-            // MySQL management
-
-            MysqlInstallCommand::class,
-            MysqlRestartCommand::class,
-            MysqlStartCommand::class,
-            MysqlStopCommand::class,
-
-            //
-            // MariaDB management
-
-            MariadbInstallCommand::class,
-            MariadbRestartCommand::class,
-            MariadbStartCommand::class,
-            MariadbStopCommand::class,
-
-            //
-            // PostgreSQL management
-
-            PostgresqlInstallCommand::class,
-            PostgresqlRestartCommand::class,
-            PostgresqlStartCommand::class,
-            PostgresqlStopCommand::class,
-
-            //
-            // Nginx management
-
-            NginxRestartCommand::class,
-            NginxStartCommand::class,
-            NginxStopCommand::class,
-
-            //
-            // PHP-FPM management
-
-            PhpRestartCommand::class,
-            PhpStartCommand::class,
-            PhpStopCommand::class,
-
-            //
-            // Redis management
-
-            RedisInstallCommand::class,
-            RedisRestartCommand::class,
-            RedisStartCommand::class,
-            RedisStopCommand::class,
-
-            //
-            // Valkey management
-
-            ValkeyInstallCommand::class,
-            ValkeyRestartCommand::class,
-            ValkeyStartCommand::class,
-            ValkeyStopCommand::class,
-
-            //
-            // Memcached management
-
-            MemcachedInstallCommand::class,
-            MemcachedRestartCommand::class,
-            MemcachedStartCommand::class,
-            MemcachedStopCommand::class,
-        ];
-
-        foreach ($commands as $command) {
+        foreach ($commandClasses as $commandClass) {
             /** @var Command $commandInstance */
-            $commandInstance = $this->container->build($command);
+            $commandInstance = $this->container->build($commandClass);
             $this->addCommand($commandInstance);
         }
     }

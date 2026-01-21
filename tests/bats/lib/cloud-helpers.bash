@@ -6,7 +6,7 @@
 # All values loaded from .env file (see .env.example)
 
 # SSH key path shared (same key, different names per provider)
-export PRO_TEST_KEY_PATH="${PRO_TEST_KEY_PATH:-${BATS_TEST_ROOT}/fixtures/keys/id_test.pub}"
+export CLOUD_TEST_KEY_PATH="${CLOUD_TEST_KEY_PATH:-${BATS_TEST_ROOT}/fixtures/keys/id_test.pub}"
 
 # ----
 # AWS Test Configuration
@@ -57,11 +57,11 @@ export CF_TEST_DOMAIN="${CF_TEST_DOMAIN:-deployercf.eu}"
 # Shared Deployment Test Configuration
 # ----
 
-export PRO_TEST_PHP_VERSION="${PRO_TEST_PHP_VERSION:-8.4}"
-export PRO_TEST_PHP_EXTENSIONS="${PRO_TEST_PHP_EXTENSIONS:-fpm,bcmath,curl,mbstring,xml,zip}"
-export PRO_TEST_DEPLOY_REPO="${PRO_TEST_DEPLOY_REPO:-https://github.com/loadinglucian/deploy-me.git}"
-export PRO_TEST_DEPLOY_BRANCH="${PRO_TEST_DEPLOY_BRANCH:-main}"
-export PRO_TEST_APP_MESSAGE="${PRO_TEST_APP_MESSAGE:-DeployerPHP-BATS-Test-Success}"
+export CLOUD_TEST_PHP_VERSION="${CLOUD_TEST_PHP_VERSION:-8.4}"
+export CLOUD_TEST_PHP_EXTENSIONS="${CLOUD_TEST_PHP_EXTENSIONS:-fpm,bcmath,curl,mbstring,xml,zip}"
+export CLOUD_TEST_DEPLOY_REPO="${CLOUD_TEST_DEPLOY_REPO:-https://github.com/loadinglucian/deploy-me.git}"
+export CLOUD_TEST_DEPLOY_BRANCH="${CLOUD_TEST_DEPLOY_BRANCH:-main}"
+export CLOUD_TEST_APP_MESSAGE="${CLOUD_TEST_APP_MESSAGE:-DeployerPHP-BATS-Test-Success}"
 
 # ----
 # AWS Helpers
@@ -87,7 +87,7 @@ aws_provision_config_available() {
 
 # Cleanup AWS test key (idempotent - ignores "not found")
 aws_cleanup_test_key() {
-	"$DEPLOYER_BIN" pro:aws:key:delete \
+	"$DEPLOYER_BIN" aws:key:delete \
 		--key="$AWS_TEST_KEY_NAME" \
 		--force \
 		--yes 2> /dev/null || true
@@ -134,7 +134,7 @@ do_extract_key_id_from_output() {
 # Note: Must strip ANSI/control codes and match 8-digit IDs (not short numbers in escapes)
 do_find_key_id_by_name() {
 	local key_name="$1"
-	"$DEPLOYER_BIN" pro:do:key:list 2> /dev/null \
+	"$DEPLOYER_BIN" do:key:list 2> /dev/null \
 		| LC_ALL=C tr -cd '[:print:]\n' \
 		| grep "$key_name" \
 		| grep -oE '[0-9]{7,8}' \
@@ -147,7 +147,7 @@ do_cleanup_test_key() {
 	key_id=$(do_find_key_id_by_name "$DO_TEST_KEY_NAME")
 
 	if [[ -n "$key_id" ]]; then
-		"$DEPLOYER_BIN" pro:do:key:delete \
+		"$DEPLOYER_BIN" do:key:delete \
 			--key="$key_id" \
 			--force \
 			--yes 2> /dev/null || true

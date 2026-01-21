@@ -245,35 +245,35 @@ All service commands follow the pattern `{service}:{action}`.
 
 #### AWS
 
-| Command              | Alias            | Description                      |
-| -------------------- | ---------------- | -------------------------------- |
-| `pro:aws:provision`  | `aws:provision`  | Provision EC2 instance           |
-| `pro:aws:key:add`    | `aws:key:add`    | Add SSH public key to AWS        |
-| `pro:aws:key:delete` | `aws:key:delete` | Delete SSH key from AWS          |
-| `pro:aws:key:list`   | `aws:key:list`   | List AWS key pairs               |
-| `pro:aws:dns:set`    | `aws:dns:set`    | Create/update Route53 DNS record |
-| `pro:aws:dns:list`   | `aws:dns:list`   | List Route53 DNS records         |
-| `pro:aws:dns:delete` | `aws:dns:delete` | Delete Route53 DNS record        |
+| Command           | Description                      |
+| ----------------- | -------------------------------- |
+| `aws:provision`   | Provision EC2 instance           |
+| `aws:key:add`     | Add SSH public key to AWS        |
+| `aws:key:delete`  | Delete SSH key from AWS          |
+| `aws:key:list`    | List AWS key pairs               |
+| `aws:dns:set`     | Create/update Route53 DNS record |
+| `aws:dns:list`    | List Route53 DNS records         |
+| `aws:dns:delete`  | Delete Route53 DNS record        |
 
 #### DigitalOcean
 
-| Command             | Alias           | Description                        |
-| ------------------- | --------------- | ---------------------------------- |
-| `pro:do:provision`  | `do:provision`  | Provision DigitalOcean droplet     |
-| `pro:do:key:add`    | `do:key:add`    | Add SSH public key to DigitalOcean |
-| `pro:do:key:delete` | `do:key:delete` | Delete SSH key from DigitalOcean   |
-| `pro:do:key:list`   | `do:key:list`   | List DigitalOcean SSH keys         |
-| `pro:do:dns:set`    | `do:dns:set`    | Create/update DNS record           |
-| `pro:do:dns:list`   | `do:dns:list`   | List DNS records                   |
-| `pro:do:dns:delete` | `do:dns:delete` | Delete DNS record                  |
+| Command          | Description                        |
+| ---------------- | ---------------------------------- |
+| `do:provision`   | Provision DigitalOcean droplet     |
+| `do:key:add`     | Add SSH public key to DigitalOcean |
+| `do:key:delete`  | Delete SSH key from DigitalOcean   |
+| `do:key:list`    | List DigitalOcean SSH keys         |
+| `do:dns:set`     | Create/update DNS record           |
+| `do:dns:list`    | List DNS records                   |
+| `do:dns:delete`  | Delete DNS record                  |
 
 #### Cloudflare
 
-| Command             | Alias           | Description                         |
-| ------------------- | --------------- | ----------------------------------- |
-| `pro:cf:dns:set`    | `cf:dns:set`    | Create/update Cloudflare DNS record |
-| `pro:cf:dns:list`   | `cf:dns:list`   | List Cloudflare DNS records         |
-| `pro:cf:dns:delete` | `cf:dns:delete` | Delete Cloudflare DNS record        |
+| Command          | Description                         |
+| ---------------- | ----------------------------------- |
+| `cf:dns:set`     | Create/update Cloudflare DNS record |
+| `cf:dns:list`    | List Cloudflare DNS records         |
+| `cf:dns:delete`  | Delete Cloudflare DNS record        |
 
 ## Debugging
 

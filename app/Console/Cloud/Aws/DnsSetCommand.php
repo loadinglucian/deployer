@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Pro\Aws;
+namespace DeployerPHP\Console\Cloud\Aws;
 
-use DeployerPHP\Contracts\ProCommand;
+use DeployerPHP\Contracts\BaseCommand;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Services\Aws\AwsRoute53DnsService;
 use DeployerPHP\Traits\AwsDnsTrait;
@@ -17,10 +17,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:aws:dns:set|aws:dns:set',
+    name: 'aws:dns:set',
     description: 'Create or update a DNS record for an AWS Route53 hosted zone'
 )]
-class DnsSetCommand extends ProCommand
+class DnsSetCommand extends BaseCommand
 {
     use AwsDnsTrait;
     use AwsTrait;

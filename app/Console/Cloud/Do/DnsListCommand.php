@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Pro\Cf;
+namespace DeployerPHP\Console\Cloud\Do;
 
-use DeployerPHP\Contracts\ProCommand;
+use DeployerPHP\Contracts\BaseCommand;
 use DeployerPHP\Exceptions\ValidationException;
-use DeployerPHP\Traits\CfTrait;
 use DeployerPHP\Traits\DnsCommandTrait;
+use DeployerPHP\Traits\DoDnsTrait;
+use DeployerPHP\Traits\DoTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -15,13 +16,14 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:cf:dns:list|cf:dns:list|pro:cloudflare:dns:list|cloudflare:dns:list',
-    description: 'List DNS records in a Cloudflare zone'
+    name: 'do:dns:list|digitalocean:dns:list',
+    description: 'List DNS records for a DigitalOcean domain'
 )]
-class DnsListCommand extends ProCommand
+class DnsListCommand extends BaseCommand
 {
-    use CfTrait;
     use DnsCommandTrait;
+    use DoDnsTrait;
+    use DoTrait;
 
     // ----
     // Configuration
@@ -47,10 +49,10 @@ class DnsListCommand extends ProCommand
         $this->h1('List DNS Records');
 
         //
-        // Initialize Cloudflare API
+        // Initialize DigitalOcean API
         // ----
 
-        if (Command::FAILURE === $this->initializeCloudflareAPI()) {
+        if (Command::FAILURE === $this->initializeDoAPI()) {
             return Command::FAILURE;
         }
 
@@ -59,13 +61,13 @@ class DnsListCommand extends ProCommand
         // ----
 
         try {
-            $zones = $this->io->promptSpin(
-                fn () => $this->cf->zone->getZones(),
-                'Fetching zones...'
+            $domains = $this->io->promptSpin(
+                fn () => $this->do->domain->getDomains(),
+                'Fetching domains...'
             );
 
-            if (0 === count($zones)) {
-                $this->info('No zones found in your Cloudflare account');
+            if (0 === count($domains)) {
+                $this->info('No domains found in your DigitalOcean account');
 
                 return Command::SUCCESS;
             }
@@ -75,28 +77,28 @@ class DnsListCommand extends ProCommand
                 'zone',
                 fn ($validate) => $this->io->promptSelect(
                     label: 'Select zone:',
-                    options: $zones,
+                    options: $domains,
                     validate: $validate
                 ),
-                fn ($value) => $this->validateZoneInput($value)
+                fn ($value) => $this->validateDoDomainInput($value)
             );
+
+            /** @var string|null $typeFilter */
+            $typeFilter = $input->getOption('type');
+
+            if (null !== $typeFilter) {
+                $error = $this->validateDoRecordTypeInput($typeFilter);
+                if (null !== $error) {
+                    $this->nay($error);
+
+                    return Command::FAILURE;
+                }
+                $typeFilter = strtoupper($typeFilter);
+            }
         } catch (ValidationException $e) {
             $this->nay($e->getMessage());
 
             return Command::FAILURE;
-        }
-
-        /** @var string|null $typeFilter */
-        $typeFilter = $input->getOption('type');
-
-        if (null !== $typeFilter) {
-            $error = $this->validateRecordTypeInput($typeFilter);
-            if (null !== $error) {
-                $this->nay($error);
-
-                return Command::FAILURE;
-            }
-            $typeFilter = strtoupper($typeFilter);
         }
 
         //
@@ -104,11 +106,8 @@ class DnsListCommand extends ProCommand
         // ----
 
         try {
-            $zoneId = $this->resolveZoneId($zone);
-
-            /** @var array<int, array{id: string, type: string, name: string, content: string, ttl: int, proxied: bool}> $records */
             $records = $this->io->promptSpin(
-                fn () => $this->cf->dns->listRecords($zoneId, $typeFilter),
+                fn () => $this->do->dns->listRecords($zone, $typeFilter),
                 'Fetching DNS records...'
             );
         } catch (\RuntimeException $e) {
@@ -123,20 +122,15 @@ class DnsListCommand extends ProCommand
                 : "No {$typeFilter} records found for '{$zone}'";
             $this->info($message);
 
-            $this->commandReplay([
-                'zone' => $zone,
-                'type' => $typeFilter,
-            ]);
-
             return Command::SUCCESS;
         }
 
-        // Normalize records for display (CF uses 'content' instead of 'value', has 'proxied')
+        // Normalize records for display (DO uses 'data' instead of 'value')
         $normalizedRecords = array_map(fn ($r) => [
             'type' => $r['type'],
             'name' => $r['name'],
-            'value' => $r['content'],
-            'ttl' => 1 === $r['ttl'] ? 'auto' : $r['ttl'],
+            'value' => $r['data'] ?? '',
+            'ttl' => $r['ttl'],
         ], $records);
 
         $this->displayDnsRecords($normalizedRecords);

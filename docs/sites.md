@@ -3,30 +3,30 @@
 - [Introduction](#introduction)
 - [Creating a Site](#creating-a-site)
 - [Deploying a Site](#deploying-a-site)
-    - [Deployment Hooks](#deployment-hooks)
-    - [Release Management](#release-management)
+  - [Deployment Hooks](#deployment-hooks)
+  - [Release Management](#release-management)
 - [Enabling HTTPS](#enabling-https)
 - [Shared Files](#shared-files)
-    - [Pushing Files](#pushing-files)
-    - [Pulling Files](#pulling-files)
+  - [Pushing Files](#pushing-files)
+  - [Pulling Files](#pulling-files)
 - [Viewing Logs](#viewing-logs)
 - [SSH Access](#ssh-access)
 - [Rollbacks](#rollbacks)
 - [Deleting a Site](#deleting-a-site)
 - [Cron Jobs](#cron-jobs)
-    - [Creating Cron Jobs](#creating-cron-jobs)
-    - [Syncing Cron Jobs](#syncing-cron-jobs)
-    - [Deleting Cron Jobs](#deleting-cron-jobs)
+  - [Creating Cron Jobs](#creating-cron-jobs)
+  - [Syncing Cron Jobs](#syncing-cron-jobs)
+  - [Deleting Cron Jobs](#deleting-cron-jobs)
 - [Supervisor Processes](#supervisor-processes)
-    - [Creating Processes](#creating-processes)
-    - [Managing Processes](#managing-processes)
-    - [Syncing Processes](#syncing-processes)
-    - [Deleting Processes](#deleting-processes)
+  - [Creating Processes](#creating-processes)
+  - [Managing Processes](#managing-processes)
+  - [Syncing Processes](#syncing-processes)
+  - [Deleting Processes](#deleting-processes)
 - [Scaffolding](#scaffolding)
-    - [Scaffolding Hooks](#scaffolding-hooks)
-    - [Scaffolding Crons](#scaffolding-crons)
-    - [Scaffolding Supervisors](#scaffolding-supervisors)
-    - [Scaffolding AI Rules](#scaffolding-ai-rules)
+  - [Scaffolding Hooks](#scaffolding-hooks)
+  - [Scaffolding Crons](#scaffolding-crons)
+  - [Scaffolding Supervisors](#scaffolding-supervisors)
+  - [Scaffolding AI Rules](#scaffolding-ai-rules)
 
 <a name="introduction"></a>
 
@@ -212,7 +212,13 @@ Options:
 
 ## Viewing Logs
 
-To view logs for a specific site, use the `server:logs` command with the `--site` option to filter log sources to that site's Nginx access logs, cron logs, and supervisor logs. For full documentation, see [Viewing Logs](/docs/pro#server-logs) in the Pro documentation.
+To view logs for a specific site, use the `server:logs` command with the `--site` option to filter log sources to that site's Nginx access logs, cron logs, and supervisor logs:
+
+```bash
+deployer server:logs --site=example.com
+```
+
+For full documentation, see [Viewing Logs](/docs/servers#viewing-logs) in the Server Management documentation.
 
 <a name="ssh-access"></a>
 

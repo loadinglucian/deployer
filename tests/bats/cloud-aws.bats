@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 # AWS Integration Tests
-# Tests: pro:aws:key:add, pro:aws:key:list, pro:aws:key:delete, pro:aws:provision
+# Tests: aws:key:add, aws:key:list, aws:key:delete, aws:provision
 #
 # Prerequisites:
 #   - AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION in environment
@@ -9,7 +9,7 @@
 #   - SSH private key at ~/.ssh/id_ed25519
 
 load 'lib/helpers'
-load 'lib/pro-helpers'
+load 'lib/cloud-helpers'
 
 # ----
 # Setup/Teardown
@@ -33,13 +33,13 @@ setup() {
 }
 
 # ----
-# pro:aws:key:add
+# aws:key:add
 # ----
 
-@test "pro:aws:key:add uploads public key to AWS" {
-	run_deployer pro:aws:key:add \
+@test "aws:key:add uploads public key to AWS" {
+	run_deployer aws:key:add \
 		--name="$AWS_TEST_KEY_NAME" \
-		--public-key-path="$PRO_TEST_KEY_PATH"
+		--public-key-path="$CLOUD_TEST_KEY_PATH"
 
 	debug_output
 
@@ -47,29 +47,29 @@ setup() {
 	assert_success_output
 	assert_output_contains "Key pair imported successfully"
 	assert_output_contains "Name: $AWS_TEST_KEY_NAME"
-	assert_command_replay "pro:aws:key:add"
+	assert_command_replay "aws:key:add"
 }
 
 # ----
-# pro:aws:key:list
+# aws:key:list
 # ----
 
-@test "pro:aws:key:list shows uploaded key" {
-	run_deployer pro:aws:key:list
+@test "aws:key:list shows uploaded key" {
+	run_deployer aws:key:list
 
 	debug_output
 
 	[ "$status" -eq 0 ]
 	assert_output_contains "$AWS_TEST_KEY_NAME"
-	assert_command_replay "pro:aws:key:list"
+	assert_command_replay "aws:key:list"
 }
 
 # ----
-# pro:aws:key:delete
+# aws:key:delete
 # ----
 
-@test "pro:aws:key:delete removes key from AWS" {
-	run_deployer pro:aws:key:delete \
+@test "aws:key:delete removes key from AWS" {
+	run_deployer aws:key:delete \
 		--key="$AWS_TEST_KEY_NAME" \
 		--force \
 		--yes
@@ -79,11 +79,11 @@ setup() {
 	[ "$status" -eq 0 ]
 	assert_success_output
 	assert_output_contains "Key pair deleted successfully"
-	assert_command_replay "pro:aws:key:delete"
+	assert_command_replay "aws:key:delete"
 }
 
-@test "pro:aws:key:list confirms key deleted" {
-	run_deployer pro:aws:key:list
+@test "aws:key:list confirms key deleted" {
+	run_deployer aws:key:list
 
 	debug_output
 
@@ -92,10 +92,10 @@ setup() {
 }
 
 # ----
-# pro:aws:provision
+# aws:provision
 # ----
 
-@test "pro:aws:provision creates EC2 instance and adds to inventory" {
+@test "aws:provision creates EC2 instance and adds to inventory" {
 	# Skip if AWS credentials or SSH key not available
 	if ! aws_provision_config_available; then
 		skip "AWS credentials not configured or SSH key missing"
@@ -104,7 +104,7 @@ setup() {
 	# Cleanup any leftover test server
 	aws_cleanup_test_server
 
-	run_deployer pro:aws:provision \
+	run_deployer aws:provision \
 		--name="$AWS_TEST_SERVER_NAME" \
 		--instance-type="$AWS_TEST_INSTANCE_TYPE" \
 		--ami="$AWS_TEST_AMI" \
@@ -123,7 +123,7 @@ setup() {
 	assert_output_contains "Instance is running"
 	assert_output_contains "Elastic IP allocated"
 	assert_output_contains "Server added to inventory"
-	assert_command_replay "pro:aws:provision"
+	assert_command_replay "aws:provision"
 }
 
 @test "server:install configures AWS provisioned server" {
@@ -136,8 +136,9 @@ setup() {
 	run timeout 600 "$DEPLOYER_BIN" --inventory="$TEST_INVENTORY" server:install \
 		--server="$AWS_TEST_SERVER_NAME" \
 		--generate-deploy-key \
-		--php-version="$PRO_TEST_PHP_VERSION" \
-		--php-extensions="$PRO_TEST_PHP_EXTENSIONS"
+		--timezone="UTC" \
+		--php-version="$CLOUD_TEST_PHP_VERSION" \
+		--php-extensions="$CLOUD_TEST_PHP_EXTENSIONS"
 
 	debug_output
 
@@ -149,10 +150,10 @@ setup() {
 }
 
 # ----
-# pro:aws:dns:set
+# aws:dns:set
 # ----
 
-@test "pro:aws:dns:set creates A record for root domain" {
+@test "aws:dns:set creates A record for root domain" {
 	# Skip if AWS credentials or SSH key not available
 	if ! aws_provision_config_available; then
 		skip "AWS credentials not configured or SSH key missing"
@@ -164,7 +165,7 @@ setup() {
 
 	[[ -n "$server_ip" ]] || skip "Could not determine server IP"
 
-	run_deployer pro:aws:dns:set \
+	run_deployer aws:dns:set \
 		--zone="$AWS_TEST_HOSTED_ZONE" \
 		--type="A" \
 		--name="@" \
@@ -176,10 +177,10 @@ setup() {
 	[ "$status" -eq 0 ]
 	assert_success_output
 	assert_output_contains "DNS record upserted successfully"
-	assert_command_replay "pro:aws:dns:set"
+	assert_command_replay "aws:dns:set"
 }
 
-@test "pro:aws:dns:set creates A record for www subdomain" {
+@test "aws:dns:set creates A record for www subdomain" {
 	# Skip if AWS credentials or SSH key not available
 	if ! aws_provision_config_available; then
 		skip "AWS credentials not configured or SSH key missing"
@@ -191,7 +192,7 @@ setup() {
 
 	[[ -n "$server_ip" ]] || skip "Could not determine server IP"
 
-	run_deployer pro:aws:dns:set \
+	run_deployer aws:dns:set \
 		--zone="$AWS_TEST_HOSTED_ZONE" \
 		--type="A" \
 		--name="www" \
@@ -203,14 +204,14 @@ setup() {
 	[ "$status" -eq 0 ]
 	assert_success_output
 	assert_output_contains "DNS record upserted successfully"
-	assert_command_replay "pro:aws:dns:set"
+	assert_command_replay "aws:dns:set"
 }
 
 # ----
-# pro:cf:dns:set
+# cf:dns:set
 # ----
 
-@test "pro:cf:dns:set creates A record for root domain (proxied)" {
+@test "cf:dns:set creates A record for root domain (proxied)" {
 	# Skip if AWS credentials/SSH key not available OR Cloudflare credentials missing
 	if ! aws_provision_config_available; then
 		skip "AWS credentials not configured or SSH key missing"
@@ -225,7 +226,7 @@ setup() {
 
 	[[ -n "$server_ip" ]] || skip "Could not determine server IP"
 
-	run_deployer pro:cf:dns:set \
+	run_deployer cf:dns:set \
 		--zone="$CF_TEST_DOMAIN" \
 		--type="A" \
 		--name="@" \
@@ -239,10 +240,10 @@ setup() {
 	assert_success_output
 	assert_output_contains "DNS record"
 	assert_output_contains "successfully"
-	assert_command_replay "pro:cf:dns:set"
+	assert_command_replay "cf:dns:set"
 }
 
-@test "pro:cf:dns:set creates A record for www subdomain (non-proxied)" {
+@test "cf:dns:set creates A record for www subdomain (non-proxied)" {
 	# Skip if AWS credentials/SSH key not available OR Cloudflare credentials missing
 	if ! aws_provision_config_available; then
 		skip "AWS credentials not configured or SSH key missing"
@@ -257,7 +258,7 @@ setup() {
 
 	[[ -n "$server_ip" ]] || skip "Could not determine server IP"
 
-	run_deployer pro:cf:dns:set \
+	run_deployer cf:dns:set \
 		--zone="$CF_TEST_DOMAIN" \
 		--type="A" \
 		--name="www" \
@@ -271,14 +272,14 @@ setup() {
 	assert_success_output
 	assert_output_contains "DNS record"
 	assert_output_contains "successfully"
-	assert_command_replay "pro:cf:dns:set"
+	assert_command_replay "cf:dns:set"
 }
 
 # ----
-# pro:cf:dns:list
+# cf:dns:list
 # ----
 
-@test "pro:cf:dns:list shows created records" {
+@test "cf:dns:list shows created records" {
 	# Skip if AWS credentials/SSH key not available OR Cloudflare credentials missing
 	if ! aws_provision_config_available; then
 		skip "AWS credentials not configured or SSH key missing"
@@ -287,21 +288,21 @@ setup() {
 		skip "Cloudflare credentials not configured"
 	fi
 
-	run_deployer pro:cf:dns:list \
+	run_deployer cf:dns:list \
 		--zone="$CF_TEST_DOMAIN"
 
 	debug_output
 
 	[ "$status" -eq 0 ]
 	assert_output_contains "$CF_TEST_DOMAIN"
-	assert_command_replay "pro:cf:dns:list"
+	assert_command_replay "cf:dns:list"
 }
 
 # ----
-# pro:cf:dns:delete
+# cf:dns:delete
 # ----
 
-@test "pro:cf:dns:delete removes www A record" {
+@test "cf:dns:delete removes www A record" {
 	# Skip if AWS credentials/SSH key not available OR Cloudflare credentials missing
 	if ! aws_provision_config_available; then
 		skip "AWS credentials not configured or SSH key missing"
@@ -310,7 +311,7 @@ setup() {
 		skip "Cloudflare credentials not configured"
 	fi
 
-	run_deployer pro:cf:dns:delete \
+	run_deployer cf:dns:delete \
 		--zone="$CF_TEST_DOMAIN" \
 		--type="A" \
 		--name="www" \
@@ -322,10 +323,10 @@ setup() {
 	[ "$status" -eq 0 ]
 	assert_success_output
 	assert_output_contains "DNS record deleted successfully"
-	assert_command_replay "pro:cf:dns:delete"
+	assert_command_replay "cf:dns:delete"
 }
 
-@test "pro:cf:dns:delete removes root A record" {
+@test "cf:dns:delete removes root A record" {
 	# Skip if AWS credentials/SSH key not available OR Cloudflare credentials missing
 	if ! aws_provision_config_available; then
 		skip "AWS credentials not configured or SSH key missing"
@@ -334,7 +335,7 @@ setup() {
 		skip "Cloudflare credentials not configured"
 	fi
 
-	run_deployer pro:cf:dns:delete \
+	run_deployer cf:dns:delete \
 		--zone="$CF_TEST_DOMAIN" \
 		--type="A" \
 		--name="@" \
@@ -346,7 +347,7 @@ setup() {
 	[ "$status" -eq 0 ]
 	assert_success_output
 	assert_output_contains "DNS record deleted successfully"
-	assert_command_replay "pro:cf:dns:delete"
+	assert_command_replay "cf:dns:delete"
 }
 
 # ----
@@ -365,7 +366,7 @@ setup() {
 	run_deployer site:create \
 		--domain="$AWS_TEST_DOMAIN" \
 		--server="$AWS_TEST_SERVER_NAME" \
-		--php-version="$PRO_TEST_PHP_VERSION" \
+		--php-version="$CLOUD_TEST_PHP_VERSION" \
 		--www-mode="redirect-to-root" \
 		--web-root="/"
 
@@ -413,8 +414,8 @@ setup() {
 	# Deploy takes time - use longer timeout
 	run timeout 300 "$DEPLOYER_BIN" --inventory="$TEST_INVENTORY" site:deploy \
 		--domain="$AWS_TEST_DOMAIN" \
-		--repo="$PRO_TEST_DEPLOY_REPO" \
-		--branch="$PRO_TEST_DEPLOY_BRANCH" \
+		--repo="$CLOUD_TEST_DEPLOY_REPO" \
+		--branch="$CLOUD_TEST_DEPLOY_BRANCH" \
 		--yes
 
 	debug_output
@@ -440,7 +441,7 @@ setup() {
 	server_ip=$(get_server_ip "$AWS_TEST_SERVER_NAME")
 
 	# Wait for HTTP response containing our test message (30 seconds - should be immediate with direct IP)
-	wait_for_http "$AWS_TEST_DOMAIN" "$PRO_TEST_APP_MESSAGE" 30 "$server_ip"
+	wait_for_http "$AWS_TEST_DOMAIN" "$CLOUD_TEST_APP_MESSAGE" 30 "$server_ip"
 }
 
 # ----

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Pro\Aws;
+namespace DeployerPHP\Console\Cloud\Do;
 
-use DeployerPHP\Contracts\ProCommand;
+use DeployerPHP\Contracts\BaseCommand;
 use DeployerPHP\Exceptions\ValidationException;
-use DeployerPHP\Services\Aws\AwsRoute53DnsService;
-use DeployerPHP\Traits\AwsDnsTrait;
-use DeployerPHP\Traits\AwsTrait;
+use DeployerPHP\Services\Do\DoDnsService;
 use DeployerPHP\Traits\DnsCommandTrait;
+use DeployerPHP\Traits\DoDnsTrait;
+use DeployerPHP\Traits\DoTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,14 +17,14 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:aws:dns:delete|aws:dns:delete',
-    description: 'Delete a DNS record from an AWS Route53 hosted zone'
+    name: 'do:dns:delete|digitalocean:dns:delete',
+    description: 'Delete a DNS record from a DigitalOcean domain'
 )]
-class DnsDeleteCommand extends ProCommand
+class DnsDeleteCommand extends BaseCommand
 {
-    use AwsDnsTrait;
-    use AwsTrait;
     use DnsCommandTrait;
+    use DoDnsTrait;
+    use DoTrait;
 
     // ----
     // Configuration
@@ -35,7 +35,7 @@ class DnsDeleteCommand extends ProCommand
         parent::configure();
 
         $this
-            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Hosted zone ID or domain name')
+            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone (domain name)')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME)')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Record name (use "@" for root)')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Skip typing the record name to confirm')
@@ -53,10 +53,10 @@ class DnsDeleteCommand extends ProCommand
         $this->h1('Delete DNS Record');
 
         //
-        // Initialize AWS API
+        // Initialize DigitalOcean API
         // ----
 
-        if (Command::FAILURE === $this->initializeAwsAPI()) {
+        if (Command::FAILURE === $this->initializeDoAPI()) {
             return Command::FAILURE;
         }
 
@@ -71,31 +71,12 @@ class DnsDeleteCommand extends ProCommand
         }
 
         //
-        // Resolve zone
-        // ----
-
-        try {
-            $zoneId = $this->resolveAwsHostedZoneId($deets['zone']);
-            $zoneName = $this->aws->route53Zone->getHostedZoneName($zoneId);
-        } catch (\RuntimeException $e) {
-            $this->nay($e->getMessage());
-
-            return Command::FAILURE;
-        }
-
-        //
-        // Normalize record name
-        // ----
-
-        $fullName = $this->normalizeAwsRecordName($deets['name'], $zoneName);
-
-        //
         // Find existing record
         // ----
 
         try {
             $record = $this->io->promptSpin(
-                fn () => $this->aws->route53Dns->findRecord($zoneId, $deets['type'], $fullName),
+                fn () => $this->do->dns->findRecord($deets['zone'], $deets['type'], $deets['name']),
                 'Finding DNS record...'
             );
         } catch (\RuntimeException $e) {
@@ -105,14 +86,7 @@ class DnsDeleteCommand extends ProCommand
         }
 
         if (null === $record) {
-            $this->nay("No {$deets['type']} record found for '{$deets['name']}' in zone '{$zoneName}'");
-
-            return Command::FAILURE;
-        }
-
-        // Check if it's an alias record (cannot delete normally)
-        if ($record['is_alias']) {
-            $this->nay('Alias records must be deleted using the AWS Console or by creating the same alias with different settings');
+            $this->nay("No {$deets['type']} record found for '{$deets['name']}' in zone '{$deets['zone']}'");
 
             return Command::FAILURE;
         }
@@ -124,7 +98,7 @@ class DnsDeleteCommand extends ProCommand
         $this->displayDeets([
             'Type' => $record['type'],
             'Name' => $record['name'],
-            'Value' => $record['value'],
+            'Value' => $record['data'],
             'TTL' => (string) $record['ttl'],
         ]);
 
@@ -156,13 +130,7 @@ class DnsDeleteCommand extends ProCommand
 
         try {
             $this->io->promptSpin(
-                fn () => $this->aws->route53Dns->deleteRecord(
-                    $zoneId,
-                    $deets['type'],
-                    $fullName,
-                    $record['value'],
-                    $record['ttl']
-                ),
+                fn () => $this->do->dns->deleteRecord($deets['zone'], $record['id']),
                 'Deleting DNS record...'
             );
 
@@ -178,7 +146,7 @@ class DnsDeleteCommand extends ProCommand
         // ----
 
         $this->commandReplay([
-            'zone' => $zoneName,
+            'zone' => $deets['zone'],
             'type' => $deets['type'],
             'name' => $deets['name'],
             'force' => true,
@@ -200,13 +168,13 @@ class DnsDeleteCommand extends ProCommand
     protected function gatherRecordDeets(): array|int
     {
         try {
-            $zones = $this->io->promptSpin(
-                fn () => $this->aws->route53Zone->getHostedZones(),
-                'Fetching hosted zones...'
+            $domains = $this->io->promptSpin(
+                fn () => $this->do->domain->getDomains(),
+                'Fetching domains...'
             );
 
-            if (0 === count($zones)) {
-                $this->info('No hosted zones found in your AWS account');
+            if (0 === count($domains)) {
+                $this->info('No domains found in your DigitalOcean account');
 
                 return Command::FAILURE;
             }
@@ -215,14 +183,14 @@ class DnsDeleteCommand extends ProCommand
             $zone = $this->io->getValidatedOptionOrPrompt(
                 'zone',
                 fn ($validate) => $this->io->promptSelect(
-                    label: 'Select hosted zone:',
-                    options: $zones,
+                    label: 'Select zone:',
+                    options: $domains,
                     validate: $validate
                 ),
-                fn ($value) => $this->validateAwsHostedZoneInput($value)
+                fn ($value) => $this->validateDoDomainInput($value)
             );
 
-            $typeOptions = array_combine(AwsRoute53DnsService::RECORD_TYPES, AwsRoute53DnsService::RECORD_TYPES);
+            $typeOptions = array_combine(DoDnsService::RECORD_TYPES, DoDnsService::RECORD_TYPES);
 
             /** @var string $type */
             $type = $this->io->getValidatedOptionOrPrompt(
@@ -232,7 +200,7 @@ class DnsDeleteCommand extends ProCommand
                     options: $typeOptions,
                     validate: $validate
                 ),
-                fn ($value) => $this->validateAwsRecordTypeInput($value)
+                fn ($value) => $this->validateDoRecordTypeInput($value)
             );
 
             $type = strtoupper($type);
@@ -246,7 +214,7 @@ class DnsDeleteCommand extends ProCommand
                     hint: 'Use "@" for root domain',
                     validate: $validate
                 ),
-                fn ($value) => $this->validateAwsRecordNameInput($value)
+                fn ($value) => $this->validateDoRecordNameInput($value)
             );
 
             return [

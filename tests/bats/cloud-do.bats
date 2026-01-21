@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 # DigitalOcean Integration Tests
-# Tests: pro:do:key:add, pro:do:key:list, pro:do:key:delete, pro:do:provision
+# Tests: do:key:add, do:key:list, do:key:delete, do:provision
 #
 # Prerequisites:
 #   - DIGITALOCEAN_API_TOKEN or DO_API_TOKEN in environment
@@ -9,7 +9,7 @@
 #   - SSH private key at ~/.ssh/id_ed25519
 
 load 'lib/helpers'
-load 'lib/pro-helpers'
+load 'lib/cloud-helpers'
 
 # ----
 # Setup/Teardown
@@ -33,13 +33,13 @@ setup() {
 }
 
 # ----
-# pro:do:key:add
+# do:key:add
 # ----
 
-@test "pro:do:key:add uploads public key to DigitalOcean" {
-	run_deployer pro:do:key:add \
+@test "do:key:add uploads public key to DigitalOcean" {
+	run_deployer do:key:add \
 		--name="$DO_TEST_KEY_NAME" \
-		--public-key-path="$PRO_TEST_KEY_PATH"
+		--public-key-path="$CLOUD_TEST_KEY_PATH"
 
 	debug_output
 
@@ -47,28 +47,28 @@ setup() {
 	assert_success_output
 	assert_output_contains "Public SSH key uploaded successfully"
 	assert_output_contains "ID:"
-	assert_command_replay "pro:do:key:add"
+	assert_command_replay "do:key:add"
 }
 
 # ----
-# pro:do:key:list
+# do:key:list
 # ----
 
-@test "pro:do:key:list shows uploaded key" {
-	run_deployer pro:do:key:list
+@test "do:key:list shows uploaded key" {
+	run_deployer do:key:list
 
 	debug_output
 
 	[ "$status" -eq 0 ]
 	assert_output_contains "$DO_TEST_KEY_NAME"
-	assert_command_replay "pro:do:key:list"
+	assert_command_replay "do:key:list"
 }
 
 # ----
-# pro:do:key:delete
+# do:key:delete
 # ----
 
-@test "pro:do:key:delete removes key from DigitalOcean" {
+@test "do:key:delete removes key from DigitalOcean" {
 	# Find key ID by name (safe: only deletes key we created)
 	local key_id
 	key_id=$(do_find_key_id_by_name "$DO_TEST_KEY_NAME")
@@ -76,7 +76,7 @@ setup() {
 	# Safety: only proceed if we found a key with our test name
 	[[ -n "$key_id" ]] || skip "Test key not found"
 
-	run_deployer pro:do:key:delete \
+	run_deployer do:key:delete \
 		--key="$key_id" \
 		--force \
 		--yes
@@ -86,11 +86,11 @@ setup() {
 	[ "$status" -eq 0 ]
 	assert_success_output
 	assert_output_contains "Public SSH key deleted successfully"
-	assert_command_replay "pro:do:key:delete"
+	assert_command_replay "do:key:delete"
 }
 
-@test "pro:do:key:list confirms key deleted" {
-	run_deployer pro:do:key:list
+@test "do:key:list confirms key deleted" {
+	run_deployer do:key:list
 
 	debug_output
 
@@ -99,10 +99,10 @@ setup() {
 }
 
 # ----
-# pro:do:provision
+# do:provision
 # ----
 
-@test "pro:do:provision creates droplet and adds to inventory" {
+@test "do:provision creates droplet and adds to inventory" {
 	# Skip if DO credentials or SSH key not available
 	if ! do_provision_config_available; then
 		skip "DO credentials not configured or SSH key missing"
@@ -111,7 +111,7 @@ setup() {
 	# Cleanup any leftover test server
 	do_cleanup_test_server
 
-	run_deployer pro:do:provision \
+	run_deployer do:provision \
 		--name="$DO_TEST_SERVER_NAME" \
 		--region="$DO_TEST_REGION" \
 		--size="$DO_TEST_SIZE" \
@@ -130,7 +130,7 @@ setup() {
 	assert_output_contains "Droplet provisioned"
 	assert_output_contains "Droplet is active"
 	assert_output_contains "Server added to inventory"
-	assert_command_replay "pro:do:provision"
+	assert_command_replay "do:provision"
 }
 
 @test "server:install configures DigitalOcean provisioned server" {
@@ -143,8 +143,9 @@ setup() {
 	run timeout 600 "$DEPLOYER_BIN" --inventory="$TEST_INVENTORY" server:install \
 		--server="$DO_TEST_SERVER_NAME" \
 		--generate-deploy-key \
-		--php-version="$PRO_TEST_PHP_VERSION" \
-		--php-extensions="$PRO_TEST_PHP_EXTENSIONS"
+		--timezone="UTC" \
+		--php-version="$CLOUD_TEST_PHP_VERSION" \
+		--php-extensions="$CLOUD_TEST_PHP_EXTENSIONS"
 
 	debug_output
 
@@ -156,10 +157,10 @@ setup() {
 }
 
 # ----
-# pro:do:dns:set
+# do:dns:set
 # ----
 
-@test "pro:do:dns:set creates A record for root domain" {
+@test "do:dns:set creates A record for root domain" {
 	# Skip if DO credentials or SSH key not available
 	if ! do_provision_config_available; then
 		skip "DO credentials not configured or SSH key missing"
@@ -171,7 +172,7 @@ setup() {
 
 	[[ -n "$server_ip" ]] || skip "Could not determine server IP"
 
-	run_deployer pro:do:dns:set \
+	run_deployer do:dns:set \
 		--zone="$DO_TEST_DOMAIN" \
 		--type="A" \
 		--name="@" \
@@ -184,10 +185,10 @@ setup() {
 	assert_success_output
 	assert_output_contains "DNS record"
 	assert_output_contains "successfully"
-	assert_command_replay "pro:do:dns:set"
+	assert_command_replay "do:dns:set"
 }
 
-@test "pro:do:dns:set creates A record for www subdomain" {
+@test "do:dns:set creates A record for www subdomain" {
 	# Skip if DO credentials or SSH key not available
 	if ! do_provision_config_available; then
 		skip "DO credentials not configured or SSH key missing"
@@ -199,7 +200,7 @@ setup() {
 
 	[[ -n "$server_ip" ]] || skip "Could not determine server IP"
 
-	run_deployer pro:do:dns:set \
+	run_deployer do:dns:set \
 		--zone="$DO_TEST_DOMAIN" \
 		--type="A" \
 		--name="www" \
@@ -212,7 +213,7 @@ setup() {
 	assert_success_output
 	assert_output_contains "DNS record"
 	assert_output_contains "successfully"
-	assert_command_replay "pro:do:dns:set"
+	assert_command_replay "do:dns:set"
 }
 
 # ----
@@ -231,7 +232,7 @@ setup() {
 	run_deployer site:create \
 		--domain="$DO_TEST_DOMAIN" \
 		--server="$DO_TEST_SERVER_NAME" \
-		--php-version="$PRO_TEST_PHP_VERSION" \
+		--php-version="$CLOUD_TEST_PHP_VERSION" \
 		--www-mode="redirect-to-root" \
 		--web-root="/"
 
@@ -279,8 +280,8 @@ setup() {
 	# Deploy takes time - use longer timeout
 	run timeout 300 "$DEPLOYER_BIN" --inventory="$TEST_INVENTORY" site:deploy \
 		--domain="$DO_TEST_DOMAIN" \
-		--repo="$PRO_TEST_DEPLOY_REPO" \
-		--branch="$PRO_TEST_DEPLOY_BRANCH" \
+		--repo="$CLOUD_TEST_DEPLOY_REPO" \
+		--branch="$CLOUD_TEST_DEPLOY_BRANCH" \
 		--yes
 
 	debug_output
@@ -306,7 +307,7 @@ setup() {
 	server_ip=$(get_server_ip "$DO_TEST_SERVER_NAME")
 
 	# Wait for HTTP response containing our test message (30 seconds - should be immediate with direct IP)
-	wait_for_http "$DO_TEST_DOMAIN" "$PRO_TEST_APP_MESSAGE" 30 "$server_ip"
+	wait_for_http "$DO_TEST_DOMAIN" "$CLOUD_TEST_APP_MESSAGE" 30 "$server_ip"
 }
 
 # ----

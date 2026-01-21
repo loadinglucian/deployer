@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Pro\Aws;
+namespace DeployerPHP\Console\Cloud\Cf;
 
-use DeployerPHP\Contracts\ProCommand;
+use DeployerPHP\Contracts\BaseCommand;
 use DeployerPHP\Exceptions\ValidationException;
-use DeployerPHP\Traits\AwsDnsTrait;
-use DeployerPHP\Traits\AwsTrait;
+use DeployerPHP\Traits\CfTrait;
 use DeployerPHP\Traits\DnsCommandTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -16,13 +15,12 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:aws:dns:list|aws:dns:list',
-    description: 'List DNS records for an AWS Route53 hosted zone'
+    name: 'cf:dns:list|cloudflare:dns:list',
+    description: 'List DNS records in a Cloudflare zone'
 )]
-class DnsListCommand extends ProCommand
+class DnsListCommand extends BaseCommand
 {
-    use AwsDnsTrait;
-    use AwsTrait;
+    use CfTrait;
     use DnsCommandTrait;
 
     // ----
@@ -34,7 +32,7 @@ class DnsListCommand extends ProCommand
         parent::configure();
 
         $this
-            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Hosted zone ID or domain name')
+            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone (domain name)')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Filter by record type (A, AAAA, CNAME)');
     }
 
@@ -49,10 +47,10 @@ class DnsListCommand extends ProCommand
         $this->h1('List DNS Records');
 
         //
-        // Initialize AWS API
+        // Initialize Cloudflare API
         // ----
 
-        if (Command::FAILURE === $this->initializeAwsAPI()) {
+        if (Command::FAILURE === $this->initializeCloudflareAPI()) {
             return Command::FAILURE;
         }
 
@@ -62,55 +60,55 @@ class DnsListCommand extends ProCommand
 
         try {
             $zones = $this->io->promptSpin(
-                fn () => $this->aws->route53Zone->getHostedZones(),
-                'Fetching hosted zones...'
+                fn () => $this->cf->zone->getZones(),
+                'Fetching zones...'
             );
 
             if (0 === count($zones)) {
-                $this->info('No hosted zones found in your AWS account');
+                $this->info('No zones found in your Cloudflare account');
 
                 return Command::SUCCESS;
             }
 
-            /** @var string $zoneInput */
-            $zoneInput = $this->io->getValidatedOptionOrPrompt(
+            /** @var string $zone */
+            $zone = $this->io->getValidatedOptionOrPrompt(
                 'zone',
                 fn ($validate) => $this->io->promptSelect(
-                    label: 'Select hosted zone:',
+                    label: 'Select zone:',
                     options: $zones,
                     validate: $validate
                 ),
-                fn ($value) => $this->validateAwsHostedZoneInput($value)
+                fn ($value) => $this->validateZoneInput($value)
             );
-
-            /** @var string|null $typeFilter */
-            $typeFilter = $input->getOption('type');
-
-            if (null !== $typeFilter) {
-                $error = $this->validateAwsRecordTypeInput($typeFilter);
-                if (null !== $error) {
-                    $this->nay($error);
-
-                    return Command::FAILURE;
-                }
-                $typeFilter = strtoupper($typeFilter);
-            }
         } catch (ValidationException $e) {
             $this->nay($e->getMessage());
 
             return Command::FAILURE;
         }
 
+        /** @var string|null $typeFilter */
+        $typeFilter = $input->getOption('type');
+
+        if (null !== $typeFilter) {
+            $error = $this->validateRecordTypeInput($typeFilter);
+            if (null !== $error) {
+                $this->nay($error);
+
+                return Command::FAILURE;
+            }
+            $typeFilter = strtoupper($typeFilter);
+        }
+
         //
-        // Resolve zone and fetch records
+        // Fetch and display records
         // ----
 
         try {
-            $zoneId = $this->resolveAwsHostedZoneId($zoneInput);
-            $zoneName = $this->aws->route53Zone->getHostedZoneName($zoneId);
+            $zoneId = $this->resolveZoneId($zone);
 
+            /** @var array<int, array{id: string, type: string, name: string, content: string, ttl: int, proxied: bool}> $records */
             $records = $this->io->promptSpin(
-                fn () => $this->aws->route53Dns->listRecords($zoneId, $typeFilter),
+                fn () => $this->cf->dns->listRecords($zoneId, $typeFilter),
                 'Fetching DNS records...'
             );
         } catch (\RuntimeException $e) {
@@ -121,19 +119,24 @@ class DnsListCommand extends ProCommand
 
         if (0 === count($records)) {
             $message = null === $typeFilter
-                ? "No DNS records found for '{$zoneName}'"
-                : "No {$typeFilter} records found for '{$zoneName}'";
+                ? "No DNS records found for '{$zone}'"
+                : "No {$typeFilter} records found for '{$zone}'";
             $this->info($message);
+
+            $this->commandReplay([
+                'zone' => $zone,
+                'type' => $typeFilter,
+            ]);
 
             return Command::SUCCESS;
         }
 
-        // Normalize records for display (AWS uses is_alias flag)
+        // Normalize records for display (CF uses 'content' instead of 'value', has 'proxied')
         $normalizedRecords = array_map(fn ($r) => [
             'type' => $r['type'],
             'name' => $r['name'],
-            'value' => $r['value'],
-            'ttl' => $r['is_alias'] ? 'ALIAS' : $r['ttl'],
+            'value' => $r['content'],
+            'ttl' => 1 === $r['ttl'] ? 'auto' : $r['ttl'],
         ], $records);
 
         $this->displayDnsRecords($normalizedRecords);
@@ -142,7 +145,7 @@ class DnsListCommand extends ProCommand
         // Show command replay
         // ----
 
-        $replayOptions = ['zone' => $zoneName];
+        $replayOptions = ['zone' => $zone];
         if (null !== $typeFilter) {
             $replayOptions['type'] = $typeFilter;
         }

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Pro\Do;
+namespace DeployerPHP\Console\Cloud\Do;
 
-use DeployerPHP\Contracts\ProCommand;
+use DeployerPHP\Contracts\BaseCommand;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\DoTrait;
 use DeployerPHP\Traits\KeysTrait;
@@ -15,10 +15,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:do:key:add|do:key:add|pro:digitalocean:key:add|digitalocean:key:add',
+    name: 'do:key:add|digitalocean:key:add',
     description: 'Add a local SSH public key to DigitalOcean'
 )]
-class KeyAddCommand extends ProCommand
+class KeyAddCommand extends BaseCommand
 {
     use DoTrait;
     use KeysTrait;

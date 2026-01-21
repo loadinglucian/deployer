@@ -3,8 +3,8 @@
 set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-BATS_DIR="$SCRIPT_DIR"
-PROJECT_ROOT="$(cd "${BATS_DIR}/../.." && pwd)"
+PROJECT_ROOT="$SCRIPT_DIR"
+BATS_DIR="${PROJECT_ROOT}/tests/bats"
 
 # Load .env file if it exists (for AWS/DO credentials)
 if [[ -f "${PROJECT_ROOT}/.env" ]]; then
@@ -317,7 +317,15 @@ clean_all_vms() {
 # ----
 
 # API-only tests (no VM required)
-API_ONLY_TESTS=("pro-aws" "pro-do")
+API_ONLY_TESTS=("cloud-aws" "cloud-do")
+
+# Test descriptions for interactive menu
+declare -A TEST_DESCRIPTIONS=(
+	["cloud"]="Cloud provider API tests"
+	["cloud-aws"]="AWS provisioning tests"
+	["cloud-do"]="DigitalOcean provisioning tests"
+	["vm"]="Server management tests"
+)
 
 is_api_only_test() {
 	local test_filter="$1"
@@ -329,12 +337,42 @@ is_api_only_test() {
 	return 1
 }
 
-# Pro test providers
-PRO_PROVIDERS=("aws" "do")
+# Cloud test providers
+CLOUD_PROVIDERS=("aws" "do")
 
-is_pro_test() {
+is_cloud_test() {
 	local test_filter="$1"
-	[[ "$test_filter" == "pro" ]]
+	[[ "$test_filter" == "cloud" ]]
+}
+
+select_test() {
+	echo "" > /dev/tty
+	echo -e "${BLUE}Select test category:${NC}" > /dev/tty
+	echo "" > /dev/tty
+
+	# Categories sorted alphabetically
+	local categories=("cloud" "vm")
+	local i=1
+
+	for cat in "${categories[@]}"; do
+		local desc="${TEST_DESCRIPTIONS[$cat]:-$cat tests}"
+		echo -e "  ${i}) ${cat}$(printf '%*s' $((8 - ${#cat})) '') ${desc}" > /dev/tty
+		((i++))
+	done
+
+	echo "" > /dev/tty
+	read -rp "Enter choice [1-${#categories[@]}]: " choice < /dev/tty > /dev/tty
+
+	if [[ ! "$choice" =~ ^[0-9]+$ ]] || [[ "$choice" -lt 1 ]] || [[ "$choice" -gt ${#categories[@]} ]]; then
+		echo -e "${RED}Invalid choice${NC}" > /dev/tty
+		exit 1
+	fi
+
+	local selected="${categories[$((choice - 1))]}"
+	echo "" > /dev/tty
+	echo -e "${GREEN}Selected: ${selected}${NC}" > /dev/tty
+
+	echo "$selected"
 }
 
 select_provider() {
@@ -342,14 +380,21 @@ select_provider() {
 	echo -e "${BLUE}Select provider to test:${NC}" > /dev/tty
 	echo "" > /dev/tty
 
-	local options=("${PRO_PROVIDERS[@]}" "all")
+	# Sort providers alphabetically
+	local sorted_providers
+	IFS=$'\n' sorted_providers=($(sort <<< "${CLOUD_PROVIDERS[*]}"))
+	unset IFS
+
+	# all first, then sorted providers
+	local options=("all" "${sorted_providers[@]}")
 	local i=1
 
 	for opt in "${options[@]}"; do
 		if [[ "$opt" == "all" ]]; then
-			echo -e "  ${i}) ${opt} (run all providers sequentially)" > /dev/tty
+			echo -e "  ${i}) ${opt}$(printf '%*s' $((8 - ${#opt})) '') Run all providers sequentially" > /dev/tty
 		else
-			echo -e "  ${i}) ${opt}" > /dev/tty
+			local desc="${TEST_DESCRIPTIONS["cloud-${opt}"]:-${opt} tests}"
+			echo -e "  ${i}) ${opt}$(printf '%*s' $((8 - ${#opt})) '') ${desc}" > /dev/tty
 		fi
 		((i++))
 	done
@@ -369,30 +414,35 @@ select_provider() {
 	echo "$selected"
 }
 
-run_pro_tests() {
+run_cloud_tests() {
+	local run_all="${1:-}"
 	local exit_code=0
 	local bats_opts=("--print-output-on-failure")
 
-	# Interactive provider selection
+	# Skip provider selection when --all flag is passed (from all-cloud menu option)
 	local selected
-	selected=$(select_provider)
+	if [[ "$run_all" == "--all" ]]; then
+		selected="all"
+	else
+		selected=$(select_provider)
+	fi
 
 	echo ""
-	echo -e "${BLUE}Running Pro provisioning tests${NC}"
+	echo -e "${BLUE}Running Cloud provisioning tests${NC}"
 	echo -e "${BLUE}(No VM required - tests against real cloud providers)${NC}"
 	echo ""
 
 	if [[ "$selected" == "all" ]]; then
-		for provider in "${PRO_PROVIDERS[@]}"; do
+		for provider in "${CLOUD_PROVIDERS[@]}"; do
 			echo ""
 			echo -e "${BLUE}──────────────────────────────────${NC}"
 			echo -e "${BLUE} Testing provider: ${provider}${NC}"
 			echo -e "${BLUE}──────────────────────────────────${NC}"
 			echo ""
-			bats "${bats_opts[@]}" "${BATS_DIR}/pro-${provider}.bats" || exit_code=$?
+			bats "${bats_opts[@]}" "${BATS_DIR}/cloud-${provider}.bats" || exit_code=$?
 		done
 	else
-		bats "${bats_opts[@]}" "${BATS_DIR}/pro-${selected}.bats" || exit_code=$?
+		bats "${bats_opts[@]}" "${BATS_DIR}/cloud-${selected}.bats" || exit_code=$?
 	fi
 
 	return $exit_code
@@ -443,12 +493,27 @@ run_tests_for_distro() {
 			exit_code=1
 		fi
 	else
-		# Run all tests
-		local test_files=("${BATS_DIR}"/*.bats)
-		if [[ -e "${test_files[0]}" ]]; then
-			bats "${bats_opts[@]}" "${BATS_DIR}"/*.bats || exit_code=$?
+		# Run all VM tests (exclude API-only tests like cloud-*)
+		local test_files=()
+		for f in "${BATS_DIR}"/*.bats; do
+			local basename="${f##*/}"
+			basename="${basename%.bats}"
+			local is_api_only=false
+			for api_test in "${API_ONLY_TESTS[@]}"; do
+				if [[ "$basename" == "$api_test" ]]; then
+					is_api_only=true
+					break
+				fi
+			done
+			if [[ "$is_api_only" == "false" ]]; then
+				test_files+=("$f")
+			fi
+		done
+
+		if [[ ${#test_files[@]} -gt 0 ]]; then
+			bats "${bats_opts[@]}" "${test_files[@]}" || exit_code=$?
 		else
-			echo -e "${YELLOW}No test files found in ${BATS_DIR}${NC}"
+			echo -e "${YELLOW}No VM test files found in ${BATS_DIR}${NC}"
 			exit_code=0
 		fi
 	fi
@@ -461,12 +526,18 @@ select_distro() {
 	echo -e "${BLUE}Select distro to test against:${NC}" > /dev/tty
 	echo "" > /dev/tty
 
-	local options=("${DISTROS[@]}" "all")
+	# Sort distros alphabetically
+	local sorted_distros
+	IFS=$'\n' sorted_distros=($(sort <<< "${DISTROS[*]}"))
+	unset IFS
+
+	# all first, then sorted distros
+	local options=("all" "${sorted_distros[@]}")
 	local i=1
 
 	for opt in "${options[@]}"; do
 		if [[ "$opt" == "all" ]]; then
-			echo -e "  ${i}) ${opt} (run all distros sequentially)" > /dev/tty
+			echo -e "  ${i}) ${opt}$(printf '%*s' $((12 - ${#opt})) '') Run on all distros sequentially" > /dev/tty
 		else
 			echo -e "  ${i}) ${opt}" > /dev/tty
 		fi
@@ -510,43 +581,66 @@ run_tests() {
 	local test_filter="${1:-}"
 	local exit_code=0
 
-	# Pro tests with provider selection
-	if [[ "$test_filter" == "pro" ]]; then
-		run_pro_tests
+	# Interactive category selection when no filter provided
+	if [[ -z "$test_filter" ]]; then
+		local category
+		category=$(select_test)
+
+		case "$category" in
+			cloud)
+				run_cloud_tests
+				return $?
+				;;
+			vm)
+				# Fall through to VM test handling below
+				test_filter="vm"
+				;;
+		esac
+	fi
+
+	# Direct CLI: cloud tests with provider selection
+	if [[ "$test_filter" == "cloud" ]]; then
+		run_cloud_tests
 		return $?
 	fi
 
-	# API-only tests don't need VMs
-	if [[ -n "$test_filter" ]] && is_api_only_test "$test_filter"; then
+	# Direct CLI: API-only tests don't need VMs
+	if is_api_only_test "$test_filter"; then
 		run_api_tests "$test_filter"
 		return $?
 	fi
 
-	# Interactive distro selection
-	local selected
-	selected=$(select_distro)
+	# VM tests: show distro submenu
+	local selected_distro
+	selected_distro=$(select_distro)
 
 	# Track which distros this runner is responsible for
-	if [[ "$selected" == "all" ]]; then
+	if [[ "$selected_distro" == "all" ]]; then
 		RUNNER_DISTROS=("${DISTROS[@]}")
 	else
-		RUNNER_DISTROS=("$selected")
+		RUNNER_DISTROS=("$selected_distro")
 	fi
 
 	# Ensure cleanup happens on exit (success or failure) - only cleans this runner's VMs
 	trap cleanup_runner_vms EXIT
 
-	if [[ "$selected" == "all" ]]; then
+	# Determine bats file filter (empty string runs all VM tests)
+	local bats_filter=""
+	if [[ "$test_filter" != "vm" ]]; then
+		bats_filter="$test_filter"
+	fi
+
+	if [[ "$selected_distro" == "all" ]]; then
 		# Start all VMs, then run tests on each
 		start_lima
 		for distro in "${DISTROS[@]}"; do
-			run_tests_for_distro "$distro" "$test_filter" || exit_code=$?
+			run_tests_for_distro "$distro" "$bats_filter" || exit_code=$?
 		done
 	else
 		# Start only the selected VM
-		start_lima_instance "$selected"
-		wait_for_ssh "${DISTRO_PORTS[$selected]}"
-		run_tests_for_distro "$selected" "$test_filter" || exit_code=$?
+		start_lima_instance "$selected_distro"
+		wait_for_ssh "${DISTRO_PORTS[$selected_distro]}"
+		run_tests_for_distro "$selected_distro" "$bats_filter" || exit_code=$?
 	fi
 
 	return $exit_code
@@ -556,26 +650,31 @@ show_usage() {
 	echo "Usage: $0 [command] [options]"
 	echo ""
 	echo "Commands:"
-	echo "  run [filter]      Run tests (optionally filtered by test file name)"
+	echo "  run [category]    Run tests (shows interactive menu if no category)"
 	echo "  start [distro]    Start VMs (all if no distro specified)"
 	echo "  stop [distro]     Stop VMs (all if no distro specified)"
 	echo "  reset [distro]    Factory reset VMs (all if no distro specified)"
 	echo "  clean [distro]    Clean VM state without restarting"
 	echo "  ssh <distro>      SSH into a test VM"
 	echo ""
+	echo "Interactive menu flow:"
+	echo "  Select test category:"
+	echo "    1) cloud    -> Select provider: all, aws, do"
+	echo "    2) vm       -> Select distro: all, debian12, debian13, ubuntu24"
+	echo ""
 	echo "Examples:"
-	echo "  $0 run            # Run all tests (interactive distro selection)"
-	echo "  $0 run server     # Run only server.bats"
-	echo "  $0 run pro        # Run pro tests (interactive provider selection)"
-	echo "  $0 run pro-aws    # Run AWS API tests (no VM needed)"
-	echo "  $0 run pro-do     # Run DigitalOcean API tests (no VM needed)"
+	echo "  $0 run            # Interactive: category menu -> submenu"
+	echo "  $0 run cloud      # Cloud tests (prompts for provider)"
+	echo "  $0 run vm         # VM tests (prompts for distro)"
+	echo "  $0 run cloud-aws  # Run AWS API tests directly (no VM)"
+	echo "  $0 run cloud-do   # Run DigitalOcean API tests directly (no VM)"
 	echo "  $0 start          # Start all VMs"
 	echo "  $0 start ubuntu24 # Start only ubuntu24 VM"
 	echo "  $0 stop debian12  # Stop only debian12 VM"
 	echo "  $0 ssh ubuntu24   # SSH into ubuntu24 VM"
 	echo ""
 	echo "Available distros: ${DISTROS[*]}"
-	echo "API-only tests (no VM): ${API_ONLY_TESTS[*]}"
+	echo "Cloud providers: ${CLOUD_PROVIDERS[*]}"
 	echo ""
 	echo "Environment:"
 	echo "  BATS_DEBUG=1      # Enable verbose debug output in tests"
