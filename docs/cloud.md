@@ -2,18 +2,18 @@
 
 - [Introduction](#introduction)
 - [AWS](#aws)
-    - [Configuration](#aws-configuration)
-    - [Managing SSH Keys](#aws-ssh-keys)
-    - [Provisioning Servers](#aws-provisioning)
-    - [Managing DNS Records](#aws-dns)
+  - [Configuration](#aws-configuration)
+  - [Managing SSH Keys](#aws-ssh-keys)
+  - [Provisioning Servers](#aws-provisioning)
+  - [Managing DNS Records](#aws-dns)
 - [Cloudflare](#cloudflare)
-    - [Configuration](#cf-configuration)
-    - [Managing DNS Records](#cf-dns)
+  - [Configuration](#cf-configuration)
+  - [Managing DNS Records](#cf-dns)
 - [DigitalOcean](#digitalocean)
-    - [Configuration](#do-configuration)
-    - [Managing SSH Keys](#do-ssh-keys)
-    - [Provisioning Droplets](#do-provisioning)
-    - [Managing DNS Records](#do-dns)
+  - [Configuration](#do-configuration)
+  - [Managing SSH Keys](#do-ssh-keys)
+  - [Provisioning Droplets](#do-provisioning)
+  - [Managing DNS Records](#do-dns)
 
 <a name="introduction"></a>
 

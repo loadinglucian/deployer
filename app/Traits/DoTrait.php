@@ -95,7 +95,7 @@ trait DoTrait
         if (0 === count($keys)) {
             $this->info('No public SSH keys found in your DigitalOcean account');
             $this->ul([
-                'Run <fg=cyan>pro:do:key:add</> to add a public SSH key',
+                'Run <fg=cyan>do:key:add</> to add a public SSH key',
             ]);
 
             return Command::FAILURE;

@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-# Server command tests
+# VM command tests (server:add, server:info, etc.)
 # Tests: server:add, server:info, server:delete, server:install, server:firewall, server:logs, server:run
 
 load 'lib/helpers'
@@ -89,8 +89,8 @@ setup() {
 
 	debug_output
 
-	assert_info_output
-	assert_output_contains "No servers found"
+	assert_error_output
+	assert_output_contains "not found in inventory"
 }
 
 @test "server:info shows correct server details" {
@@ -137,8 +137,8 @@ setup() {
 
 	debug_output
 
-	assert_info_output
-	assert_output_contains "No servers found"
+	assert_error_output
+	assert_output_contains "not found in inventory"
 }
 
 @test "server:delete with --inventory-only removes from inventory" {
@@ -173,8 +173,8 @@ setup() {
 
 	debug_output
 
-	assert_info_output
-	assert_output_contains "No servers found"
+	assert_error_output
+	assert_output_contains "not found in inventory"
 }
 
 @test "server:install completes successfully with generated deploy key" {
@@ -184,6 +184,7 @@ setup() {
 	run timeout 300 "$DEPLOYER_BIN" --inventory="$TEST_INVENTORY" server:install \
 		--server="$TEST_SERVER_NAME" \
 		--generate-deploy-key \
+		--timezone="UTC" \
 		--php-version="8.4" \
 		--php-extensions="cli,fpm,curl,mbstring"
 
@@ -254,6 +255,7 @@ setup() {
 	run timeout 300 "$DEPLOYER_BIN" --inventory="$TEST_INVENTORY" server:install \
 		--server="$TEST_SERVER_NAME" \
 		--custom-deploy-key="$TEST_KEY" \
+		--timezone="UTC" \
 		--php-version="8.4" \
 		--php-extensions="cli,fpm,curl,mbstring"
 
@@ -279,8 +281,8 @@ setup() {
 
 	debug_output
 
-	assert_info_output
-	assert_output_contains "No servers found"
+	assert_error_output
+	assert_output_contains "not found in inventory"
 }
 
 @test "server:firewall configures UFW with listening port" {
@@ -321,8 +323,8 @@ setup() {
 
 	debug_output
 
-	assert_info_output
-	assert_output_contains "No servers found"
+	assert_error_output
+	assert_output_contains "not found in inventory"
 }
 
 @test "server:logs retrieves system logs" {
@@ -337,7 +339,7 @@ setup() {
 
 	[ "$status" -eq 0 ]
 	assert_output_contains "System logs"
-	assert_command_replay "pro:server:logs"
+	assert_command_replay "server:logs"
 }
 
 @test "server:logs retrieves multiple service logs" {
@@ -366,8 +368,8 @@ setup() {
 
 	debug_output
 
-	assert_info_output
-	assert_output_contains "No servers found"
+	assert_error_output
+	assert_output_contains "not found in inventory"
 }
 
 @test "server:run executes command on server" {
@@ -381,7 +383,7 @@ setup() {
 
 	[ "$status" -eq 0 ]
 	assert_output_contains "root"
-	assert_command_replay "pro:server:run"
+	assert_command_replay "server:run"
 }
 
 @test "server:run shows command output" {
