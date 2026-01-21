@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - main
-      - 'ci/**' # Feature branches for testing - remove before merging
+      - "ci/bats/**"
 
 jobs:
   vm-tests:
