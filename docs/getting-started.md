@@ -4,6 +4,7 @@ DeployerPHP streamlines the process of managing, installing, and deploying your 
 
 This guide will walk you through setting up a new server and deploying your first site.
 
+- [TL;DR](#tldr)
 - [Installation](#installation)
 - [Requirements](#requirements)
 - [How Commands Are Organized](#how-commands-are-organized)
@@ -13,6 +14,44 @@ This guide will walk you through setting up a new server and deploying your firs
 - [Step 4: Deploying a Site](#deploy-site)
 - [Step 5: Enabling HTTPS](#enable-https)
 - [AI Rules for Debugging](#scaffold-ai-rules)
+
+<a name="tldr"></a>
+
+## TL;DR
+
+Here's the quick path from zero to deployed:
+
+```shell
+# Install as project dependency
+composer require loadinglucian/deployer-php
+
+# Add alias for convenience
+alias deployer="./vendor/bin/deployer"
+
+# Add your server to the inventory
+deployer server:add
+
+# Install PHP, Nginx, and generate a deploy key
+deployer server:install
+
+# Create your site
+deployer site:create
+
+# Generate deployment hooks (run from your project directory)
+deployer scaffold:hooks
+
+# Deploy your application
+deployer site:deploy
+
+# Upload your .env file to the server
+deployer site:shared:push
+
+# Enable HTTPS (after DNS propagates)
+deployer site:https
+```
+
+> [!TIP]
+> Prefer cloud provisioning? Replace `server:add` with `pro:aws:provision` or `pro:do:provision` to spin up a new EC2 instance or DigitalOcean droplet automatically.
 
 <a name="installation"></a>
 
@@ -109,7 +148,7 @@ DeployerPHP will prompt you for:
 Once completed, DeployerPHP confirms the connection and adds the server to your inventory. You can then run `server:info` to view server details or `server:install` to set up the server.
 
 > [!NOTE]
-> DeployerPHP supports automation and CI/CD integration. After each command, a non-interactive replay is displayed with all selected options. See [Automation](/docs/automation) for details on command replay, quiet mode, and GitHub workflows.
+> DeployerPHP supports automation and CI/CD integration. After each command, a non-interactive replay is displayed with all selected options. See [Automation](/docs/automation) for details on command replay and quiet mode.
 
 > [!NOTE]
 > You can use the `pro:aws:provision` or `pro:do:provision` commands to automatically provision and add a new EC2 instance or droplet to your inventory. It's super convenient if you want to spin up servers on the fly in your automation pipelines.
@@ -263,13 +302,37 @@ The deployment process will:
 
 ### Upload Shared Files
 
-After your first deployment, you'll need to upload environment files and other shared data that shouldn't be in version control:
+After your first deployment, you'll need to upload environment files and other shared data that shouldn't be in version control. Without a `.env` file, most PHP applications won't start.
+
+**Prepare your local shared directory:**
+
+Create a `.deployer/shared/` directory in your project and add your environment file:
+
+```shell
+mkdir -p .deployer/shared
+cp .env.production .deployer/shared/.env
+```
+
+> [!TIP]
+> Add `.deployer/shared/` to your `.gitignore` to avoid committing sensitive files.
+
+**Push shared files to the server:**
 
 ```shell
 deployer site:shared:push
 ```
 
-This uploads files from your local `.deployer/shared/` directory to the server's `shared/` directory. The shared directory persists across deployments. Place your `.env` file here.
+DeployerPHP will prompt you for the local file path and the remote filename. The file is uploaded to the server's `shared/` directory, which persists across deployments and is automatically symlinked into each release.
+
+**Pull shared files from the server:**
+
+If you need to download the current `.env` or other shared files from the server (useful when syncing environments or debugging), use:
+
+```shell
+deployer site:shared:pull
+```
+
+For more details on shared file management, see [Shared Files](/docs/sites#shared-files) in the Site Management documentation.
 
 <a name="enable-https"></a>
 

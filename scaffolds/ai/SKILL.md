@@ -240,7 +240,6 @@ All service commands follow the pattern `{service}:{action}`.
 | `scaffold:hooks`       | Generate deployment hooks (`.deployer/hooks/`)                  |
 | `scaffold:crons`       | Generate cron script templates (`.deployer/crons/`)             |
 | `scaffold:supervisors` | Generate supervisor script templates (`.deployer/supervisors/`) |
-| `scaffold:workflows`   | Generate GitHub Actions workflow for preview deployments        |
 
 ### Cloud Providers
 
