@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Pro\Aws;
+namespace DeployerPHP\Console\Cloud\Aws;
 
-use DeployerPHP\Contracts\ProCommand;
+use DeployerPHP\Contracts\BaseCommand;
 use DeployerPHP\Traits\AwsTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -13,10 +13,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:aws:key:delete|aws:key:delete',
+    name: 'aws:key:delete',
     description: 'Delete a key pair from AWS'
 )]
-class KeyDeleteCommand extends ProCommand
+class KeyDeleteCommand extends BaseCommand
 {
     use AwsTrait;
 

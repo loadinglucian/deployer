@@ -29,25 +29,25 @@ use DeployerPHP\Console\Postgresql\PostgresqlInstallCommand;
 use DeployerPHP\Console\Postgresql\PostgresqlRestartCommand;
 use DeployerPHP\Console\Postgresql\PostgresqlStartCommand;
 use DeployerPHP\Console\Postgresql\PostgresqlStopCommand;
-use DeployerPHP\Console\Pro\Aws\DnsDeleteCommand as AwsDnsDeleteCommand;
-use DeployerPHP\Console\Pro\Aws\DnsListCommand as AwsDnsListCommand;
-use DeployerPHP\Console\Pro\Aws\DnsSetCommand as AwsDnsSetCommand;
-use DeployerPHP\Console\Pro\Aws\KeyAddCommand as AwsKeyAddCommand;
-use DeployerPHP\Console\Pro\Aws\KeyDeleteCommand as AwsKeyDeleteCommand;
-use DeployerPHP\Console\Pro\Aws\KeyListCommand as AwsKeyListCommand;
-use DeployerPHP\Console\Pro\Aws\ProvisionCommand as AwsProvisionCommand;
-use DeployerPHP\Console\Pro\Cf\DnsDeleteCommand as CfDnsDeleteCommand;
-use DeployerPHP\Console\Pro\Cf\DnsListCommand as CfDnsListCommand;
-use DeployerPHP\Console\Pro\Cf\DnsSetCommand as CfDnsSetCommand;
-use DeployerPHP\Console\Pro\Do\DnsDeleteCommand as DoDnsDeleteCommand;
-use DeployerPHP\Console\Pro\Do\DnsListCommand as DoDnsListCommand;
-use DeployerPHP\Console\Pro\Do\DnsSetCommand as DoDnsSetCommand;
-use DeployerPHP\Console\Pro\Do\KeyAddCommand as DoKeyAddCommand;
-use DeployerPHP\Console\Pro\Do\KeyDeleteCommand as DoKeyDeleteCommand;
-use DeployerPHP\Console\Pro\Do\KeyListCommand as DoKeyListCommand;
-use DeployerPHP\Console\Pro\Do\ProvisionCommand as DoProvisionCommand;
-use DeployerPHP\Console\Pro\Server\ServerLogsCommand as ProServerLogsCommand;
-use DeployerPHP\Console\Pro\Server\ServerRunCommand as ProServerRunCommand;
+use DeployerPHP\Console\Cloud\Aws\DnsDeleteCommand as AwsDnsDeleteCommand;
+use DeployerPHP\Console\Cloud\Aws\DnsListCommand as AwsDnsListCommand;
+use DeployerPHP\Console\Cloud\Aws\DnsSetCommand as AwsDnsSetCommand;
+use DeployerPHP\Console\Cloud\Aws\KeyAddCommand as AwsKeyAddCommand;
+use DeployerPHP\Console\Cloud\Aws\KeyDeleteCommand as AwsKeyDeleteCommand;
+use DeployerPHP\Console\Cloud\Aws\KeyListCommand as AwsKeyListCommand;
+use DeployerPHP\Console\Cloud\Aws\ProvisionCommand as AwsProvisionCommand;
+use DeployerPHP\Console\Cloud\Cf\DnsDeleteCommand as CfDnsDeleteCommand;
+use DeployerPHP\Console\Cloud\Cf\DnsListCommand as CfDnsListCommand;
+use DeployerPHP\Console\Cloud\Cf\DnsSetCommand as CfDnsSetCommand;
+use DeployerPHP\Console\Cloud\Do\DnsDeleteCommand as DoDnsDeleteCommand;
+use DeployerPHP\Console\Cloud\Do\DnsListCommand as DoDnsListCommand;
+use DeployerPHP\Console\Cloud\Do\DnsSetCommand as DoDnsSetCommand;
+use DeployerPHP\Console\Cloud\Do\KeyAddCommand as DoKeyAddCommand;
+use DeployerPHP\Console\Cloud\Do\KeyDeleteCommand as DoKeyDeleteCommand;
+use DeployerPHP\Console\Cloud\Do\KeyListCommand as DoKeyListCommand;
+use DeployerPHP\Console\Cloud\Do\ProvisionCommand as DoProvisionCommand;
+use DeployerPHP\Console\Server\ServerLogsCommand;
+use DeployerPHP\Console\Server\ServerRunCommand;
 use DeployerPHP\Console\Redis\RedisInstallCommand;
 use DeployerPHP\Console\Redis\RedisRestartCommand;
 use DeployerPHP\Console\Redis\RedisStartCommand;
@@ -199,10 +199,12 @@ final class SymfonyApp extends SymfonyApplication
             ServerFirewallCommand::class,
             ServerInfoCommand::class,
             ServerInstallCommand::class,
+            ServerLogsCommand::class,
+            ServerRunCommand::class,
             ServerSshCommand::class,
 
             //
-            // Provider integrations (keys + provisioning)
+            // Cloud provider integrations
 
             AwsDnsDeleteCommand::class,
             AwsDnsListCommand::class,
@@ -221,8 +223,6 @@ final class SymfonyApp extends SymfonyApplication
             DoKeyDeleteCommand::class,
             DoKeyListCommand::class,
             DoProvisionCommand::class,
-            ProServerLogsCommand::class,
-            ProServerRunCommand::class,
 
             //
             // Site management

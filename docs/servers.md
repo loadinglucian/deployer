@@ -134,7 +134,20 @@ Options:
 
 ## Running Commands
 
-The `server:run` command executes arbitrary shell commands on a server with real-time output streaming. For full documentation, see [Running Commands](/docs/pro#server-run) in the Pro documentation.
+The `server:run` command executes arbitrary shell commands on a server with real-time output streaming:
+
+```bash
+deployer server:run
+```
+
+You'll be prompted for the server and command. Output is streamed in real-time as the command executes on the remote server.
+
+| Option      | Description        |
+| ----------- | ------------------ |
+| `--server`  | Server name        |
+| `--command` | Command to execute |
+
+This is useful for quick administrative tasks without opening a full SSH session.
 
 <a name="ssh-access"></a>
 
@@ -156,7 +169,28 @@ You'll be prompted to select a server from your inventory, then dropped into a t
 
 ## Viewing Logs
 
-The `server:logs` command provides a unified interface for viewing all logs on a server, including system logs, service logs, site access logs, cron logs, and supervisor logs. For full documentation, see [Viewing Logs](/docs/pro#server-logs) in the Pro documentation.
+The `server:logs` command provides a unified interface for viewing all logs on a server:
+
+```bash
+deployer server:logs
+```
+
+When run interactively, you'll see a multiselect prompt with all available log sources. You can select multiple sources at once to view logs from different services in a single command.
+
+Available log sources include:
+
+- **System logs** - General system logs via journalctl
+- **Service logs** - Nginx, SSH, PHP-FPM (per version), MySQL, MariaDB, PostgreSQL, Redis, Valkey, Memcached
+- **Site access logs** - Per-site Nginx access logs
+- **Cron script logs** - Output from individual cron scripts
+- **Supervisor program logs** - Output from supervisor programs
+
+| Option          | Description                            | Default    |
+| --------------- | -------------------------------------- | ---------- |
+| `--server`      | Server name                            | (prompted) |
+| `--site`        | Filter logs to a specific site         | (none)     |
+| `--service, -s` | Service(s) to view (comma-separated)   | (prompted) |
+| `--lines, -n`   | Number of lines to retrieve per source | 50         |
 
 <a name="deleting-a-server"></a>
 

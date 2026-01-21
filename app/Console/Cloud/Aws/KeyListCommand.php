@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Pro\Do;
+namespace DeployerPHP\Console\Cloud\Aws;
 
-use DeployerPHP\Contracts\ProCommand;
-use DeployerPHP\Traits\DoTrait;
+use DeployerPHP\Contracts\BaseCommand;
+use DeployerPHP\Traits\AwsTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:do:key:list|do:key:list|pro:digitalocean:key:list|digitalocean:key:list',
-    description: 'List public SSH keys in DigitalOcean'
+    name: 'aws:key:list',
+    description: 'List EC2 key pairs in AWS'
 )]
-class KeyListCommand extends ProCommand
+class KeyListCommand extends BaseCommand
 {
-    use DoTrait;
+    use AwsTrait;
 
     // ----
     // Execution
@@ -27,17 +27,23 @@ class KeyListCommand extends ProCommand
     {
         parent::execute($input, $output);
 
-        $this->h1('List Public SSH Keys in DigitalOcean');
+        $this->h1('List EC2 Key Pairs in AWS');
 
         //
-        // Retrieve DigitalOcean account data
+        // Initialize AWS API
         // ----
 
-        if (Command::FAILURE === $this->initializeDoAPI()) {
+        if (Command::FAILURE === $this->initializeAwsAPI()) {
             return Command::FAILURE;
         }
 
-        $keys = $this->ensureDoKeysAvailable();
+        $this->info("Region: {$this->aws->getRegion()}");
+
+        //
+        // Fetch keys
+        // ----
+
+        $keys = $this->ensureAwsKeysAvailable();
 
         if (is_int($keys)) {
             return Command::FAILURE;

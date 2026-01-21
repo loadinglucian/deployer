@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Pro\Cf;
+namespace DeployerPHP\Console\Cloud\Aws;
 
-use DeployerPHP\Contracts\ProCommand;
+use DeployerPHP\Contracts\BaseCommand;
 use DeployerPHP\Exceptions\ValidationException;
-use DeployerPHP\Services\Cf\CfDnsService;
-use DeployerPHP\Traits\CfTrait;
+use DeployerPHP\Services\Aws\AwsRoute53DnsService;
+use DeployerPHP\Traits\AwsDnsTrait;
+use DeployerPHP\Traits\AwsTrait;
 use DeployerPHP\Traits\DnsCommandTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -16,12 +17,13 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:cf:dns:delete|cf:dns:delete|pro:cloudflare:dns:delete|cloudflare:dns:delete',
-    description: 'Delete a DNS record from Cloudflare'
+    name: 'aws:dns:delete',
+    description: 'Delete a DNS record from an AWS Route53 hosted zone'
 )]
-class DnsDeleteCommand extends ProCommand
+class DnsDeleteCommand extends BaseCommand
 {
-    use CfTrait;
+    use AwsDnsTrait;
+    use AwsTrait;
     use DnsCommandTrait;
 
     // ----
@@ -33,9 +35,9 @@ class DnsDeleteCommand extends ProCommand
         parent::configure();
 
         $this
-            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Zone (domain name)')
+            ->addOption('zone', null, InputOption::VALUE_REQUIRED, 'Hosted zone ID or domain name')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Record type (A, AAAA, CNAME)')
-            ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Record name (use "@" for root domain)')
+            ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Record name (use "@" for root)')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Skip typing the record name to confirm')
             ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip Yes/No confirmation prompt');
     }
@@ -51,10 +53,10 @@ class DnsDeleteCommand extends ProCommand
         $this->h1('Delete DNS Record');
 
         //
-        // Initialize Cloudflare API
+        // Initialize AWS API
         // ----
 
-        if (Command::FAILURE === $this->initializeCloudflareAPI()) {
+        if (Command::FAILURE === $this->initializeAwsAPI()) {
             return Command::FAILURE;
         }
 
@@ -69,69 +71,98 @@ class DnsDeleteCommand extends ProCommand
         }
 
         //
-        // Find the record
+        // Resolve zone
         // ----
 
         try {
-            $zoneId = $this->resolveZoneId($deets['zone']);
+            $zoneId = $this->resolveAwsHostedZoneId($deets['zone']);
+            $zoneName = $this->aws->route53Zone->getHostedZoneName($zoneId);
+        } catch (\RuntimeException $e) {
+            $this->nay($e->getMessage());
 
-            // Get zone name for record normalization
-            $zoneName = $this->io->promptSpin(
-                fn () => $this->cf->zone->getZoneName($zoneId),
-                'Fetching zone details...'
-            );
+            return Command::FAILURE;
+        }
 
-            $fullName = $this->normalizeRecordName($deets['name'], $zoneName);
+        //
+        // Normalize record name
+        // ----
 
-            /** @var array{id: string, type: string, name: string, content: string, ttl: int, proxied: bool}|null $record */
+        $fullName = $this->normalizeAwsRecordName($deets['name'], $zoneName);
+
+        //
+        // Find existing record
+        // ----
+
+        try {
             $record = $this->io->promptSpin(
-                fn () => $this->cf->dns->findRecord($zoneId, $deets['type'], $fullName),
+                fn () => $this->aws->route53Dns->findRecord($zoneId, $deets['type'], $fullName),
                 'Finding DNS record...'
             );
+        } catch (\RuntimeException $e) {
+            $this->nay($e->getMessage());
 
-            if (null === $record) {
-                $this->nay("No {$deets['type']} record found for '{$deets['name']}' in zone '{$zoneName}'");
+            return Command::FAILURE;
+        }
 
-                return Command::FAILURE;
-            }
+        if (null === $record) {
+            $this->nay("No {$deets['type']} record found for '{$deets['name']}' in zone '{$zoneName}'");
 
-            // Show record details
-            $this->displayDeets([
-                'Type' => $record['type'],
-                'Name' => $record['name'],
-                'Value' => $record['content'],
-                'TTL' => 1 === $record['ttl'] ? 'auto' : "{$record['ttl']}s",
-                'Proxied' => $record['proxied'] ? 'Yes' : 'No',
-            ]);
+            return Command::FAILURE;
+        }
 
-            $this->out('───');
-            $this->io->write("\n");
+        // Check if it's an alias record (cannot delete normally)
+        if ($record['is_alias']) {
+            $this->nay('Alias records must be deleted using the AWS Console or by creating the same alias with different settings');
 
-            //
-            // Confirm deletion (two-tier confirmation)
-            // ----
+            return Command::FAILURE;
+        }
 
-            /** @var bool $forceSkip */
-            $forceSkip = $input->getOption('force');
+        //
+        // Display record details
+        // ----
 
-            $confirmed = $this->confirmDnsDeletion($fullName, $forceSkip);
+        $this->displayDeets([
+            'Type' => $record['type'],
+            'Name' => $record['name'],
+            'Value' => $record['value'],
+            'TTL' => (string) $record['ttl'],
+        ]);
 
-            if (null === $confirmed) {
-                return Command::FAILURE;
-            }
+        $this->out('───');
+        $this->io->write("\n");
 
-            if (!$confirmed) {
-                $this->warn('Cancelled deleting DNS record');
+        //
+        // Confirm deletion
+        // ----
 
-                return Command::SUCCESS;
-            }
+        /** @var bool $forceSkip */
+        $forceSkip = $input->getOption('force');
 
-            //
-            // Delete record
-            // ----
+        $confirmed = $this->confirmDnsDeletion($deets['name'], $forceSkip);
 
+        if (null === $confirmed) {
+            return Command::FAILURE;
+        }
+
+        if (!$confirmed) {
+            $this->warn('Cancelled deleting DNS record');
+
+            return Command::SUCCESS;
+        }
+
+        //
+        // Delete record
+        // ----
+
+        try {
             $this->io->promptSpin(
-                fn () => $this->cf->dns->deleteRecord($zoneId, $record['id']),
+                fn () => $this->aws->route53Dns->deleteRecord(
+                    $zoneId,
+                    $deets['type'],
+                    $fullName,
+                    $record['value'],
+                    $record['ttl']
+                ),
                 'Deleting DNS record...'
             );
 
@@ -147,7 +178,7 @@ class DnsDeleteCommand extends ProCommand
         // ----
 
         $this->commandReplay([
-            'zone' => $deets['zone'],
+            'zone' => $zoneName,
             'type' => $deets['type'],
             'name' => $deets['name'],
             'force' => true,
@@ -170,12 +201,12 @@ class DnsDeleteCommand extends ProCommand
     {
         try {
             $zones = $this->io->promptSpin(
-                fn () => $this->cf->zone->getZones(),
-                'Fetching zones...'
+                fn () => $this->aws->route53Zone->getHostedZones(),
+                'Fetching hosted zones...'
             );
 
             if (0 === count($zones)) {
-                $this->info('No zones found in your Cloudflare account');
+                $this->info('No hosted zones found in your AWS account');
 
                 return Command::FAILURE;
             }
@@ -184,17 +215,14 @@ class DnsDeleteCommand extends ProCommand
             $zone = $this->io->getValidatedOptionOrPrompt(
                 'zone',
                 fn ($validate) => $this->io->promptSelect(
-                    label: 'Select zone:',
+                    label: 'Select hosted zone:',
                     options: $zones,
                     validate: $validate
                 ),
-                fn ($value) => $this->validateZoneInput($value)
+                fn ($value) => $this->validateAwsHostedZoneInput($value)
             );
 
-            $typeOptions = array_combine(
-                CfDnsService::RECORD_TYPES,
-                CfDnsService::RECORD_TYPES
-            );
+            $typeOptions = array_combine(AwsRoute53DnsService::RECORD_TYPES, AwsRoute53DnsService::RECORD_TYPES);
 
             /** @var string $type */
             $type = $this->io->getValidatedOptionOrPrompt(
@@ -204,7 +232,7 @@ class DnsDeleteCommand extends ProCommand
                     options: $typeOptions,
                     validate: $validate
                 ),
-                fn ($value) => $this->validateRecordTypeInput($value)
+                fn ($value) => $this->validateAwsRecordTypeInput($value)
             );
 
             $type = strtoupper($type);
@@ -218,7 +246,7 @@ class DnsDeleteCommand extends ProCommand
                     hint: 'Use "@" for root domain',
                     validate: $validate
                 ),
-                fn ($value) => $this->validateRecordNameInput($value)
+                fn ($value) => $this->validateAwsRecordNameInput($value)
             );
 
             return [

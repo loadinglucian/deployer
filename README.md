@@ -31,8 +31,6 @@ As a native PHP/Composer package, it integrates seamlessly into your existing to
 - **End-to-end server management** - Provision cloud instances, install services, and manage operations
 - **Composable commands** - Easily build automation pipelines to spin up servers, deploy sites, or run workflows on demand
 
-**Pro Commands:** DeployerPHP offers various Pro commands with convenience features and integrations with third-party cloud providers. Pro commands are free for now, but a modest subscription may be introduced in the future to support development. Core commands will always be free.
-
 ## Contributing
 
 Thank you for considering contributing to DeployerPHP! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
@@ -86,23 +84,20 @@ You can use it freely for personal or commercial projects, without any restricti
     - [Cron Jobs](docs/sites.md#cron-jobs)
     - [Supervisor Processes](docs/sites.md#supervisor-processes)
     - [Scaffolding](docs/sites.md#scaffolding)
-- [Pro](docs/pro.md)
-    - [Server Access](docs/pro.md#server-access)
-        - [Running Commands](docs/pro.md#server-run)
-        - [Viewing Logs](docs/pro.md#server-logs)
-    - [AWS](docs/pro.md#aws)
-        - [Configuration](docs/pro.md#aws-configuration)
-        - [Managing SSH Keys](docs/pro.md#aws-ssh-keys)
-        - [Provisioning Servers](docs/pro.md#aws-provisioning)
-        - [Managing DNS Records](docs/pro.md#aws-dns)
-    - [Cloudflare](docs/pro.md#cloudflare)
-        - [Configuration](docs/pro.md#cf-configuration)
-        - [Managing DNS Records](docs/pro.md#cf-dns)
-    - [DigitalOcean](docs/pro.md#digitalocean)
-        - [Configuration](docs/pro.md#do-configuration)
-        - [Managing SSH Keys](docs/pro.md#do-ssh-keys)
-        - [Provisioning Droplets](docs/pro.md#do-provisioning)
-        - [Managing DNS Records](docs/pro.md#do-dns)
+- [Cloud Providers](docs/cloud.md)
+    - [AWS](docs/cloud.md#aws)
+        - [Configuration](docs/cloud.md#aws-configuration)
+        - [Managing SSH Keys](docs/cloud.md#aws-ssh-keys)
+        - [Provisioning Servers](docs/cloud.md#aws-provisioning)
+        - [Managing DNS Records](docs/cloud.md#aws-dns)
+    - [Cloudflare](docs/cloud.md#cloudflare)
+        - [Configuration](docs/cloud.md#cf-configuration)
+        - [Managing DNS Records](docs/cloud.md#cf-dns)
+    - [DigitalOcean](docs/cloud.md#digitalocean)
+        - [Configuration](docs/cloud.md#do-configuration)
+        - [Managing SSH Keys](docs/cloud.md#do-ssh-keys)
+        - [Provisioning Droplets](docs/cloud.md#do-provisioning)
+        - [Managing DNS Records](docs/cloud.md#do-dns)
 - [Automation](docs/automation.md)
     - [Command Replay](docs/automation.md#command-replay)
     - [Quiet Mode](docs/automation.md#quiet-mode)

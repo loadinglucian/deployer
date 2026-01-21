@@ -51,7 +51,7 @@ deployer site:https
 ```
 
 > [!TIP]
-> Prefer cloud provisioning? Replace `server:add` with `pro:aws:provision` or `pro:do:provision` to spin up a new EC2 instance or DigitalOcean droplet automatically.
+> Prefer cloud provisioning? Replace `server:add` with `aws:provision` or `do:provision` to spin up a new EC2 instance or DigitalOcean droplet automatically.
 
 <a name="installation"></a>
 
@@ -122,7 +122,7 @@ DeployerPHP commands are grouped by what they manage:
 - **`nginx:*`** and **`php:*`**: Web server and PHP-FPM control
 - **`mariadb:*`**, **`mysql:*`**, **`postgresql:*`**: Database services
 - **`memcached:*`**, **`redis:*`**, **`valkey:*`**: Cache services
-- **`pro:*`**: Cloud provider integrations (AWS, DigitalOcean)
+- **`aws:*`**, **`cf:*`**, **`do:*`**: Cloud provider integrations (AWS, Cloudflare, DigitalOcean)
 
 <a name="add-new-server"></a>
 
@@ -151,7 +151,7 @@ Once completed, DeployerPHP confirms the connection and adds the server to your 
 > DeployerPHP supports automation and CI/CD integration. After each command, a non-interactive replay is displayed with all selected options. See [Automation](/docs/automation) for details on command replay and quiet mode.
 
 > [!NOTE]
-> You can use the `pro:aws:provision` or `pro:do:provision` commands to automatically provision and add a new EC2 instance or droplet to your inventory. It's super convenient if you want to spin up servers on the fly in your automation pipelines.
+> You can use the `aws:provision` or `do:provision` commands to automatically provision and add a new EC2 instance or droplet to your inventory. It's super convenient if you want to spin up servers on the fly in your automation pipelines.
 
 ### Delete A Server From Inventory
 
@@ -167,7 +167,7 @@ DeployerPHP will prompt you to select a server, type its name to confirm, and gi
 > You are responsible for making sure the server is no longer running or incurring costs with your hosting provider.
 
 > [!NOTE]
-> If you used the `pro:aws:provision` or `pro:do:provision` commands to provision the server, the `server:delete` command will automatically destroy the cloud instance for you.
+> If you used the `aws:provision` or `do:provision` commands to provision the server, the `server:delete` command will automatically destroy the cloud instance for you.
 
 <a name="install-new-server"></a>
 
@@ -236,7 +236,7 @@ Once completed, DeployerPHP displays the next steps:
 - Run `site:deploy` to deploy your application
 
 > [!NOTE]
-> If your DNS is managed by AWS Route53, Cloudflare, or DigitalOcean, you can use DeployerPHP's DNS commands to point your domain to your server. For example, `pro:cf:dns:set --zone=example.com --type=A --name=@ --value=YOUR_SERVER_IP` creates the A record for your root domain. See [Managing DNS Records](/docs/pro#aws-dns) in the Pro documentation.
+> If your DNS is managed by AWS Route53, Cloudflare, or DigitalOcean, you can use DeployerPHP's DNS commands to point your domain to your server. For example, `cf:dns:set --zone=example.com --type=A --name=@ --value=YOUR_SERVER_IP` creates the A record for your root domain. See [Managing DNS Records](/docs/cloud#aws-dns) in the Cloud documentation.
 
 ### Delete a Site
 

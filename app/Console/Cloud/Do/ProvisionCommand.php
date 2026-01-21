@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Pro\Do;
+namespace DeployerPHP\Console\Cloud\Do;
 
 use DeployerPHP\Builders\ServerBuilder;
-use DeployerPHP\Contracts\ProCommand;
+use DeployerPHP\Contracts\BaseCommand;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Traits\DoTrait;
 use DeployerPHP\Traits\KeysTrait;
@@ -18,10 +18,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:do:provision|do:provision|pro:digitalocean:provision|digitalocean:provision',
+    name: 'do:provision|digitalocean:provision',
     description: 'Provision a new DigitalOcean droplet and add it to inventory'
 )]
-class ProvisionCommand extends ProCommand
+class ProvisionCommand extends BaseCommand
 {
     use DoTrait;
     use KeysTrait;

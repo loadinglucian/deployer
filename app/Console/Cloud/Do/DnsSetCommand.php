@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DeployerPHP\Console\Pro\Do;
+namespace DeployerPHP\Console\Cloud\Do;
 
-use DeployerPHP\Contracts\ProCommand;
+use DeployerPHP\Contracts\BaseCommand;
 use DeployerPHP\Exceptions\ValidationException;
 use DeployerPHP\Services\Do\DoDnsService;
 use DeployerPHP\Traits\DnsCommandTrait;
@@ -17,10 +17,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'pro:do:dns:set|do:dns:set|pro:digitalocean:dns:set|digitalocean:dns:set',
+    name: 'do:dns:set|digitalocean:dns:set',
     description: 'Create or update a DNS record for a DigitalOcean domain'
 )]
-class DnsSetCommand extends ProCommand
+class DnsSetCommand extends BaseCommand
 {
     use DnsCommandTrait;
     use DoDnsTrait;
