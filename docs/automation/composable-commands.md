@@ -1,13 +1,6 @@
-# Automation
+# Composable Commands
 
-When integrating DeployerPHP into CI/CD pipelines or shell scripts, you'll want commands to run without interactive prompts. DeployerPHP provides two features to make automation straightforward: command replay for learning the CLI syntax, and quiet mode for suppressing output.
-
-- [Command Replay](#command-replay)
-- [Quiet Mode](#quiet-mode)
-
-<a name="command-replay"></a>
-
-## Command Replay
+### Command Replays
 
 Every DeployerPHP command displays a **non-interactive command replay** at the end of execution. This replay shows the exact command with all options you selected during the interactive session, making it easy to copy and use in scripts or CI pipelines.
 
@@ -25,9 +18,7 @@ deployer server:add \
 
 You can copy this command directly into your automation scripts. The replay teaches you the CLI syntax as you use the tool: run interactively once, then automate with the generated command.
 
-<a name="quiet-mode"></a>
-
-## Quiet Mode
+### Quiet Mode
 
 If you want minimal output, use the `--quiet` (or `-q`) global option. This option is available on all commands and suppresses all output except errors.
 
