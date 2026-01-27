@@ -553,7 +553,12 @@ class AwsAccountService extends BaseAwsService
 
         // Debian major versions
         if (preg_match('/debian-(\d+)/', $name, $matches)) {
-            return ['debian', $matches[1]];
+            $version = $matches[1];
+            if (!Distribution::DEBIAN->isValidVersion($version)) {
+                return null;
+            }
+
+            return ['debian', $version];
         }
 
         return null;

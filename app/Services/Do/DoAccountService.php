@@ -189,7 +189,12 @@ class DoAccountService extends BaseDoService
 
         // Debian: debian-12-x64
         if (preg_match('/^debian-(\d+)/', $slug, $matches)) {
-            return [Distribution::DEBIAN, $slug, $matches[1]];
+            $version = $matches[1];
+            if (!Distribution::DEBIAN->isValidVersion($version)) {
+                return null;
+            }
+
+            return [Distribution::DEBIAN, $slug, $version];
         }
 
         return null;
