@@ -77,7 +77,9 @@ enum Distribution: string
         $codename = $this->codename($version);
 
         return match ($this) {
-            self::UBUNTU => "{$this->displayName()} {$version} LTS ({$codename})",
+            self::UBUNTU => $this->isUbuntuLts($version)
+                ? "{$this->displayName()} {$version} LTS ({$codename})"
+                : "{$this->displayName()} {$version} ({$codename})",
             self::DEBIAN => "{$this->displayName()} {$version} ({$codename})",
         };
     }
