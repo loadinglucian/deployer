@@ -541,9 +541,14 @@ class AwsAccountService extends BaseAwsService
      */
     private function parseImageVersion(string $name): ?array
     {
-        // Ubuntu LTS only (xx.04 versions)
+        // Ubuntu LTS only (xx.04 versions where xx is even)
         if (preg_match('/ubuntu[^0-9]*(\d+\.04)/', $name, $matches)) {
-            return ['ubuntu', $matches[1]];
+            $version = $matches[1];
+            if (!Distribution::UBUNTU->isValidVersion($version)) {
+                return null;
+            }
+
+            return ['ubuntu', $version];
         }
 
         // Debian major versions

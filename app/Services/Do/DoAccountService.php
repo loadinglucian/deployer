@@ -177,9 +177,14 @@ class DoAccountService extends BaseDoService
             return null;
         }
 
-        // Ubuntu LTS: ubuntu-24-04-x64 (only xx.04 versions)
+        // Ubuntu LTS: ubuntu-24-04-x64 (only xx.04 versions where xx is even)
         if (preg_match('/^ubuntu-(\d+)-04/', $slug, $matches)) {
-            return [Distribution::UBUNTU, $slug, $matches[1] . '.04'];
+            $version = $matches[1] . '.04';
+            if (!Distribution::UBUNTU->isValidVersion($version)) {
+                return null;
+            }
+
+            return [Distribution::UBUNTU, $slug, $version];
         }
 
         // Debian: debian-12-x64
