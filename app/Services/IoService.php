@@ -9,10 +9,12 @@ use DeployerPHP\Exceptions\ValidationException;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\multiselect;
+
+use Laravel\Prompts\Output\ConsoleOutput as PromptsConsoleOutput;
+
 use function Laravel\Prompts\password;
 use function Laravel\Prompts\pause;
 
-use Laravel\Prompts\Output\ConsoleOutput as PromptsConsoleOutput;
 use Laravel\Prompts\Prompt;
 
 use function Laravel\Prompts\search;
