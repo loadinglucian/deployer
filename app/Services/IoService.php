@@ -11,6 +11,10 @@ use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\password;
 use function Laravel\Prompts\pause;
+
+use Laravel\Prompts\Output\ConsoleOutput as PromptsConsoleOutput;
+use Laravel\Prompts\Prompt;
+
 use function Laravel\Prompts\search;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\spin;
@@ -43,7 +47,15 @@ class IoService
     {
         $this->command = $command; // Used to inspect input definitions (like --yes and -y, etc.)
         $this->input = $input;
-        $this->io = new SymfonyStyle($input, $output);
+
+        // Use Laravel Prompts' newline-tracking output for everything.
+        // This ensures accurate margin calculations between prompts and custom output.
+        $trackingOutput = new PromptsConsoleOutput();
+        $trackingOutput->setVerbosity($output->getVerbosity());
+        $trackingOutput->setDecorated($output->isDecorated());
+
+        $this->io = new SymfonyStyle($input, $trackingOutput);
+        Prompt::setOutput($trackingOutput);
     }
 
     // ----
