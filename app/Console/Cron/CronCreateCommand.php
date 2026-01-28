@@ -68,15 +68,19 @@ class CronCreateCommand extends BaseCommand
             return $deployedResult;
         }
 
-        $availableScripts = $this->getAvailableScripts(
-            $site,
-            '.deployer/crons',
-            'cron',
-            'scaffold:crons'
-        );
+        try {
+            $availableScripts = $this->getAvailableScripts($site, '.deployer/crons');
+        } catch (\RuntimeException $e) {
+            $this->nay($e->getMessage());
 
-        if (is_int($availableScripts)) {
-            return $availableScripts;
+            return Command::FAILURE;
+        }
+
+        if ([] === $availableScripts) {
+            $this->warn('No cron scripts found in repository');
+            $this->info('Run <|cyan>scaffold:crons</> to create some');
+
+            return Command::FAILURE;
         }
 
         //

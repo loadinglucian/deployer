@@ -96,7 +96,11 @@ class ServerSshCommand extends BaseCommand
             return Command::FAILURE;
         }
 
-        $this->out('');
+        $this->out([
+            '',
+            'Opening SSH...',
+        ]);
+
         pcntl_exec($sshBinary, $sshArgs);
 
         // Only reached if pcntl_exec fails

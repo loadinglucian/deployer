@@ -102,15 +102,14 @@ trait DnsCommandTrait
     protected function displayDnsRecords(array $records): void
     {
         foreach ($records as $index => $record) {
-            if ($index > 0) {
-                $this->out('');
-            }
             $this->displayDeets([
                 'Type' => $record['type'],
                 'Name' => $record['name'],
                 'Value' => $this->truncateValue($record['value']),
                 'TTL' => (string) $record['ttl'],
             ]);
+
+            $this->out('───');
         }
     }
 }
