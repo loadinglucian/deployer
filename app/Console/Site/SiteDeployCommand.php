@@ -30,13 +30,6 @@ class SiteDeployCommand extends BaseCommand
 
     private const DEFAULT_KEEP_RELEASES = 5;
 
-    /** @var array<int, string> */
-    private const REQUIRED_HOOKS = [
-        '1-building.sh',
-        '2-releasing.sh',
-        '3-finishing.sh',
-    ];
-
     // ----
     // Configuration
     // ----
@@ -50,6 +43,7 @@ class SiteDeployCommand extends BaseCommand
             ->addOption('repo', null, InputOption::VALUE_REQUIRED, 'Git repository URL')
             ->addOption('branch', null, InputOption::VALUE_REQUIRED, 'Git branch name')
             ->addOption('keep-releases', null, InputOption::VALUE_REQUIRED, 'Number of releases to keep (default: 5)')
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Skip typing the site domain to confirm')
             ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Deploy without confirmation prompt');
     }
 
@@ -113,22 +107,26 @@ class SiteDeployCommand extends BaseCommand
         // Check for deployment hooks in remote repository
         // ----
 
-        $availableHooks = $this->getAvailableScripts($site, '.deployer/hooks', 'hook', 'scaffold:hooks');
-
-        if (is_int($availableHooks)) {
-            return $availableHooks;
-        }
-
-        $missingHooks = array_diff(self::REQUIRED_HOOKS, $availableHooks);
-
-        if ([] !== $missingHooks) {
-            $this->warn('Missing required deployment hooks:');
-            foreach ($missingHooks as $hook) {
-                $this->out('  • ' . $hook);
-            }
-            $this->info("Run <|cyan>scaffold:hooks</> to create them");
+        try {
+            $availableHooks = $this->getAvailableScripts($site, '.deployer/hooks');
+        } catch (\RuntimeException $e) {
+            $this->nay($e->getMessage());
 
             return Command::FAILURE;
+        }
+
+        $expectedHooks = $this->getExpectedHooks();
+        $hooksStatus = $this->getHooksStatus($availableHooks, $expectedHooks);
+        $missingHooks = array_keys(array_filter($hooksStatus, fn ($s) => 'missing' === $s));
+        $hasMissingHooks = [] !== $missingHooks;
+
+        $this->out('Deployment hooks:');
+        $this->displayDeets($hooksStatus);
+        $this->out('───');
+
+        if ($hasMissingHooks) {
+            $this->warn('Missing hooks will be skipped.');
+            $this->info('Run <|cyan>scaffold:hooks</> to create them.');
         }
 
         //
@@ -152,8 +150,24 @@ class SiteDeployCommand extends BaseCommand
         }
 
         //
-        // Confirm deployment
+        // Confirm deployment with type-to-confirm
         // ----
+
+        /** @var bool $forceSkip */
+        $forceSkip = $input->getOption('force');
+
+        if (! $forceSkip) {
+            $typedDomain = $this->io->promptText(
+                label: "Type the site domain '{$site->domain}' to confirm deployment:",
+                required: true
+            );
+
+            if ($typedDomain !== $site->domain) {
+                $this->nay('Site domain does not match. Deployment cancelled.');
+
+                return Command::FAILURE;
+            }
+        }
 
         $confirmed = $this->io->getBooleanOptionOrPrompt(
             'yes',
@@ -165,7 +179,6 @@ class SiteDeployCommand extends BaseCommand
 
         if (! $confirmed) {
             $this->warn('Deployment cancelled.');
-            $this->out('');
 
             return Command::SUCCESS;
         }
@@ -205,6 +218,7 @@ class SiteDeployCommand extends BaseCommand
             'repo' => $repo,
             'branch' => $branch,
             'keep-releases' => $keepReleases,
+            'force' => true,
             'yes' => true,
         ]);
 
@@ -356,5 +370,35 @@ class SiteDeployCommand extends BaseCommand
         }
 
         return $intValue;
+    }
+
+    /**
+     * Get expected hooks by scanning the scaffolds/hooks directory.
+     *
+     * @return array<int, string>
+     */
+    private function getExpectedHooks(): array
+    {
+        $scaffoldsPath = dirname(__DIR__, 3) . '/scaffolds/hooks';
+
+        return $this->fs->scanDirectory($scaffoldsPath);
+    }
+
+    /**
+     * Build status array for hooks (present/missing).
+     *
+     * @param array<int, string> $availableHooks Hooks found in repository
+     * @param array<int, string> $expectedHooks  Hooks from scaffolds directory
+     * @return array<string, string> Hook name => status
+     */
+    private function getHooksStatus(array $availableHooks, array $expectedHooks): array
+    {
+        $status = [];
+
+        foreach ($expectedHooks as $hook) {
+            $status[$hook] = in_array($hook, $availableHooks, true) ? 'present' : 'missing';
+        }
+
+        return $status;
     }
 }

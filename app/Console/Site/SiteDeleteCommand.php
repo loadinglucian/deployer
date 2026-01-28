@@ -90,8 +90,6 @@ class SiteDeleteCommand extends BaseCommand
         $forceSkip = $input->getOption('force');
 
         if (!$forceSkip) {
-            $this->out('');
-
             $typedDomain = $this->io->promptText(
                 label: "Type the site domain '{$site->domain}' to confirm deletion:",
                 required: true

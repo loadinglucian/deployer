@@ -98,33 +98,13 @@ trait SitesTrait
     /**
      * Get available scripts from a remote site directory.
      *
-     * @param string $directory    Directory path (e.g., '.deployer/crons')
-     * @param string $resourceType Human-readable type for messages (e.g., 'cron')
-     * @param string $scaffoldCmd  Scaffold command hint (e.g., 'scaffold:crons')
-     * @return array<int, string>|int Script list or Command::FAILURE
+     * @param string $directory Directory path (e.g., '.deployer/crons')
+     * @return array<int, string> Script list (empty if none found)
+     * @throws \RuntimeException If git operations fail
      */
-    protected function getAvailableScripts(
-        SiteDTO $site,
-        string $directory,
-        string $resourceType,
-        string $scaffoldCmd
-    ): array|int {
-        try {
-            $scripts = $this->listRemoteSiteDirectory($site, $directory);
-        } catch (\RuntimeException $e) {
-            $this->nay($e->getMessage());
-
-            return Command::FAILURE;
-        }
-
-        if ([] === $scripts) {
-            $this->warn("No {$resourceType} scripts found in repository");
-            $this->info("Run <|cyan>{$scaffoldCmd}</> to create some");
-
-            return Command::FAILURE;
-        }
-
-        return $scripts;
+    protected function getAvailableScripts(SiteDTO $site, string $directory): array
+    {
+        return $this->listRemoteSiteDirectory($site, $directory);
     }
 
     /**

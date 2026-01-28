@@ -72,15 +72,19 @@ class SupervisorCreateCommand extends BaseCommand
             return $deployedResult;
         }
 
-        $availableScripts = $this->getAvailableScripts(
-            $site,
-            '.deployer/supervisors',
-            'supervisor',
-            'scaffold:supervisors'
-        );
+        try {
+            $availableScripts = $this->getAvailableScripts($site, '.deployer/supervisors');
+        } catch (\RuntimeException $e) {
+            $this->nay($e->getMessage());
 
-        if (is_int($availableScripts)) {
-            return $availableScripts;
+            return Command::FAILURE;
+        }
+
+        if ([] === $availableScripts) {
+            $this->warn('No supervisor scripts found in repository');
+            $this->info('Run <|cyan>scaffold:supervisors</> to create some');
+
+            return Command::FAILURE;
         }
 
         //

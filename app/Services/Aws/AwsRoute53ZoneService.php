@@ -159,6 +159,6 @@ class AwsRoute53ZoneService extends BaseAwsService
      */
     private function cleanZoneId(string $zoneId): string
     {
-        return preg_replace('#^/hostedzone/#', '', $zoneId) ?? $zoneId;
+        return preg_replace('#^/hostedzone/#', '', (string) $zoneId) ?? $zoneId;
     }
 }
